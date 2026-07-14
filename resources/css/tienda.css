@@ -1,0 +1,264 @@
+/* =========================================
+   FUENTES Y VARIABLES (Licorería Premium)
+   ========================================= */
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400..900&family=Josefin+Sans:ital,wght@0,100..700;1,100..700&family=Lora:ital,wght@0,400..700;1,400..700&family=Rye&display=swap');
+
+:root {
+    --color_primario: #F59E0B;     /* Dorado / Ámbar */
+    --color_secundario: #1a1a1a;   /* Negro/Gris oscuro */
+    --color_texto_light: #ffffff;
+    --color_accent: #d4ae63;
+    --borde_dorado: rgba(184, 149, 81, 0.3);
+    --sombra_dorada: rgba(184, 149, 81, 0.4);
+}
+
+* {
+    font-family: "Lora", serif;
+}
+
+body {
+    padding-top: 90px;
+    background-color: #ffffff; 
+    color: var(--color_secundario);
+}
+
+h1, h2, h3, h4, h5, h6, .titulo-premium {
+    font-family: "Cinzel", serif;
+    color: var(--color_secundario);
+    font-weight: 700;
+}
+
+/* NAVBAR */
+.navbar-tienda {
+    background-color: rgba(255, 255, 255, 0.95) !important; 
+    backdrop-filter: blur(10px); 
+    -webkit-backdrop-filter: blur(10px);
+    border-bottom: 1px solid var(--borde_dorado);
+    min-height: 90px;
+}
+
+/* ICONOS NAVBAR  */
+.nav-icon {
+    color: var(--color_secundario);
+    font-size: 1.4rem;
+    transition: all 0.3s ease;
+    text-decoration: none;
+    padding: 0;
+    background-color: transparent !important; 
+    border: none !important; 
+}
+.nav-icon:hover {
+    color: var(--color_primario);
+    transform: scale(1.2);
+}
+
+.social-icon {
+    color: var(--color_secundario);
+    font-size: 1.3rem;
+    transition: all 0.3s ease;
+}
+.social-icon:hover {
+    color: var(--color_primario);
+    transform: scale(1.3) translateY(-3px);
+}
+
+/* BOTONES */
+.btn-premium {
+    background-color: var(--color_primario);
+    color: var(--color_texto_light);
+    border: none;
+    transition: all 0.3s ease-in-out;
+}
+.btn-premium:hover {
+    background-color: var(--color_accent);
+    color: var(--color_texto_light);
+    box-shadow: 0 5px 15px var(--sombra_dorada);
+    transform: translateY(-2px);
+}
+
+.btn-black {
+    background-color: var(--color_secundario);
+    color: var(--color_texto_light);
+    font-family: "Lora", serif; 
+    font-weight: 700;
+    text-transform: uppercase;
+    border: 2px solid var(--color_secundario);
+    padding: 10px 28px;
+    border-radius: 30px;
+    letter-spacing: 1.5px;
+    font-size: 0.85rem;
+    transition: all 0.3s ease;
+}
+.btn-black:hover {
+    background-color: var(--color_primario);
+    border-color: var(--color_primario);
+    color: var(--color_texto_light);
+    transform: scale(1.05);
+}
+
+/* CARRUSEL DE MARCAS */
+.logo-slider {
+    width: 100%;
+    height: auto;
+    overflow: hidden;
+    position: relative;
+    padding: 25px 0;
+    background-color: #ffffff;
+}
+.logo-track {
+    display: flex;
+    width: calc(200px * 10); /* 10 marcas + 10 duplicados */
+    animation: scroll-infinito 25s linear infinite; 
+}
+.slide_logo {
+    width: 200px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 30px;
+}
+.slide_logo img {
+    max-width: 100%;
+    max-height: 75px;
+    object-fit: contain;
+    transition: transform 0.3s ease;
+}
+.slide_logo:hover img {
+    transform: scale(1.15);
+}
+@keyframes scroll-infinito {
+    0% { transform: translateX(0); }
+    100% { transform: translateX(calc(-200px * 3)); } 
+}
+
+/* TARJETAS DE PRODUCTOS (Corregido el fondo de la imagen) */
+.product-card {
+    border-radius: 8px !important;
+    background-color: #ffffff;
+    border: 1px solid #eaeaea;
+    transition: all 0.3s ease;
+}
+.product-card:hover {
+    border-color: var(--color_primario);
+    transform: translateY(-5px);
+    box-shadow: 0 8px 20px var(--sombra_dorada);
+}
+.card-img-container {
+    height: 180px; 
+    padding: 10px; /* Reduje el padding para que la botella ocupe más espacio arriba */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: transparent; /* Fondo transparente, ya no es gris */
+    /* Eliminamos el border-bottom para que se fusione con la tarjeta */
+}
+.card-img-container img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain; 
+    transition: transform 0.3s ease;
+}
+.product-card:hover .card-img-container img {
+    transform: scale(1.08);
+}
+.product-title {
+    font-size: 1rem;
+    font-weight: 700;
+    margin-bottom: 5px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis; 
+}
+
+/* Efecto hover para los iconos de la sección de contacto */
+.icon-contacto {
+    color: var(--color_secundario);
+    transition: all 0.3s ease;
+    display: inline-block;
+}
+.icon-contacto:hover {
+    color: var(--color_primario);
+    transform: scale(1.2);
+}
+
+/* =========================================
+   SECCIÓN: CÓMO COMPRAR (Infografía)
+   ========================================= */
+.step-card {
+    transition: all 0.3s ease;
+    padding: 20px 10px;
+}
+.step-icon-wrapper {
+    width: 110px;
+    height: 110px;
+    background-color: #fcfcfc;
+    border: 2px dashed var(--borde_dorado);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    color: var(--color_secundario);
+    transition: all 0.4s ease;
+}
+.step-card:hover .step-icon-wrapper {
+    background-color: var(--color_primario);
+    color: var(--color_texto_light);
+    border-color: var(--color_primario);
+    transform: translateY(-10px);
+    box-shadow: 0 10px 25px var(--sombra_dorada);
+}
+.step-number {
+    position: absolute;
+    top: -5px;
+    right: -5px;
+    background-color: var(--color_secundario);
+    color: var(--color_primario);
+    width: 35px;
+    height: 35px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 1.2rem;
+    font-family: 'Cinzel', serif;
+    border: 3px solid #ffffff;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    transition: all 0.3s ease;
+}
+.step-card:hover .step-number {
+    background-color: #ffffff;
+    color: var(--color_secundario);
+}
+
+/* Estilos personalizados para el Acordeón de FAQs */
+.accordion-button:not(.collapsed) {
+    color: var(--color_primario) !important;
+    background-color: rgba(245, 158, 11, 0.05) !important;
+    box-shadow: none !important;
+}
+.accordion-button:focus {
+    box-shadow: none !important;
+    border-color: rgba(245, 158, 11, 0.2) !important;
+}
+
+/* =========================================
+   SECCIÓN: BENEFICIOS
+   ========================================= */
+.beneficio-box {
+    transition: all 0.3s ease;
+    padding: 20px 15px;
+    border-radius: 10px;
+    background-color: #ffffff;
+}
+.beneficio-box:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 20px rgba(0,0,0,0.04);
+}
+.beneficio-box i {
+    transition: transform 0.3s ease;
+}
+.beneficio-box:hover i {
+    transform: scale(1.15) rotate(5deg);
+}
