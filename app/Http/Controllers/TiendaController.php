@@ -34,4 +34,18 @@ class TiendaController extends Controller
 
         return view('tienda.index', compact('productos', 'categorias'));
     }
+
+    /**
+     * Muestra el historial de compras del cliente logueado.
+     */
+    public function misPedidos()
+    {
+        // Buscamos los tickets que pertenezcan al ID del usuario actual, ordenados del más reciente al más antiguo
+        $tickets = \App\Models\Ticket::with('detalles.producto')
+                    ->where('user_id', auth()->id())
+                    ->orderBy('created_at', 'desc')
+                    ->get();
+
+        return view('tienda.mis-pedidos', compact('tickets'));
+    }
 }

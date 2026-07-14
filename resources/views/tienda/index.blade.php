@@ -4,6 +4,8 @@
 
 @section('content')
 
+    {{-- hero --}}
+
     <section class="hero-section position-relative vh-100" style="margin-top: -90px;">
         <div id="carruselLicoreria" class="carousel slide carousel-fade" data-bs-ride="carousel" data-bs-interval="3500">
             <div class="carousel-inner">
@@ -22,6 +24,8 @@
             </div>
         </div>
 
+        {{-- titulo --}}
+
         <div class="position-absolute top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center text-center"
             style="z-index: 2;">
             <div class="container px-4">
@@ -34,6 +38,8 @@
             </div>
         </div>
     </section>
+
+    {{-- logos --}}
 
     <section class="logo-slider-container">
         <div class="logo-slider">
@@ -53,6 +59,8 @@
             </div>
         </div>
     </section>
+
+    {{-- beneficios --}}
 
     <section class="container py-4 mt-3 mb-2">
         <div class="row g-4 text-center justify-content-center">
@@ -90,6 +98,8 @@
         </div>
     </section>
 
+    {{-- catálogo --}}
+
     <div class="container py-2 " id="catalogo">
 
         <div class="text-center mb-5">
@@ -121,13 +131,13 @@
                             style="{{ !request('categoria') ? 'border-left: 4px solid var(--color_primario);' : 'border-left: 4px solid transparent;' }}">
                             Todas las botellas
                         </a>
-                        @foreach($categorias as $cat)
-    <a href="{{ route('tienda.categoria', $cat->slug) }}#catalogo" 
-       class="list-group-item list-group-item-action py-3 {{ request()->is('categoria/' . $cat->slug) ? 'fw-bold bg-light text-dark' : 'text-muted' }}" 
-       style="{{ request()->is('categoria/' . $cat->slug) ? 'border-left: 4px solid var(--color_primario);' : 'border-left: 4px solid transparent;' }}">
-        {{ $cat->nombre }}
-    </a>
-@endforeach
+                        @foreach ($categorias as $cat)
+                            <a href="{{ route('tienda.categoria', $cat->slug) }}#catalogo"
+                                class="list-group-item list-group-item-action py-3 {{ request()->is('categoria/' . $cat->slug) ? 'fw-bold bg-light text-dark' : 'text-muted' }}"
+                                style="{{ request()->is('categoria/' . $cat->slug) ? 'border-left: 4px solid var(--color_primario);' : 'border-left: 4px solid transparent;' }}">
+                                {{ $cat->nombre }}
+                            </a>
+                        @endforeach
                     </div>
                 </div>
             </div>
@@ -201,6 +211,8 @@
     </div>
 </div>
 
+{{-- como realizar pedidos --}}
+
 <section class="container py-5 mt-2 border-top">
     <div class="text-center mb-5">
         <h2 class="titulo-premium mb-3 display-5 fw-bold" style="text-shadow: 1px 1px 2px var(--sombra_dorada);">¿Cómo
@@ -267,6 +279,8 @@
     </div>
 </section>
 
+{{-- preguntas frecuentes --}}
+
 <section id="faq" class="container py-5 mt-4 border-top">
     <div class="text-center mb-5">
         <h2 class="titulo-premium mb-2 display-5 fw-bold">Preguntas Frecuentes</h2>
@@ -330,10 +344,11 @@
     </div>
 </section>
 
+{{-- encuentranos --}}
+
 <section id="contacto" class="container py-5 mt-4 border-top">
     <div class="text-center mb-5">
-        <h2 class="titulo-premium mb-2 text-uppercase"
-            style="font-size: 2.8rem; text-shadow: 1px 1px 2px var(--sombra_dorada);">Encuéntranos</h2>
+        <h2 class="titulo-premium mb-3 display-5 fw-bold" style="text-shadow: 1px 1px 2px var(--sombra_dorada);">Encuéntranos</h2>
         <p class="text-muted">Estamos listos para brindarte la mejor atención y asesoría para tus eventos.</p>
     </div>
 

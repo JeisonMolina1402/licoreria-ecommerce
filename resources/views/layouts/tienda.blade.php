@@ -52,15 +52,29 @@
 
             <div class="d-flex justify-content-end align-items-center gap-3 gap-lg-4" style="flex: 1;">
                 @auth
-                    @if(in_array(Auth::user()->rol, ['admin', 'vendedor']))
+                    @if (in_array(Auth::user()->rol, ['admin', 'vendedor']))
                         <a href="{{ url('/home') }}" class="nav-icon text-dark text-decoration-none" title="Mi Panel">
                             <i class="fa-solid fa-chart-line fs-5"></i>
                         </a>
                     @endif
 
+                    @auth
+
+                        @if (auth()->user()->rol !== 'admin')
+                            <!-- Ícono de Mis Pedidos (SOLO CLIENTES) -->
+                            <a href="{{ route('tienda.mis-pedidos') }}"
+                                class="text-dark me-3 position-relative text-decoration-none" title="Mis Pedidos">
+                                <i class="fa-solid fa-receipt fs-4" style="transition: color 0.3s;"
+                                    onmouseover="this.style.color='var(--color_primario)'"
+                                    onmouseout="this.style.color='#212529'"></i>
+                            </a>
+                        @endif
+                    @endauth
+
                     <form action="{{ route('logout') }}" method="POST" class="m-0 p-0">
                         @csrf
-                        <button type="submit" class="nav-icon border-0 bg-transparent text-danger p-0" title="Cerrar Sesión">
+                        <button type="submit" class="nav-icon border-0 bg-transparent text-danger p-0"
+                            title="Cerrar Sesión">
                             <i class="fa-solid fa-right-from-bracket fs-5"></i>
                         </button>
                     </form>
@@ -68,13 +82,14 @@
                     <a href="{{ route('login') }}" class="nav-icon text-dark text-decoration-none" title="Iniciar Sesión">
                         <i class="fa-regular fa-user fs-5"></i>
                     </a>
-                    <a href="{{ route('register') }}" class="nav-icon d-none d-sm-block text-dark text-decoration-none" title="Crear Cuenta">
+                    <a href="{{ route('register') }}" class="nav-icon d-none d-sm-block text-dark text-decoration-none"
+                        title="Crear Cuenta">
                         <i class="fa-solid fa-user-plus fs-5"></i>
                     </a>
                 @endauth
 
-                <button class="nav-icon border-0 position-relative bg-transparent text-dark p-0" type="button" data-bs-toggle="offcanvas"
-                    data-bs-target="#carritoOffcanvas" title="Mi Carrito">
+                <button class="nav-icon border-0 position-relative bg-transparent text-dark p-0" type="button"
+                    data-bs-toggle="offcanvas" data-bs-target="#carritoOffcanvas" title="Mi Carrito">
                     <i class="fa-solid fa-cart-shopping fs-5"></i>
                     <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
                         id="contador-carrito" style="font-size: 0.65rem;">
@@ -102,9 +117,11 @@
                 <div class="d-flex justify-content-center gap-4">
                     <a href="#" class="text-white social-icon fs-3 m-0"><i
                             class="fa-brands fa-facebook-f"></i></a>
-                    <a href="#" class="text-white social-icon fs-3 m-0"><i class="fa-brands fa-instagram"></i></a>
+                    <a href="#" class="text-white social-icon fs-3 m-0"><i
+                            class="fa-brands fa-instagram"></i></a>
                     <a href="#" class="text-white social-icon fs-3 m-0"><i class="fa-brands fa-tiktok"></i></a>
-                    <a href="#" class="text-white social-icon fs-3 m-0"><i class="fa-brands fa-whatsapp"></i></a>
+                    <a href="#" class="text-white social-icon fs-3 m-0"><i
+                            class="fa-brands fa-whatsapp"></i></a>
                 </div>
             </div>
 

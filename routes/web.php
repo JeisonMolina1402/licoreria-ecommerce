@@ -27,6 +27,11 @@ Route::get('/checkout/exito/{id}', [CheckoutController::class, 'exito'])
     ->middleware('auth')
     ->name('tienda.exito');
 
+// Historial de pedidos del cliente
+Route::get('/mis-pedidos', [TiendaController::class, 'misPedidos'])
+    ->middleware('auth')
+    ->name('tienda.mis-pedidos');
+
 // ==========================================
 // PANEL ADMINISTRATIVO Y PERFIL - PROTEGIDO (SOLO ADMIN Y VENDEDOR)
 // ==========================================

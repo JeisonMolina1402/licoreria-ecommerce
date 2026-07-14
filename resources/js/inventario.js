@@ -15,11 +15,25 @@ window.mostrarVistaPrevia = function(event) {
 // Función para confirmar la cancelación y limpiar el modal
 window.confirmarCancelacion = function() {
     if (confirm("¿Estás seguro de que deseas cancelar? Los datos no guardados se perderán.")) {
-        const modalEl = document.getElementById('modalAgregarProducto');
-        const modalInst = bootstrap.Modal.getInstance(modalEl) || new bootstrap.Modal(modalEl);
-        modalInst.hide();
         
-        // Limpiar el formulario
+        // 1. CERRAR EL MODAL USANDO ATRIBUTOS NATIVOS DE BOOTSTRAP (SIN JS GLOBAL)
+        // Buscamos el botón de cerrar tradicional "X" en la cabecera del modal activo y simulamos un clic
+        const btnCerrarX = document.querySelector('#modalAgregarProducto [data-bs-dismiss="modal"]');
+        if (btnCerrarX) {
+            btnCerrarX.click();
+        } else {
+            // Alternativa por si no encuentra la X: ocultamos usando clases directamente
+            const modalEl = document.getElementById('modalAgregarProducto');
+            modalEl.classList.remove('show');
+            modalEl.setAttribute('aria-hidden', 'true');
+            modalEl.style.display = 'none';
+            const backdrop = document.querySelector('.modal-backdrop');
+            if (backdrop) backdrop.remove();
+            document.body.classList.remove('modal-open');
+            document.body.style.overflow = '';
+        }
+
+        // 2. LIMPIAR EL FORMULARIO
         document.getElementById('formProducto').reset();
         document.getElementById('formProducto').action = '/inventario/guardar'; // Restaurar ruta de guardado
         
