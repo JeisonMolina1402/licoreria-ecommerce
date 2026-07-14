@@ -11,7 +11,7 @@ class TiendaController extends Controller
     /**
      * Muestra el catálogo principal de la tienda al cliente.
      */
-    public function index(Request $request)
+    public function index(Request $request, Categoria $categoria = null)
     {
         // 1. Traemos las categorías para ponerlas en un menú de filtros
         $categorias = Categoria::all();
@@ -24,10 +24,10 @@ class TiendaController extends Controller
             $query->where('nombre', 'LIKE', '%' . $request->buscar . '%');
         }
 
-        // Si el cliente da clic en una categoría específica
-        if ($request->filled('categoria')) {
-            $query->where('categoria_id', $request->categoria);
-        }
+        // SI EXISTE $categoria (porque entramos por /categoria/whisky), filtramos por su ID
+    if ($categoria) {
+        $query->where('categoria_id', $categoria->id);
+    }
 
         // 3. Paginamos los productos de 12 en 12 (formato cuadrícula para tienda)
         $productos = $query->latest()->paginate(12)->appends($request->all());

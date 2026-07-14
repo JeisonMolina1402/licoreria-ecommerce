@@ -17,12 +17,19 @@ class Producto extends Model
         'precio_compra',
         'precio',
         'stock',
-        'imagen'
+        'imagen',
+        'slug',
     ];
 
     //Esto conecta el Producto con su Categoría
     public function categoria()
     {
         return $this->belongsTo(Categoria::class);
+    }
+
+    // Le dice a Laravel que use esta columna para buscar en las URLs
+    public function getRouteKeyName()
+    {
+        return 'slug';
     }
 }

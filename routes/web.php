@@ -13,6 +13,9 @@ use App\Http\Controllers\ProfileController; // <-- Controlador del perfil
 // ==========================================
 Route::get('/', [TiendaController::class, 'index'])->name('tienda.index');
 
+// ruta amigable para categorías
+Route::get('/categoria/{categoria}', [TiendaController::class, 'index'])->name('tienda.categoria');
+
 // ==========================================
 // PROCESO DE COMPRA (CHECKOUT) - REQUIERE LOGIN DE CLIENTE
 // ==========================================
