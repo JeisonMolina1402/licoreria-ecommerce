@@ -3,62 +3,57 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
+use App\Models\Ticket;
+use App\Models\DetalleTicket;
 use Illuminate\Support\Str;
-use App\Models\Ticket; // <-- Ajusta esto si tu modelo se llama Venta o Pedido
+use Illuminate\Support\Facades\Auth;
 
 class CheckoutController extends Controller
 {
     public function procesar(Request $request)
     {
-        // 1. Recibir los datos del carrito oculto en el formulario
-        $carritoJson = $request->input('carrito_datos');
-        $carrito = json_decode($carritoJson, true);
+        // 1. Decodificar el JSON de los productos que viene del carrito
+        $carrito = json_decode($request->carrito_datos, true);
 
-        // Si por algún motivo llega vacío, lo regresamos a la tienda
+        // Si por alguna razón llega vacío, lo regresamos
         if (!$carrito || count($carrito) == 0) {
-            return redirect()->route('tienda.index')->with('error', 'Tu carrito está vacío.');
+            return redirect()->back()->withErrors(['error' => 'El carrito está vacío.']);
         }
 
-        // 2. Calcular el total a pagar en el servidor (Seguridad Backend)
+        // 2. Calcular el total real sumando las cantidades
         $total = 0;
         foreach ($carrito as $item) {
             $total += $item['precio'] * $item['cantidad'];
         }
 
-        // 3. Generar un Código de Compra Único (Ej: LCR-A4F9K)
-        $codigoCompra = 'LCR-' . strtoupper(Str::random(5));
-
-        // 4. Guardar el Ticket en la Base de Datos
-        // (Ajusta los nombres de las columnas a como los tengas en tu base de datos)
-        $ticket = new Ticket();
-        $ticket->user_id = Auth::id(); // Relacionamos la compra con el cliente logueado
-        $ticket->codigo = $codigoCompra;
-        $ticket->total = $total;
-        $ticket->estado = 'Pendiente de Pago'; 
-        
-        // Guardamos todo el JSON de productos directamente en la base de datos 
-        // para no tener que crear otra tabla extra de "detalles_ticket" si no quieres.
-        $ticket->detalle_productos = $carritoJson; 
-        
-        $ticket->save();
-
-        // 5. Redirigir a la pantalla del Comprobante Digital (que crearemos en el siguiente paso)
-        // Usamos "with" para enviarle a la vista los datos recién guardados.
-        return redirect()->route('tienda.exito', $ticket->id)->with([
-            'mensaje' => '¡Reserva generada con éxito!',
-            'limpiar_carrito' => true // Esta bandera le dirá a JS que vacíe el carrito
+        // 3. Crear el Ticket principal (Cabecera)
+        $ticket = Ticket::create([
+            'user_id' => Auth::id(),
+            'codigo_reserva' => 'LCR-' . strtoupper(Str::random(5)), // Aquí corregimos 'codigo' por 'codigo_reserva'
+            'total' => $total,
+            'estado' => 'pendiente',
         ]);
+
+        // 4. Guardar cada producto en la tabla de detalles
+        foreach ($carrito as $item) {
+            DetalleTicket::create([
+                'ticket_id' => $ticket->id,
+                'producto_id' => $item['id'],
+                'cantidad' => $item['cantidad'],
+                'precio_unitario' => $item['precio'],
+            ]);
+        }
+
+        // 5. Redirigir a la pantalla de éxito (Ticket final)
+        return redirect()->route('tienda.exito', $ticket->id);
     }
 
     public function exito($id)
     {
-        // Buscamos el ticket recién creado
-        $ticket = Ticket::where('id', $id)->where('user_id', Auth::id())->firstOrFail();
+        // Buscamos el ticket con todos sus detalles y productos asociados
+        $ticket = Ticket::with('detalles.producto')->findOrFail($id);
         
-        // Convertimos el JSON de productos nuevamente a arreglo para poder dibujarlo en la vista
-        $productos = json_decode($ticket->detalle_productos, true);
-
-        return view('tienda.checkout_exito', compact('ticket', 'productos'));
+        // Retornamos la vista para descargar el comprobante
+        return view('tienda.exito', compact('ticket'));
     }
 }

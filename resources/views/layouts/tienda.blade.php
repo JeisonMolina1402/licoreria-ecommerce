@@ -52,23 +52,32 @@
 
             <div class="d-flex justify-content-end align-items-center gap-3 gap-lg-4" style="flex: 1;">
                 @auth
-                    <a href="{{ url('/home') }}" class="nav-icon" title="Mi Panel">
-                        <i class="fa-solid fa-chart-line"></i>
-                    </a>
+                    @if(in_array(Auth::user()->rol, ['admin', 'vendedor']))
+                        <a href="{{ url('/home') }}" class="nav-icon text-dark text-decoration-none" title="Mi Panel">
+                            <i class="fa-solid fa-chart-line fs-5"></i>
+                        </a>
+                    @endif
+
+                    <form action="{{ route('logout') }}" method="POST" class="m-0 p-0">
+                        @csrf
+                        <button type="submit" class="nav-icon border-0 bg-transparent text-danger p-0" title="Cerrar Sesión">
+                            <i class="fa-solid fa-right-from-bracket fs-5"></i>
+                        </button>
+                    </form>
                 @else
-                    <a href="{{ route('login') }}" class="nav-icon" title="Iniciar Sesión">
-                        <i class="fa-regular fa-user"></i>
+                    <a href="{{ route('login') }}" class="nav-icon text-dark text-decoration-none" title="Iniciar Sesión">
+                        <i class="fa-regular fa-user fs-5"></i>
                     </a>
-                    <a href="{{ route('register') }}" class="nav-icon d-none d-sm-block" title="Crear Cuenta">
-                        <i class="fa-solid fa-user-plus"></i>
+                    <a href="{{ route('register') }}" class="nav-icon d-none d-sm-block text-dark text-decoration-none" title="Crear Cuenta">
+                        <i class="fa-solid fa-user-plus fs-5"></i>
                     </a>
                 @endauth
 
-                <button class="nav-icon border-0 position-relative" type="button" data-bs-toggle="offcanvas"
+                <button class="nav-icon border-0 position-relative bg-transparent text-dark p-0" type="button" data-bs-toggle="offcanvas"
                     data-bs-target="#carritoOffcanvas" title="Mi Carrito">
-                    <i class="fa-solid fa-cart-shopping"></i>
+                    <i class="fa-solid fa-cart-shopping fs-5"></i>
                     <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
-                        id="contador-carrito">
+                        id="contador-carrito" style="font-size: 0.65rem;">
                         0
                     </span>
                 </button>
