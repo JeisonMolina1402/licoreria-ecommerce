@@ -8,6 +8,9 @@ export default defineConfig({
                 // Estilos (CSS/SASS)
                 'resources/sass/app.scss',
                 'resources/css/tienda.css',
+
+                //Breeze
+                'resources/css/app.css',
                 
                 // Scripts Base
                 'resources/js/app.js',
@@ -19,7 +22,8 @@ export default defineConfig({
                 // Scripts del Panel Administrativo (Backend)
                 'resources/js/inventario.js',
                 'resources/js/pos.js',
-                'resources/js/tickets.js'
+                'resources/js/tickets.js',
+                'resources/js/reportes.js',
             ],
             refresh: true,
         }),

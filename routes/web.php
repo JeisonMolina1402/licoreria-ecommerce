@@ -1,12 +1,13 @@
 <?php
 
-use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\TiendaController;
+use App\Http\Controllers\CheckoutController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\InventarioController;
-use App\Http\Controllers\TicketController;
-use App\Http\Controllers\CheckoutController;
 use App\Http\Controllers\ProfileController; // <-- Controlador del perfil
+use App\Http\Controllers\ReporteController;
+use App\Http\Controllers\TicketController;
+use App\Http\Controllers\TiendaController;
+use Illuminate\Support\Facades\Route;
 
 // ==========================================
 // TIENDA PÚBLICA (E-COMMERCE) - ACCESO LIBRE
@@ -36,7 +37,7 @@ Route::get('/mis-pedidos', [TiendaController::class, 'misPedidos'])
 // PANEL ADMINISTRATIVO Y PERFIL - PROTEGIDO (SOLO ADMIN Y VENDEDOR)
 // ==========================================
 Route::middleware(['auth', 'admin'])->group(function () {
-    
+
     // Rutas del Perfil de Usuario 
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
@@ -52,6 +53,10 @@ Route::middleware(['auth', 'admin'])->group(function () {
     Route::post('/inventario/actualizar/{id}', [InventarioController::class, 'update'])->name('inventario.update');
     Route::delete('/inventario/eliminar/{id}', [InventarioController::class, 'destroy'])->name('inventario.destroy');
 
+    // Módulo de Reportes
+    Route::get('/reportes', [ReporteController::class, 'index'])->name('reportes.index');
+    Route::post('/reportes/pdf', [ReporteController::class, 'exportarPdf'])->name('reportes.pdf');
+
     // Módulo de Tickets (Ventas y Pedidos)
     Route::get('/tickets', [TicketController::class, 'index'])->name('tickets.index');
     Route::get('/tickets/nueva-venta', [TicketController::class, 'create'])->name('tickets.create');
@@ -62,4 +67,4 @@ Route::middleware(['auth', 'admin'])->group(function () {
 // ==========================================
 // RUTAS DE SEGURIDAD DE LARAVEL BREEZE
 // ==========================================
-require __DIR__.'/auth.php';
+require __DIR__ . '/auth.php';

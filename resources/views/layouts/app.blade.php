@@ -71,7 +71,12 @@
                                 🎟️ Tickets
                             </a>
                         </li>
-                        <li class="nav-item mb-2"><a class="nav-link text-white" href="#">📄 Reportes</a></li>
+                        <li class="nav-item mb-2">
+                            <a class="nav-link {{ request()->routeIs('reportes.index') ? 'active-menu' : 'text-white' }}"
+                                href="{{ route('reportes.index') }}">
+                                📄 Reportes
+                            </a>
+                        </li>
                         <li class="nav-item mb-2"><a class="nav-link text-white" href="#">👥 Usuarios</a></li>
                     </ul>
                 </div>
@@ -93,7 +98,12 @@
                         <li class="nav-item mb-2"><a
                                 class="nav-link {{ request()->routeIs('tickets.index') ? 'active-menu' : 'text-white' }}"
                                 href="{{ route('tickets.index') }}">🎟️ Tickets</a></li>
-                        <li class="nav-item mb-2"><a class="nav-link text-white" href="#">📄 Reportes</a></li>
+                        <li class="nav-item mb-2">
+                            <a class="nav-link {{ request()->routeIs('reportes.index') ? 'active-menu' : 'text-white' }}"
+                                href="{{ route('reportes.index') }}">
+                                📄 Reportes
+                            </a>
+                        </li>
                         <li class="nav-item mb-2"><a class="nav-link text-white" href="#">👥 Usuarios</a></li>
                     </ul>
                 </div>
@@ -154,7 +164,7 @@
 
             </main>
         </div>
-    </div>  
+    </div>
     @stack('scripts')
 </body>
 
