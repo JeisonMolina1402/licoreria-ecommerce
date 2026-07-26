@@ -11,7 +11,7 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // Aquí le decimos al "director de orquesta" qué archivos debe ejecutar
+        // Aquí le decimos al composer qué archivos debe ejecutar
         $this->call([
             UserSeeder::class,
             // A futuro, si hacemos un CategoriaSeeder o ProductoSeeder, los agregaremos aquí abajo.

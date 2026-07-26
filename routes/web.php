@@ -3,10 +3,11 @@
 use App\Http\Controllers\CheckoutController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\InventarioController;
-use App\Http\Controllers\ProfileController; // <-- Controlador del perfil
+use App\Http\Controllers\ProfileController; 
 use App\Http\Controllers\ReporteController;
 use App\Http\Controllers\TicketController;
 use App\Http\Controllers\TiendaController;
+use App\Http\Controllers\UserController; // <-- IMPORTANTE: Agregamos el nuevo controlador
 use Illuminate\Support\Facades\Route;
 
 // ==========================================
@@ -62,6 +63,15 @@ Route::middleware(['auth', 'admin'])->group(function () {
     Route::get('/tickets/nueva-venta', [TicketController::class, 'create'])->name('tickets.create');
     Route::post('/tickets/estado/{id}', [TicketController::class, 'cambiarEstado'])->name('tickets.estado');
     Route::post('/tickets', [TicketController::class, 'store'])->name('tickets.store');
+
+    // ==========================================
+    // NUEVO: MÓDULO DE USUARIOS (ADMINISTRACIÓN)
+    // ==========================================
+    Route::get('/usuarios', [UserController::class, 'index'])->name('usuarios.index');
+    Route::post('/usuarios', [UserController::class, 'store'])->name('usuarios.store');
+    Route::put('/usuarios/{usuario}', [UserController::class, 'update'])->name('usuarios.update');
+    Route::patch('/usuarios/{usuario}/estado', [UserController::class, 'toggleEstado'])->name('usuarios.toggle');
+
 });
 
 // ==========================================

@@ -3,6 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <title>Reporte de Ventas</title>
+    
+    {{-- CSS INTERNO: Optimizado específicamente para motores como DomPDF. --}}
     <style>
         body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; color: #333; font-size: 13px; margin: 0; padding: 20px; }
         .header { border-bottom: 2px solid #b07d00; padding-bottom: 10px; margin-bottom: 25px; text-align: center; }
@@ -27,6 +29,9 @@
         .text-success { color: #198754; font-weight: bold; }
         
         .footer { margin-top: 40px; font-size: 10px; text-align: center; color: #999; border-top: 1px solid #eee; padding-top: 10px; }
+
+        /* NUEVA CLASE: Fuerza a DomPDF a no separar los elementos internos de este contenedor en dos páginas diferentes */
+        .evitar-salto { page-break-inside: avoid; }
     </style>
 </head>
 <body>
@@ -34,14 +39,20 @@
     <div class="header">
         <h1>LICORERÍA WEB STORE</h1>
         <p>Reporte de Rendimiento Financiero y Operativo</p>
+        
         <p><strong>Período:</strong> {{ \Carbon\Carbon::parse($fechaInicio)->format('d/m/Y') }} al {{ \Carbon\Carbon::parse($fechaFin)->format('d/m/Y') }}</p>
     </div>
 
+    <!-- CAJAS DE RESUMEN (KPIs) -->
     <table class="resumen-box">
         <tr>
             <td>
                 <span class="titulo">Ingresos (Ventas)</span>
                 <span class="valor primary">${{ number_format($ventasTotales, 2) }}</span>
+            </td>
+            <td>
+                <span class="titulo">Costos (Gastos de Inventario)</span>
+                <span class="valor" style="color: red;">${{ number_format($costosTotales, 2) }}</span>
             </td>
             <td>
                 <span class="titulo">Ganancia Neta</span>
@@ -58,20 +69,18 @@
         </tr>
     </table>
 
+    <!-- INYECCIÓN DEL GRÁFICO DE BARRAS -->
     @if(isset($graficoBarras) && $graficoBarras)
-        <div class="seccion-titulo">Rendimiento Financiero (Visual)</div>
-        <div style="text-align: center; margin-bottom: 30px; background-color: #f9f9f9; border: 1px solid #eee; padding: 10px; border-radius: 8px;">
-            <img src="{{ $graficoBarras }}" style="width: 100%; max-height: 250px; object-fit: contain;">
+        {{-- Envolvemos el título y el gráfico para que viajen juntos --}}
+        <div class="evitar-salto">
+            <div class="seccion-titulo">Rendimiento Financiero (Visual)</div>
+            <div style="text-align: center; margin-bottom: 30px; background-color: #f9f9f9; border: 1px solid #eee; padding: 10px; border-radius: 8px;">
+                <img src="{{ $graficoBarras }}" style="width: 100%; max-height: 250px; object-fit: contain;">
+            </div>
         </div>
     @endif
 
-    @if(isset($graficoDona) && $graficoDona)
-        <div class="seccion-titulo">Distribución de Ventas por Categoría</div>
-        <div style="text-align: center; margin-bottom: 35px; background-color: #f9f9f9; border: 1px solid #eee; padding: 15px; border-radius: 8px;">
-            <img src="{{ $graficoDona }}" style="width: 70%; max-height: 220px; object-fit: contain; margin: 0 auto;">
-        </div>
-    @endif
-
+    <!-- TABLA DE VENTAS EXITOSAS -->
     <div class="seccion-titulo">Detalle de Licores Vendidos (1 o más unidades)</div>
     <table class="datos">
         <thead>
@@ -96,6 +105,7 @@
         </tbody>
     </table>
 
+    <!-- TABLA DE ALERTA (INVENTARIO MUERTO) -->
     <div class="seccion-titulo" style="color: #dc3545;">Atención: Licores Sin Movimiento (0 Ventas)</div>
     <table class="datos">
         <thead>
@@ -120,30 +130,46 @@
         </tbody>
     </table>
 
-    <div class="seccion-titulo">Resumen de Ventas por Categoría</div>
-    <table class="datos" style="width: 70%;">
-        <thead>
-            <tr>
-                <th style="width: 70%;">Nombre de Categoría</th>
-                <th style="width: 30%;" class="text-center">Total Vendidas</th>
-            </tr>
-        </thead>
-        <tbody>
-            @forelse($ventasPorCategoria as $categoria => $cantidad)
-                <tr>
-                    <td>{{ $categoria }}</td>
-                    <td class="text-center fw-bold @if($cantidad == 0) text-danger @else text-success @endif">
-                        {{ $cantidad }} unid.
-                    </td>
-                </tr>
-            @empty
-                <tr>
-                    <td colspan="2" class="text-center">No hay datos de categorías en este período.</td>
-                </tr>
-            @endforelse
-        </tbody>
-    </table>
+    <!-- INYECCIÓN DEL GRÁFICO DE DONA -->
+    @if(isset($graficoDona) && $graficoDona)
+        {{-- Aquí aplicamos la misma lógica para solucionar tu problema específico --}}
+        <div class="evitar-salto">
+            <div class="seccion-titulo">Distribución de Ventas por Categoría</div>
+            <div style="text-align: center; margin-bottom: 35px; background-color: #f9f9f9; border: 1px solid #eee; padding: 15px; border-radius: 8px;">
+                <img src="{{ $graficoDona }}" style="width: 70%; max-height: 220px; object-fit: contain; margin: 0 auto;">
+            </div>
+        </div>
+    @endif
 
+    <!-- TABLA DE RESUMEN POR CATEGORÍAS -->
+    {{-- A esta tabla también le podemos aplicar la clase por si acaso --}}
+    <div class="evitar-salto">
+        <div class="seccion-titulo">Resumen de Ventas por Categoría</div>
+        <table class="datos" style="width: 70%;">
+            <thead>
+                <tr>
+                    <th style="width: 70%;">Nombre de Categoría</th>
+                    <th style="width: 30%;" class="text-center">Total Vendidas</th>
+                </tr>
+            </thead>
+            <tbody>
+                @forelse($ventasPorCategoria as $categoria => $cantidad)
+                    <tr>
+                        <td>{{ $categoria }}</td>
+                        <td class="text-center fw-bold @if($cantidad == 0) text-danger @else text-success @endif">
+                            {{ $cantidad }} unid.
+                        </td>
+                    </tr>
+                @empty
+                    <tr>
+                        <td colspan="2" class="text-center">No hay datos de categorías en este período.</td>
+                    </tr>
+                @endforelse
+            </tbody>
+        </table>
+    </div>
+
+    <!-- FOOTER DEL DOCUMENTO -->
     <div class="footer">
         Documento generado automáticamente por el Sistema Administrativo de Licorería Web Store.<br>
         Fecha de emisión: {{ now()->format('d/m/Y H:i') }}

@@ -4,6 +4,11 @@ let chartBarrasInstance = null;
 
 document.addEventListener('DOMContentLoaded', function() {
     
+    // 0. Registramos el plugin de etiquetas
+    if (typeof ChartDataLabels !== 'undefined') {
+        Chart.register(ChartDataLabels);
+    }
+
     // --- 1. GRÁFICO DE DONA ---
     const canvasDona = document.getElementById('graficoCategorias');
     if (canvasDona) {
@@ -12,7 +17,6 @@ document.addEventListener('DOMContentLoaded', function() {
         const data = JSON.parse(canvasDona.dataset.cantidades || '[]');
         const colores = ['#0d6efd', '#198754', '#ffc107', '#dc3545', '#6f42c1', '#fd7e14', '#20c997', '#0dcaf0'];
 
-        // Guardamos la instancia en nuestra variable global
         chartDonaInstance = new Chart(ctxDona, {
             type: 'doughnut',
             data: {
@@ -35,6 +39,26 @@ document.addEventListener('DOMContentLoaded', function() {
                             font: { family: "'Nunito', sans-serif", size: 12 },
                             usePointStyle: true 
                         }
+                    },
+                    // ==========================================
+                    // CONFIGURACIÓN DE ETIQUETAS MEJORADA
+                    // ==========================================
+                    datalabels: {
+                        display: false, // 🔴 OCULTAS POR DEFECTO EN LA WEB
+                        color: '#ffffff',
+                        backgroundColor: 'rgba(0, 0, 0, 0.65)', // Fondo limpio y nítido (cero píxeles borrosos)
+                        borderRadius: 4,
+                        padding: 4,
+                        font: {
+                            weight: 'bold',
+                            size: 11
+                        },
+                        textAlign: 'center',
+                        formatter: (value, context) => {
+                            if (value === 0) return null;
+                            const nombreCategoria = context.chart.data.labels[context.dataIndex];
+                            return nombreCategoria + '\n' + value + ' unid.';
+                        }
                     }
                 },
                 cutout: '65%'
@@ -51,7 +75,6 @@ document.addEventListener('DOMContentLoaded', function() {
         const ganancias = JSON.parse(canvasBarras.dataset.ganancias || '[]');
         const gastos = JSON.parse(canvasBarras.dataset.gastos || '[]');
 
-        // Guardamos la instancia en nuestra variable global
         chartBarrasInstance = new Chart(ctxBarras, {
             type: 'bar',
             data: {
@@ -91,6 +114,9 @@ document.addEventListener('DOMContentLoaded', function() {
                                 return context.dataset.label + ': $' + context.raw.toFixed(2);
                             }
                         }
+                    },
+                    datalabels: {
+                        display: false // Siempre apagadas en las barras
                     }
                 },
                 scales: {
@@ -108,22 +134,51 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 
-// FUNCIÓN MÁGICA: Convierte los gráficos a imágenes y envía el formulario
+// ==========================================
+// FUNCIÓN MÁGICA DE EXPORTACIÓN (ACTUALIZADA)
+// ==========================================
 window.exportarConGraficos = function() {
-    const inputBarras = document.getElementById('inputGraficoBarras');
-    const inputDona = document.getElementById('inputGraficoDona');
-    const form = document.getElementById('formExportarPdf');
+    
+    const canvasBarras = document.getElementById('graficoBarras');
+    const canvasDona = document.getElementById('graficoCategorias'); 
+    
+    const inputBarras = document.getElementById('grafico_barras_base64');
+    const inputDona = document.getElementById('grafico_dona_base64');
 
-    // Convertimos el gráfico de barras a Base64 si existe en pantalla
-    if (chartBarrasInstance) {
-        inputBarras.value = chartBarrasInstance.toBase64Image();
+    // 1. Gráfico de Barras a imagen
+    if (canvasBarras) {
+        inputBarras.value = canvasBarras.toDataURL('image/png');
+    } else {
+        inputBarras.value = '';
     }
 
-    // Convertimos el gráfico de dona a Base64 si existe en pantalla
-    if (chartDonaInstance) {
-        inputDona.value = chartDonaInstance.toBase64Image();
+    // 2. Gráfico de Dona a imagen (CON RE-RENDERIZADO INMEDIATO)
+    if (canvasDona && chartDonaInstance) {
+        
+        // A) Encendemos las etiquetas temporalmente
+        chartDonaInstance.options.plugins.datalabels.display = true;
+        
+        // B) Forzamos un repintado INMEDIATO (sin animaciones) usando 'none'
+        chartDonaInstance.update('none'); 
+        
+        // C) Ahora sí, tomamos la foto perfecta con los datos ya dibujados
+        inputDona.value = canvasDona.toDataURL('image/png');
+        
+        // D) Las apagamos de nuevo para que la web siga limpia
+        chartDonaInstance.options.plugins.datalabels.display = false;
+        
+        // E) Volvemos al estado normal inmediatamente
+        chartDonaInstance.update('none');
+
+    } else {
+        inputDona.value = '';
     }
 
-    // Enviamos el formulario al controlador
-    form.submit();
+    // 3. Enviamos el formulario
+    const formExportar = document.getElementById('formExportarPdf');
+    if (formExportar) {
+        formExportar.submit();
+    } else {
+        console.error("No se encontró el formulario formExportarPdf");
+    }
 };

@@ -1,9 +1,13 @@
 // resources/js/pos.js
 
 document.addEventListener('DOMContentLoaded', function() {
-    let carrito = [];
+    
+    // 1. INICIALIZAR MEMORIA (LOCALSTORAGE)
+    // En lugar de empezar vacío siempre, leemos el disco duro del navegador. 
+    // Si no hay nada guardado, entonces sí iniciamos un arreglo vacío [].
+    let carrito = JSON.parse(localStorage.getItem('carritoPOS')) || [];
 
-    // 1. Lógica del Buscador en vivo
+    // 2. Lógica del Buscador en vivo (Se mantiene intacta)
     const buscadorInput = document.getElementById('buscadorPOS');
     if (buscadorInput) {
         buscadorInput.addEventListener('input', function() {
@@ -21,7 +25,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // 2. Lógica para Agregar al Carrito (Capturando los clics en las tarjetas)
+    // 3. Lógica para Agregar al Carrito (Capturando los clics en las tarjetas)
     const botonesAgregar = document.querySelectorAll('.btn-agregar-producto');
     botonesAgregar.forEach(boton => {
         boton.addEventListener('click', function() {
@@ -55,8 +59,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
-    // 3. Función para sumar/restar/eliminar desde el carrito derecho
-    // La asignamos al window para que pueda ser llamada desde los botones HTML generados dinámicamente
+    // 4. Función para sumar/restar/eliminar desde el carrito derecho
     window.cambiarCantidadPOS = function(id, accion) {
         const index = carrito.findIndex(p => p.id === id);
         if (index !== -1) {
@@ -74,7 +77,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // 4. Refrescar el HTML del carrito y preparar los inputs ocultos
+    // 5. Refrescar el HTML del carrito y preparar los inputs ocultos
     function actualizarInterfaz() {
         const lista = document.getElementById('listaCarrito');
         const vacio = document.getElementById('carritoVacio');
@@ -123,8 +126,25 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         }
 
-        // Actualizar totales
+        // Actualizar totales visuales
         document.getElementById('subtotalDisplay').innerText = '$' + total.toFixed(2);
         document.getElementById('totalDisplay').innerText = '$' + total.toFixed(2);
+
+        // ¡LA MAGIA! Guardamos el arreglo actualizado en el localStorage del navegador
+        localStorage.setItem('carritoPOS', JSON.stringify(carrito));
     }
+
+    // 6. LIMPIEZA POST-VENTA
+    // Si la venta se cobra con éxito y se envía el formulario al servidor, borramos la memoria.
+    const formVenta = document.getElementById('formVenta');
+    if (formVenta) {
+        formVenta.addEventListener('submit', function() {
+            localStorage.removeItem('carritoPOS');
+        });
+    }
+
+    // 7. ARRANQUE DEL SISTEMA
+    // Al cargar la página (ya sea al entrar por primera vez o al recargar por un filtro)
+    // ejecutamos la función para que dibuje lo que haya encontrado en el localStorage.
+    actualizarInterfaz();
 });

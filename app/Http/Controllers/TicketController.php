@@ -3,9 +3,9 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use App\Models\Ticket; 
-use App\Models\Producto; 
-use App\Models\Categoria; 
+use App\Models\Ticket;
+use App\Models\Producto;
+use App\Models\Categoria;
 use Illuminate\Support\Facades\DB;   //Para las transacciones atómicas (Rollback/Commit)
 use Illuminate\Support\Facades\Auth; //Para registrar qué cajero hizo la venta
 use Illuminate\Support\Str;
@@ -29,7 +29,7 @@ class TicketController extends Controller
     {
         // 1. OPTIMIZACIÓN (EAGER LOADING): 
         // Usamos 'with' para traer los datos del usuario y los productos asociados en la misma consulta SQL.
-        // Esto evita el "Problema de las N+1 consultas", haciendo que la página cargue instantáneamente 
+        // evitamos el Problema de las N+1 consultas, haciendo que la página cargue instantáneamente 
         // sin importar si hay 10 o 1000 tickets.
         $query = Ticket::with(['user', 'detalles.producto']);
 
@@ -52,15 +52,46 @@ class TicketController extends Controller
 
     /**
      * MÉTODO CREATE: Prepara y muestra la pantalla del Punto de Venta (POS).
+     * ACTUALIZADO: Ahora recibe Request para procesar los filtros del catálogo.
      */
-    public function create()
+    public function create(Request $request)
     {
-        // REGLA DE NEGOCIO ESTRICTA: 
-        // Solo enviamos a la vista del cajero los productos que tengan un stock mayor a cero.
-        // Esto previene desde la raíz que el cajero intente vender algo que no existe físicamente.
-        $productos = Producto::where('stock', '>', 0)->get();
-        $categorias = Categoria::all();
-        
+        // 1. Obtenemos todas las categorías ordenadas alfabéticamente para el selector
+        $categorias = Categoria::orderBy('nombre', 'asc')->get();
+
+        // 2. Preparamos la consulta base: Solo productos con stock > 0
+        $query = Producto::where('stock', '>', 0);
+
+        // 3. APLICAMOS LOS FILTROS DINÁMICOS
+
+        // Filtro por Nombre
+        if ($request->filled('nombre')) {
+            $query->where('nombre', 'LIKE', '%' . $request->nombre . '%');
+        }
+
+        // Filtro por Categoría
+        if ($request->filled('categoria_id')) {
+            $query->where('categoria_id', $request->categoria_id);
+        }
+
+        // Ordenamiento por Stock
+        if ($request->filled('orden_stock')) {
+            $query->orderBy('stock', $request->orden_stock);
+        }
+
+        // Ordenamiento por Precio
+        if ($request->filled('orden_precio')) {
+            $query->orderBy('precio', $request->orden_precio);
+        }
+
+        // Si el usuario no aplicó ningún orden específico, mostramos alfabéticamente por defecto
+        if (!$request->filled('orden_stock') && !$request->filled('orden_precio')) {
+            $query->orderBy('nombre', 'asc');
+        }
+
+        // 4. Ejecutamos la consulta final
+        $productos = $query->get();
+
         return view('tickets.create', compact('productos', 'categorias'));
     }
 
@@ -69,30 +100,45 @@ class TicketController extends Controller
      */
     public function cambiarEstado(Request $request, $id)
     {
-        // 1. SEGURIDAD: Validamos que un usuario no inyecte un estado que no existe 
-        // (ej. 'estado' => 'hackeado') usando la regla 'in:' de Laravel.
+        // 1. SEGURIDAD: Validamos los estados permitidos
         $request->validate([
             'estado' => 'required|in:pendiente,pagado,entregado,cancelado'
         ], [
             'estado.in' => 'El estado seleccionado no es válido.'
         ]);
 
-        // 2. Buscamos el ticket y actualizamos.
-        $ticket = Ticket::findOrFail($id);
+        // 2. Buscamos el ticket. 
+        // IMPORTANTE: Le agregamos 'with('detalles')' para traer de una vez qué productos compró y no hacer consultas lentas
+        $ticket = Ticket::with('detalles')->findOrFail($id);
+
+        // ========================================================
+        // 🚨 MAGIA AQUÍ: LÓGICA DE DEVOLUCIÓN DE INVENTARIO
+        // ========================================================
+        // Si el ticket NO estaba cancelado antes, y el NUEVO estado que pide el admin ES 'cancelado'...
+        if ($ticket->estado != 'cancelado' && $request->estado == 'cancelado') {
+            
+            // Recorremos cada producto que estaba guardado en este ticket
+            foreach ($ticket->detalles as $detalle) {
+                // Ataque directo a la base de datos para DEVOLVER (+) el stock a la repisa
+                DB::table('productos')
+                    ->where('id', $detalle->producto_id)
+                    ->increment('stock', $detalle->cantidad);
+            }
+        }
+        // ========================================================
+
+        // 3. Actualizamos el estado y guardamos
         $ticket->estado = $request->estado;
         $ticket->save();
 
         return redirect()->back()->with('success', '¡El estado del ticket ha sido actualizado!');
     }
-
     /**
      * MÉTODO STORE (COBRAR):Guarda la venta, crea detalles y resta stock.
      */
     public function store(Request $request)
     {
-        // 1. VALIDACIÓN DEL ARREGLO DE PRODUCTOS:
-        // Verificamos que el carrito enviado desde JavaScript no esté vacío y que cada producto
-        // tenga un ID que realmente exista en nuestra base de datos, cantidades enteras y precios lógicos.
+        // 1. VALIDAMOS LOS DATOS QUE VIENEN DE JAVASCRIPT
         $request->validate([
             'productos' => 'required|array',
             'productos.*.id' => 'required|exists:productos,id',
@@ -103,65 +149,57 @@ class TicketController extends Controller
         ]);
 
         try {
-            // 2. INICIO DE TRANSACCIÓN ATÓMICA (DB::transaction)
-            // Esto garantiza que si ocurre un error en el paso 3 o 4, se hace un "Rollback" automático.
-            // Ningún dato se guarda a medias, protegiendo la integridad del inventario.
             DB::transaction(function () use ($request) {
                 $totalReal = 0;
-                $detallesVenta = [];
 
-                // 3. SERVER-SIDE VALIDATION (No confiar en el cliente)
-                // Recorremos lo que envió JavaScript, pero NO confiamos en su total. Lo recalculamos en el servidor.
+                // ========================================================
+                // PASO A: VERIFICACIÓN DE SEGURIDAD (Evitar ventas a medias)
+                // ========================================================
                 foreach ($request->productos as $item) {
                     $producto = Producto::findOrFail($item['id']);
 
-                    // PREVENCIÓN DE CONDICIÓN DE CARRERA (Race Condition):
-                    // Verificamos el stock en el milisegundo exacto antes de cobrar. 
-                    // Si otro cajero vendió la última botella un segundo antes, lanzamos una excepción y frenamos todo.
+                    // Si un producto no tiene stock, cancelamos TODO antes de guardar nada
                     if ($producto->stock < $item['cantidad']) {
                         throw new \Exception("Stock insuficiente para: " . $producto->nombre);
                     }
 
-                    // Calculamos el subtotal real usando el precio de la Base de Datos, no el del HTML.
-                    $subtotal = $producto->precio * $item['cantidad'];
-                    $totalReal += $subtotal;
-
-                    // Preparamos los datos para la tabla pivote (detalle_tickets)
-                    $detallesVenta[] = [
-                        'producto' => $producto,
-                        'cantidad' => $item['cantidad'],
-                        'precio_unitario' => $producto->precio // "Congelamos" el precio histórico
-                    ];
+                    // Sumamos al total (calculado de forma segura en el servidor)
+                    $totalReal += ($producto->precio * $item['cantidad']);
                 }
 
-                // 4. CREACIÓN DEL TICKET MAESTRO
+                // ========================================================
+                // PASO B: CREACIÓN DEL TICKET
+                // ========================================================
                 $ticket = Ticket::create([
-                    'user_id' => Auth::id(), // Registramos automáticamente qué cajero está cobrando
-                    'codigo_reserva' => strtoupper(Str::random(8)), // Generamos código único alfanumérico
-                    'estado' => 'entregado', // Por lógica de negocio de POS físico, nace pagado/entregado
-                    'total' => $totalReal, // Usamos el total que nosotros calculamos de forma segura
+                    'user_id' => Auth::id(),
+                    'codigo_reserva' => strtoupper(Str::random(8)),
+                    'estado' => 'entregado',
+                    'total' => $totalReal,
                 ]);
 
-                // 5. INSERCIÓN DE DETALLES Y DESCUENTO DE STOCK FÍSICO
-                foreach ($detallesVenta as $detalle) {
-                    // Creamos el registro en la tabla pivote usando la relación de Eloquent
+                // ========================================================
+                // PASO C: GUARDAR DETALLES Y DESCONTAR STOCK (A PRUEBA DE FALLOS)
+                // ========================================================
+                foreach ($request->productos as $item) {
+
+                    // Volvemos a llamar al producto fresco de la Base de Datos
+                    $producto = Producto::findOrFail($item['id']);
+
+                    // 1. Guardamos en la tabla detalle_tickets
                     $ticket->detalles()->create([
-                        'producto_id' => $detalle['producto']->id,
-                        'cantidad' => $detalle['cantidad'],
-                        'precio_unitario' => $detalle['precio_unitario'],
+                        'producto_id' => $producto->id,
+                        'cantidad' => $item['cantidad'],
+                        'precio_unitario' => $producto->precio,
                     ]);
 
-                    // Descontamos el stock de la base de datos de forma segura usando decrement()
-                    $detalle['producto']->decrement('stock', $detalle['cantidad']);
+                    // 2. DESCONTAMOS EL STOCK DIRECTAMENTE
+                    $producto->stock = $producto->stock - $item['cantidad'];
+                    $producto->save(); // save() fuerza la actualización de 'updated_at' y guarda los datos
                 }
             });
 
-            // Si la transacción finalizó sin excepciones (Commit exitoso), regresamos al POS con éxito.
             return redirect()->route('tickets.create')->with('success', 'El cobro se ha realizado y el inventario fue actualizado.');
-
         } catch (\Exception $e) {
-            // Si hubo cualquier error (ej. falta de stock), Laravel deshace todo lo hecho en la transacción
-            // y devolvemos al cajero un mensaje de error exacto de lo que falló.
             return redirect()->back()->withErrors(['error' => $e->getMessage()]);
         }
     }

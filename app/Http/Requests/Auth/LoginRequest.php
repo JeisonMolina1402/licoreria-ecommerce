@@ -50,6 +50,16 @@ class LoginRequest extends FormRequest
             ]);
         }
 
+        // Bloquear usuarios inactivos
+
+        if (Auth::user()->estado === 'inactivo') {
+            Auth::logout(); // Le cerramos la sesión inmediatamente
+
+            throw ValidationException::withMessages([
+                'email' => 'Tu cuenta ha sido desactivada. Comunícate con el administrador.',
+            ]);
+        }
+
         RateLimiter::clear($this->throttleKey());
     }
 

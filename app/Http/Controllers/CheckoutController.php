@@ -7,6 +7,7 @@ use App\Models\Ticket;
 use App\Models\DetalleTicket;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB; //Agregamos esto para poder hacer consultas directas
 
 class CheckoutController extends Controller
 {
@@ -29,19 +30,26 @@ class CheckoutController extends Controller
         // 3. Crear el Ticket principal (Cabecera)
         $ticket = Ticket::create([
             'user_id' => Auth::id(),
-            'codigo_reserva' => 'LCR-' . strtoupper(Str::random(5)), // Aquí corregimos 'codigo' por 'codigo_reserva'
+            'codigo_reserva' => 'LCR-' . strtoupper(Str::random(5)),
             'total' => $total,
             'estado' => 'pendiente',
         ]);
 
-        // 4. Guardar cada producto en la tabla de detalles
+        // 4. Guardar cada producto en la tabla de detalles Y DESCONTAR STOCK
         foreach ($carrito as $item) {
+            
+            // A) Creamos el detalle del ticket
             DetalleTicket::create([
                 'ticket_id' => $ticket->id,
                 'producto_id' => $item['id'],
                 'cantidad' => $item['cantidad'],
                 'precio_unitario' => $item['precio'],
             ]);
+
+            // B) Descontamos el stock inmediatamente
+            DB::table('productos')
+                ->where('id', $item['id'])
+                ->decrement('stock', $item['cantidad']);
         }
 
         // 5. Redirigir a la pantalla de éxito (Ticket final)

@@ -1,29 +1,44 @@
 @extends('layouts.app')
 
+<!-- Inyección a la plantilla maestra -->
 @section('titulo_modulo', 'Gestión de Inventario')
+@section('subtitulo_modulo', 'Control de stock, precios y catálogo de licores')
 
 @section('content')
+    
+    <!-- ========================================== -->
+    <!-- MOTOR DE BÚSQUEDA Y FILTRADO MULTICRITERIO -->
+    <!-- ========================================== -->
     <form action="{{ route('inventario') }}" method="GET" id="formBusqueda" class="card shadow-sm border-0 mb-4">
         <div class="card-body">
             <div class="row g-2">
+                
+                <!-- Buscador de Texto con Autocompletado Nativo (Datalist) -->
                 <div class="col-md-3">
                     <input type="text" class="form-control" name="nombre" list="sugerenciasProductos" autocomplete="off" placeholder="🔍 Buscar por nombre..." value="{{ request('nombre') }}">
+                    
+                    {{-- DATALIST: Despliega sugerencias en tiempo real basadas en los nombres existentes en la base de datos --}}
                     <datalist id="sugerenciasProductos">
                         @foreach($nombresProductos as $nombre)
                             <option value="{{ $nombre }}">
                         @endforeach
                     </datalist>
                 </div>
+
+                <!-- Filtro por Categoría -->
                 <div class="col-md-2">
                     <select class="form-select" name="categoria_id">
                         <option value="">Categoría</option>
                         @foreach($categorias as $categoria)
+                            {{-- request() retiene la opción seleccionada tras la recarga --}}
                             <option value="{{ $categoria->id }}" {{ request('categoria_id') == $categoria->id ? 'selected' : '' }}>
                                 {{ $categoria->nombre }}
                             </option>
                         @endforeach
                     </select>
                 </div>
+
+                <!-- Ordenamiento por Stock -->
                 <div class="col-md-2">
                     <select class="form-select" name="orden_stock">
                         <option value="">Stock...</option>
@@ -31,6 +46,8 @@
                         <option value="asc" {{ request('orden_stock') == 'asc' ? 'selected' : '' }}>Menos stock</option>
                     </select>
                 </div>
+
+                <!-- Ordenamiento por Precio -->
                 <div class="col-md-2">
                     <select class="form-select" name="orden_precio">
                         <option value="">Precio...</option>
@@ -38,6 +55,8 @@
                         <option value="asc" {{ request('orden_precio') == 'asc' ? 'selected' : '' }}>Más barato</option>
                     </select>
                 </div>
+
+                <!-- Botones de Acción del Filtro -->
                 <div class="col-md-3">
                     <div class="d-flex gap-2">
                         <button type="submit" class="btn btn-dark w-100">Filtrar</button>
@@ -48,13 +67,21 @@
         </div>
     </form>
 
+    <!-- ========================================== -->
+    <!-- CABECERA Y BOTÓN DE APERTURA DE MODAL      -->
+    <!-- ========================================== -->
     <div class="d-flex justify-content-between align-items-end mb-3">
         <h5 class="text-dark mb-0 d-none d-md-block">Lista de Productos</h5>
+        
+        {{-- DISPARADOR DE CREACIÓN: Llama a la función JS 'prepararModalCrear()' para limpiar el formulario antes de abrirlo --}}
         <button class="btn btn-primary btn-sm fw-bold shadow-sm px-3" data-bs-toggle="modal" data-bs-target="#modalAgregarProducto" onclick="prepararModalCrear()">
             + Agregar Producto
         </button>
     </div>
 
+    <!-- ========================================== -->
+    <!-- MANEJO DE ALERTAS (FLASH DATA & ERRORS)    -->
+    <!-- ========================================== -->
     @if(session('success'))
     <div class="alert alert-success alert-dismissible fade show shadow-sm" role="alert">
         <strong>¡Éxito!</strong> {{ session('success') }}
@@ -74,9 +101,12 @@
     </div>
     @endif
 
+    <!-- ========================================== -->
+    <!-- TABLA PRINCIPAL DE INVENTARIO              -->
+    <!-- ========================================== -->
     <div class="table-responsive bg-white p-3 rounded-3 shadow-sm mb-4">
         <table class="table table-hover align-middle mb-0">
-            <thead class="table-light">
+            <th class="table-light">
                 <tr>
                     <th>Imagen</th>
                     <th>Nombre Producto</th>
@@ -93,15 +123,23 @@
                     @foreach($productos as $producto)
                     <tr>
                         <td style="font-size: 1.5rem;">
+                            {{-- Fallback visual de imagen --}}
                             @if($producto->imagen)
                             <img src="{{ asset($producto->imagen) }}" alt="img" class="rounded" style="width: 40px; height: 40px; object-fit: cover;">
                             @else 🍾 @endif
                         </td>
                         <td class="fw-bold">{{ $producto->nombre }}</td>
+                        
+                        {{-- Str::limit: Recorta descripciones muy largas para no deformar el diseño de la tabla --}}
                         <td class="text-muted small">{{ \Illuminate\Support\Str::limit($producto->descripcion, 30) }}</td>
+                        
+                        {{-- 🛡️ Null Coalescing: Previene errores si la categoría fue eliminada --}}
                         <td class="d-none d-md-table-cell">{{ $producto->categoria->nombre ?? 'Sin Categoría' }}</td>
+                        
                         <td class="text-muted">${{ number_format($producto->precio_compra, 2) }}</td>
                         <td>${{ number_format($producto->precio, 2) }}</td>
+                        
+                        <!-- Badge Dinámico de Stock -->
                         <td>
                             @if($producto->stock <= 10) 
                                 <span class="badge bg-danger">{{ $producto->stock }}</span>
@@ -109,14 +147,25 @@
                                 <span class="badge bg-success">{{ $producto->stock }}</span> 
                             @endif
                         </td>
+                        
+                        <!-- ACCIONES (EDITAR / ELIMINAR) -->
                         <td>
+                            {{-- BOTÓN EDITAR: Almacena toda la data del producto en data-attributes para que JS los inyecte en el modal --}}
                             <button class="btn btn-sm btn-outline-primary mb-1 mb-md-0" data-bs-toggle="modal" data-bs-target="#modalAgregarProducto" 
-                                data-id="{{ $producto->id }}" data-nombre="{{ $producto->nombre }}" data-categoria="{{ $producto->categoria_id }}" 
-                                data-descripcion="{{ $producto->descripcion }}" data-precio_compra="{{ $producto->precio_compra }}" 
-                                data-precio="{{ $producto->precio }}" data-stock="{{ $producto->stock }}" 
-                                data-imagen="{{ $producto->imagen ? asset($producto->imagen) : '' }}" onclick="prepararModalEditar(this)">✏️ Editar</button>
+                                data-id="{{ $producto->id }}" 
+                                data-nombre="{{ $producto->nombre }}" 
+                                data-categoria="{{ $producto->categoria_id }}" 
+                                data-descripcion="{{ $producto->descripcion }}" 
+                                data-precio_compra="{{ $producto->precio_compra }}" 
+                                data-precio="{{ $producto->precio }}" 
+                                data-stock="{{ $producto->stock }}" 
+                                data-imagen="{{ $producto->imagen ? asset($producto->imagen) : '' }}" 
+                                onclick="prepararModalEditar(this)">✏️ Editar</button>
+                            
+                            {{-- FORMULARIO DE ELIMINACIÓN (Método DELETE) --}}
                             <form action="{{ route('inventario.destroy', $producto->id) }}" method="POST" class="d-inline" onsubmit="return confirm('¿Eliminar producto?')">
-                                @csrf @method('DELETE')
+                                @csrf 
+                                @method('DELETE')
                                 <button type="submit" class="btn btn-sm btn-outline-danger">🗑️ Eliminar</button>
                             </form>
                         </td>
@@ -131,18 +180,25 @@
         </table>
     </div>
 
+    <!-- Paginación con Bootstrap 5 -->
     <div class="d-flex justify-content-end">
         {{ $productos->links('pagination::bootstrap-5') }}
     </div>
 
+    <!-- ========================================== -->
+    <!-- MODAL ÚNICO (CREAR / EDITAR PRODUCTO)      -->
+    <!-- ========================================== -->
     <div class="modal fade" id="modalAgregarProducto" data-bs-backdrop="static" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+            
+            {{-- Formulario unificado. enctype="multipart/form-data" es vital para el manejo de archivos --}}
             <form id="formProducto" action="{{ route('inventario.store') }}" method="POST" enctype="multipart/form-data" class="modal-content border-0 shadow-lg" style="border-radius: 16px;">
                 @csrf
                 <div class="modal-header bg-white border-bottom-0 pt-4 pb-3 px-4">
                     <h5 class="modal-title fw-bold text-dark">📦 INFORMACIÓN DEL PRODUCTO</h5>
                     <button type="button" class="btn-close" onclick="confirmarCancelacion()"></button>
                 </div>
+                
                 <div class="modal-body px-4" style="background-color: #f0f4f8;">
                     <div class="row g-4">
                         <div class="col-md-6">
@@ -159,6 +215,7 @@
                             <label class="form-label fw-bold mt-3">DESCRIPCIÓN</label>
                             <textarea class="form-control" name="descripcion" rows="2"></textarea>
                         </div>
+                        
                         <div class="col-md-6">
                             <label class="form-label fw-bold">PRECIO COMPRA</label>
                             <input type="number" step="0.01" class="form-control" name="precio_compra">
@@ -179,6 +236,7 @@
                         </div>
                     </div>
                 </div>
+
                 <div class="modal-footer bg-white border-top-0 px-4 py-3">
                     <button type="button" class="btn btn-light" onclick="confirmarCancelacion()">Cancelar</button>
                     <button type="submit" class="btn btn-primary">Guardar Producto</button>
@@ -188,6 +246,9 @@
     </div>
 @endsection
 
+<!-- ========================================== -->
+<!-- INYECCIÓN DEL SCRIPT DE INVENTARIO         -->
+<!-- ========================================== -->
 @push('scripts')
     @vite(['resources/js/inventario.js'])
 @endpush

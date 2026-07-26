@@ -279,70 +279,6 @@
     </div>
 </section>
 
-{{-- preguntas frecuentes --}}
-
-<section id="faq" class="container py-5 mt-4 border-top">
-    <div class="text-center mb-5">
-        <h2 class="titulo-premium mb-2 display-5 fw-bold">Preguntas Frecuentes</h2>
-        <p class="text-muted">Despeja tus dudas sobre nuestro sistema de reserva y retiro.</p>
-    </div>
-
-    <div class="row justify-content-center">
-        <div class="col-lg-8">
-            <div class="accordion accordion-flush shadow-sm rounded-3 overflow-hidden border" id="accordionFaq">
-
-                <div class="accordion-item">
-                    <h2 class="accordion-header">
-                        <button class="accordion-button fw-bold text-dark bg-white py-3" type="button"
-                            data-bs-toggle="collapse" data-bs-target="#faq1">
-                            ¿Qué pasa si no realizo la transferencia en los 10 minutos?
-                        </button>
-                    </h2>
-                    <div id="faq1" class="accordion-collapse collapse show" data-bs-parent="#accordionFaq">
-                        <div class="accordion-body text-muted" style="font-family: 'Lora', serif;">
-                            Nuestro sistema automatizado reserva el stock de tus botellas durante un lapso estricto de
-                            10 minutos. Si el comprobante no es enviado dentro de ese tiempo, la orden se cancela
-                            automáticamente y los productos vuelven a estar disponibles en el catálogo para otros
-                            clientes.
-                        </div>
-                    </div>
-                </div>
-
-                <div class="accordion-item">
-                    <h2 class="accordion-header">
-                        <button class="accordion-button collapsed fw-bold text-dark bg-white py-3" type="button"
-                            data-bs-toggle="collapse" data-bs-target="#faq2">
-                            ¿Qué requisitos necesito para retirar mi pedido en la tienda?
-                        </button>
-                    </h2>
-                    <div id="faq2" class="accordion-collapse collapse" data-bs-parent="#accordionFaq">
-                        <div class="accordion-body text-muted" style="font-family: 'Lora', serif;">
-                            Al acercarte a nuestro local, únicamente debes presentar el **código único de compra**
-                            generado por el sistema y tu documento de identidad para verificar que eres mayor de edad.
-                        </div>
-                    </div>
-                </div>
-
-                <div class="accordion-item">
-                    <h2 class="accordion-header">
-                        <button class="accordion-button collapsed fw-bold text-dark bg-white py-3" type="button"
-                            data-bs-toggle="collapse" data-bs-target="#faq3">
-                            ¿Puedo solicitar que otra persona retire mi pedido?
-                        </button>
-                    </h2>
-                    <div id="faq3" class="accordion-collapse collapse" data-bs-parent="#accordionFaq">
-                        <div class="accordion-body text-muted" style="font-family: 'Lora', serif;">
-                            Sí. Para que un tercero retire tu pedido, deberá presentar una foto del código de compra de
-                            la orden, junto con su cédula. Recuerda que no entregamos licores a menores de edad bajo
-                            ninguna circunstancia.
-                        </div>
-                    </div>
-                </div>
-
-            </div>
-        </div>
-    </div>
-</section>
 
 {{-- encuentranos --}}
 
@@ -464,6 +400,221 @@
                         </div>
                     </div>
                 </form>
+            </div>
+        </div>
+    </div>
+</section>
+
+{{-- preguntas frecuentes --}}
+
+<section id="faq" class="container py-5 mt-4 border-top">
+    <div class="text-center mb-5">
+        <h2 class="titulo-premium mb-2 display-5 fw-bold">Preguntas Frecuentes</h2>
+        <p class="text-muted">Despeja tus dudas sobre nuestro sistema de reserva y retiro.</p>
+    </div>
+
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="accordion accordion-flush shadow-sm rounded-3 overflow-hidden border" id="accordionFaq">
+
+                <div class="accordion-item">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button fw-bold text-dark bg-white py-3" type="button"
+                            data-bs-toggle="collapse" data-bs-target="#faq1">
+                            ¿Qué pasa si no realizo la transferencia en los 10 minutos?
+                        </button>
+                    </h2>
+                    <div id="faq1" class="accordion-collapse collapse show" data-bs-parent="#accordionFaq">
+                        <div class="accordion-body text-muted" style="font-family: 'Lora', serif;">
+                            Nuestro sistema automatizado reserva el stock de tus botellas durante un lapso estricto de
+                            10 minutos. Si el comprobante no es enviado dentro de ese tiempo, la orden se cancela
+                            automáticamente y los productos vuelven a estar disponibles en el catálogo para otros
+                            clientes.
+                        </div>
+                    </div>
+                </div>
+
+                <div class="accordion-item">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed fw-bold text-dark bg-white py-3" type="button"
+                            data-bs-toggle="collapse" data-bs-target="#faq2">
+                            ¿Tienen servicio de envío a domicilio (Delivery)?
+                        </button>
+                    </h2>
+                    <div id="faq2" class="accordion-collapse collapse" data-bs-parent="#accordionFaq">
+                        <div class="accordion-body text-muted" style="font-family: 'Lora', serif;">
+                            Por el momento, nuestro sistema web opera exclusivamente bajo la modalidad de reserva y retiro físico en tienda (Pick-Up). Esto nos permite asegurar tu stock de forma inmediata y mantener los precios más competitivos del mercado.
+                        </div>
+                    </div>
+                </div>
+
+                 <div class="accordion-item">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed fw-bold text-dark bg-white py-3" type="button"
+                            data-bs-toggle="collapse" data-bs-target="#faq3">
+                            ¿Cuánto tiempo máximo tengo para retirar mi botella una vez que ya la pagué?
+                        </button>
+                    </h2>
+                    <div id="faq3" class="accordion-collapse collapse" data-bs-parent="#accordionFaq">
+                        <div class="accordion-body text-muted" style="font-family: 'Lora', serif;">
+                            ¡No te preocupes! Una vez que tu pedido cambie a estado "Pagado", la botella es totalmente tuya. Tienes un plazo máximo de 7 días hábiles para acercarte a retirarla. Pasado ese tiempo, nos comunicaremos contigo para coordinar la entrega.
+                        </div>
+                    </div>
+                </div>
+
+                 <div class="accordion-item">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed fw-bold text-dark bg-white py-3" type="button"
+                            data-bs-toggle="collapse" data-bs-target="#faq4">
+                            ¿En qué horario puedo acercarme a retirar mi compra?
+                        </button>
+                    </h2>
+                    <div id="faq4" class="accordion-collapse collapse" data-bs-parent="#accordionFaq">
+                        <div class="accordion-body text-muted" style="font-family: 'Lora', serif;">
+                           Puedes acercarte a retirar tu pedido de lunes a sábado, en el horario ininterrumpido de 10:00 AM a 12:00 PM. Te sugerimos esperar la notificación de "Listo para retirar" antes de venir al local para garantizar que tu paquete esté empacado y sin demoras.
+                        </div>
+                    </div>
+                </div>
+
+                <div class="accordion-item">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed fw-bold text-dark bg-white py-3" type="button"
+                            data-bs-toggle="collapse" data-bs-target="#faq5">
+                            ¿Qué requisitos necesito para retirar mi pedido en la tienda?
+                        </button>
+                    </h2>
+                    <div id="faq5" class="accordion-collapse collapse" data-bs-parent="#accordionFaq">
+                        <div class="accordion-body text-muted" style="font-family: 'Lora', serif;">
+                            Al acercarte a nuestro local, únicamente debes presentar el **código único de compra**
+                            generado por el sistema y tu documento de identidad para verificar que eres mayor de edad.
+                        </div>
+                    </div>
+                </div>
+
+                <div class="accordion-item">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed fw-bold text-dark bg-white py-3" type="button"
+                            data-bs-toggle="collapse" data-bs-target="#faq6">
+                            ¿Puedo solicitar que otra persona retire mi pedido?
+                        </button>
+                    </h2>
+                    <div id="faq6" class="accordion-collapse collapse" data-bs-parent="#accordionFaq">
+                        <div class="accordion-body text-muted" style="font-family: 'Lora', serif;">
+                            Sí. Para que un tercero retire tu pedido, deberá presentar una foto del código de compra de
+                            la orden, junto con su cédula. Recuerda que no entregamos licores a menores de edad bajo
+                            ninguna circunstancia.
+                        </div>
+                    </div>
+                </div>
+
+                <div class="accordion-item">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed fw-bold text-dark bg-white py-3" type="button"
+                            data-bs-toggle="collapse" data-bs-target="#faq7">
+                            ¿Debo ser mayor de edad para realizar una reserva?
+                        </button>
+                    </h2>
+                    <div id="faq7" class="accordion-collapse collapse" data-bs-parent="#accordionFaq">
+                        <div class="accordion-body text-muted" style="font-family: 'Lora', serif;">
+                            Sí, es un requisito legal indispensable. Al momento de acercarte a retirar tu pedido en la tienda, nuestro personal te solicitará tu cédula de identidad original para verificar que eres mayor de 18 años. No se entregarán pedidos a menores de edad bajo ninguna circunstancia, incluso si la transferencia ya fue realizada
+                        </div>
+                    </div>
+                </div>
+
+                <div class="accordion-item">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed fw-bold text-dark bg-white py-3" type="button"
+                            data-bs-toggle="collapse" data-bs-target="#faq8">
+                            ¿Se aceptan cambios o devoluciones?
+                        </button>
+                    </h2>
+                    <div id="faq8" class="accordion-collapse collapse" data-bs-parent="#accordionFaq">
+                        <div class="accordion-body text-muted" style="font-family: 'Lora', serif;">
+                            Por estrictas políticas de control de calidad y seguridad alimentaria, no aceptamos devoluciones ni cambios de bebidas alcohólicas una vez que han salido de nuestras instalaciones. Te invitamos a revisar que el sello y el estado de tu botella estén en perfectas condiciones al momento de recibirla en el mostrador.
+                        </div>
+                    </div>
+                </div>
+
+                <div class="accordion-item">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed fw-bold text-dark bg-white py-3" type="button"
+                            data-bs-toggle="collapse" data-bs-target="#faq9">
+                            Ya envié mi comprobante de transferencia, ¿cómo sé que mi pedido está confirmado?
+                        </button>
+                    </h2>
+                    <div id="faq9" class="accordion-collapse collapse" data-bs-parent="#accordionFaq">
+                        <div class="accordion-body text-muted" style="font-family: 'Lora', serif;">
+                            Una vez que subas o envíes tu comprobante, nuestro equipo de ventas verificará la transacción. Recibirás una confirmación en tu correo electrónico (o WhatsApp) indicando que tu pedido ha pasado al estado "Pagado". Este proceso de validación suele tomar entre 10 a 15 minutos dentro de nuestro horario de atención.
+                        </div>
+                    </div>
+                </div> 
+
+                <div class="accordion-item">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed fw-bold text-dark bg-white py-3" type="button"
+                            data-bs-toggle="collapse" data-bs-target="#faq10">
+                            ¿Qué pasa si mi transferencia se hace efectiva al día siguiente (interbancaria)?
+                        </button>
+                    </h2>
+                    <div id="faq10" class="accordion-collapse collapse" data-bs-parent="#accordionFaq">
+                        <div class="accordion-body text-muted" style="font-family: 'Lora', serif;">
+                            Si realizas una transferencia desde un banco distinto y el dinero no se refleja de inmediato, tu reserva se mantendrá en estado "Pendiente de Validación" siempre y cuando hayas enviado el comprobante dentro de los 10 minutos reglamentarios. El producto se te entregará únicamente cuando el dinero se haya efectivizado en nuestra cuenta.
+                        </div>
+                    </div>
+                </div>
+
+                <div class="accordion-item">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed fw-bold text-dark bg-white py-3" type="button"
+                            data-bs-toggle="collapse" data-bs-target="#faq11">
+                            ¿Puedo pagar con tarjeta de crédito, débito o PayPal en la página web?
+                        </button>
+                    </h2>
+                    <div id="faq11" class="accordion-collapse collapse" data-bs-parent="#accordionFaq">
+                        <div class="accordion-body text-muted" style="font-family: 'Lora', serif;">
+                            Por el momento, nuestro sistema de reservas en línea opera exclusivamente mediante transferencia bancaria directa. Trabajar sin pasarelas de pago externas nos permite evitar comisiones bancarias adicionales, garantizando que siempre recibas el precio más bajo y justo del mercado en todos nuestros licores.
+                    </div>
+                </div>
+
+                <div class="accordion-item">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed fw-bold text-dark bg-white py-3" type="button"
+                            data-bs-toggle="collapse" data-bs-target="#faq12">
+                            ¿Tienen algún link de pagos (botón de pagos) para realizar la compra?
+                        </button>
+                    </h2>
+                    <div id="faq12" class="accordion-collapse collapse" data-bs-parent="#accordionFaq">
+                        <div class="accordion-body text-muted" style="font-family: 'Lora', serif;">
+                            No, todo el proceso de reserva online se confirma únicamente enviando el comprobante de la transferencia a nuestras cuentas bancarias oficiales indicadas al finalizar tu pedido. Nuestro equipo validará el pago y te notificará de inmediato.
+                    </div>
+                </div>
+
+                <div class="accordion-item">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed fw-bold text-dark bg-white py-3" type="button"
+                            data-bs-toggle="collapse" data-bs-target="#faq13">
+                            ¿Puedo reservar mi pedido en la web y pagar en efectivo al momento de retirar?
+                        </button>
+                    </h2>
+                    <div id="faq13" class="accordion-collapse collapse" data-bs-parent="#accordionFaq">
+                        <div class="accordion-body text-muted" style="font-family: 'Lora', serif;">
+                            Nuestro sistema web bloquea el stock de las botellas a tu nombre sacándolas del inventario disponible. Por esta razón, la reserva web requiere que la transferencia se realice en los próximos 10 minutos para confirmarse. Si prefieres pagar en efectivo, no es necesario hacer una reserva web; te invitamos a visitarnos directamente en nuestro local físico.
+                    </div>
+                </div>
+
+                <div class="accordion-item">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed fw-bold text-dark bg-white py-3" type="button"
+                            data-bs-toggle="collapse" data-bs-target="#faq14">
+                            Si voy a comprar directamente en el local físico, ¿qué métodos de pago aceptan?
+                        </button>
+                    </h2>
+                    <div id="faq14" class="accordion-collapse collapse" data-bs-parent="#accordionFaq">
+                        <div class="accordion-body text-muted" style="font-family: 'Lora', serif;">
+                            Para las compras que realizas directamente en nuestro mostrador (sin haber hecho una reserva previa en la web), aceptamos pagos en efectivo y transferencias bancarias al momento de la entrega. Toma en cuenta que las compras directas en el local están sujetas al stock disponible en ese instante.
+                    </div>
+                </div>
+
             </div>
         </div>
     </div>

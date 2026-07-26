@@ -1,15 +1,13 @@
 // resources/js/tickets.js
 
-// Quitamos el DOMContentLoaded porque Vite ya lo carga de forma segura al final
+console.log('Script de recarga automática de tickets INICIADO.'); 
 
-console.log('Script de recarga automática de tickets INICIADO.'); // Un chismoso para la consola
-
-// Ejecutar cada 5 segundos (5000 milisegundos) PARA PRUEBAS
+// Ejecutar cada 10 segundos (10000 milisegundos) para la demostración
 setInterval(() => {
     // 1. Verificamos que no haya ningún Modal (recuadro negro) abierto
     if (!document.body.classList.contains('modal-open')) {
         
-        console.log('Buscando actualizaciones...'); // Chismoso 2
+        console.log('Buscando actualizaciones...'); 
         
         // 2. Traemos la información más fresca de la base de datos de forma invisible
         fetch(window.location.href)
@@ -19,7 +17,7 @@ setInterval(() => {
                 const parser = new DOMParser();
                 const doc = parser.parseFromString(html, 'text/html');
                 
-                // 4. Extraemos SOLO la tabla nueva y reemplazamos la vieja
+                // 4. Extraemos SOLO la tabla nueva usando la CLASE y reemplazamos la vieja
                 const tablaNueva = doc.querySelector('.table-responsive');
                 const tablaVieja = document.querySelector('.table-responsive');
 
@@ -29,6 +27,6 @@ setInterval(() => {
             })
             .catch(error => console.error('Error actualizando la tabla:', error));
     } else {
-        console.log('Modal abierto, recarga pausada.'); // Chismoso 3
+        console.log('Modal abierto, recarga pausada.'); 
     }
-}, 30000); //aqui colocamos el tiempo en milisegundos 
+}, 10000); // 10000 ms = 10 segundos 

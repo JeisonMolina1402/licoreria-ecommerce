@@ -24,6 +24,7 @@ export default defineConfig({
                 'resources/js/pos.js',
                 'resources/js/tickets.js',
                 'resources/js/reportes.js',
+                'resources/js/usuarios.js',
             ],
             refresh: true,
         }),

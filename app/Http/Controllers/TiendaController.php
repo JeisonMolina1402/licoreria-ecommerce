@@ -24,7 +24,7 @@ class TiendaController extends Controller
             $query->where('nombre', 'LIKE', '%' . $request->buscar . '%');
         }
 
-        // SI EXISTE $categoria (porque entramos por /categoria/whisky), filtramos por su ID
+        // SI EXISTE $categoria porque entramos por /categoria/whisky, filtramos por su ID
     if ($categoria) {
         $query->where('categoria_id', $categoria->id);
     }

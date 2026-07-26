@@ -1,26 +1,34 @@
 @extends('layouts.app')
 
-@section('content')
-    <div class="container-fluid p-4 bg-light" style="min-height: 100vh;">
+<!-- Enviamos el título, subtítulo y el botón rojo a la plantilla maestra -->
+@section('titulo_modulo', 'Panel de Rendimiento')
+@section('subtitulo_modulo', 'Resumen financiero y operativo de tu tienda')
 
-        <div class="d-flex justify-content-between align-items-center mb-4 border-bottom pb-3">
-            <div>
-                <h2 class="h3 text-dark mb-0 fw-bold">📊 Panel de Rendimiento</h2>
-                <small class="text-muted">Resumen financiero y operativo de tu tienda</small>
-            </div>
-            <<form id="formExportarPdf" action="{{ route('reportes.pdf') }}" method="POST" target="_blank" class="m-0">
-                @csrf
-                <input type="hidden" name="fecha_inicio" value="{{ $fechaInicio }}">
-                <input type="hidden" name="fecha_fin" value="{{ $fechaFin }}">
-                
-                <input type="hidden" name="grafico_barras_base64" id="inputGraficoBarras">
-                <input type="hidden" name="grafico_dona_base64" id="inputGraficoDona">
-                
-                <button type="button" onclick="exportarConGraficos()" class="btn btn-danger shadow-sm">
-                    <i class="fa-solid fa-file-pdf me-2"></i> Exportar Reporte
-                </button>
-            </form>
+@section('content')
+    <div class="container-fluid bg-light p-4" style="min-height: 100vh;">
+
+        <!--exportar pdf       -->
+
+        <div class="d-flex justify-content-between align-items-end mb-3">
+            <h5 class="text-dark mb-0 d-none d-md-block">Datos de Rendimiento</h5>
+            <button type="button" class="btn btn-danger btn-sm fw-bold shadow-sm px-3" onclick="exportarConGraficos()">
+                <i class="fa-solid fa-file-pdf me-1"></i> Exportar Reporte
+            </button>
         </div>
+
+        <!-- FORMULARIO OCULTO PARA EL PDF  -->
+
+        <form id="formExportarPdf" action="{{ route('reportes.pdf') }}" method="POST" class="d-none">
+            @csrf
+            <!-- Mantenemos las fechas para que el PDF sepa qué rango exportar -->
+            <input type="hidden" name="fecha_inicio" value="{{ request('fecha_inicio', $fechaInicio) }}">
+            <input type="hidden" name="fecha_fin" value="{{ request('fecha_fin', $fechaFin) }}">
+            
+            <!-- Aquí JavaScript inyectará las imágenes de los gráficos -->
+            <input type="hidden" name="grafico_barras_base64" id="grafico_barras_base64">
+            <input type="hidden" name="grafico_dona_base64" id="grafico_dona_base64">
+        </form>
+
 
         <div class="card shadow-sm border-0 mb-4">
             <div class="card-body p-4">
@@ -55,6 +63,24 @@
                             <div>
                                 <div class="text-uppercase text-muted small fw-bold mb-1">Ingresos (Ventas)</div>
                                 <div class="h3 mb-0 fw-bold text-dark">${{ number_format($ventasTotales, 2) }}</div>
+                            </div>
+                            <div class="bg-primary bg-opacity-10 rounded-circle p-3 d-flex align-items-center justify-content-center"
+                                style="width: 60px; height: 60px;">
+                                <i class="fa-solid fa-cash-register fa-2x text-primary"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-xl-3 col-sm-6">
+                <div class="card border-0 shadow-sm h-100 rounded-4" style="border-left: 5px solid red !important;">
+                    <div class="card-body p-4">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <div class="text-uppercase text-muted small fw-bold mb-1">Costos (Gastos de Inventario)
+                                </div>
+                                <div class="h3 mb-0 fw-bold text-dark">${{ number_format($costosTotales, 2) }}</div>
                             </div>
                             <div class="bg-primary bg-opacity-10 rounded-circle p-3 d-flex align-items-center justify-content-center"
                                 style="width: 60px; height: 60px;">
@@ -118,18 +144,53 @@
             </div>
         </div>
 
+        <!-- Gráfico de Barras Dinámico (Diario o Mensual) -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card shadow-sm border-0 rounded-4">
+                    <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
+                        <h6 class="m-0 fw-bold text-dark"><i class="fa-solid fa-chart-column text-primary me-2"></i>
+                            {{ $tituloGraficoBarras }}</h6>
+                        <span class="badge bg-light text-muted border">Ventas Brutas vs Ganancia Neta</span>
+                    </div>
+                    <div class="card-body" style="position: relative; height: 350px;">
+                        <canvas id="graficoBarras" data-etiquetas="{{ $nombresBarras }}"
+                            data-ventas="{{ $datosVentasBarras }}" data-ganancias="{{ $datosGananciasBarras }}"
+                            data-gastos="{{ $datosGastosBarras }}">
+                        </canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <!-- Fila 2: Tablas y Gráficos -->
         <div class="row g-4">
 
             <!-- Lista de Productos Paginada -->
-            <div class="col-lg-7">
+            <div class="col-lg-7" id="tabla-ranking">
                 <div class="card shadow-sm border-0 h-100 rounded-4">
                     <div class="card-header bg-white py-3 border-bottom d-flex align-items-center justify-content-between">
-                        <h6 class="m-0 fw-bold text-primary"><i class="fa-solid fa-trophy text-warning me-2"></i> Ranking de
-                            Productos Vendidos</h6>
-                        <span class="badge bg-light text-dark border">Página {{ $productosTop->currentPage() }} de
-                            {{ $productosTop->lastPage() }}</span>
+                        <h6 class="m-0 fw-bold text-primary">
+                            <i class="fa-solid fa-trophy text-warning me-2"></i> Rendimiento de Productos
+                        </h6>
+                        
+                        <div class="d-flex align-items-center gap-3">
+                            <!-- Filtro de Estado de Ventas -->
+                            <form action="{{ route('reportes.index') }}#tabla-ranking" method="GET" class="m-0">
+                                <!-- Mantenemos las fechas actuales ocultas para no perder ese filtro al cambiar de ranking -->
+                                <input type="hidden" name="fecha_inicio" value="{{ request('fecha_inicio', $fechaInicio) }}">
+                                <input type="hidden" name="fecha_fin" value="{{ request('fecha_fin', $fechaFin) }}">
+                                
+                                <select name="tipo_ranking" class="form-select form-select-sm border-primary fw-bold text-primary" onchange="this.form.submit()" style="cursor: pointer;">
+                                    <option value="top" {{ request('tipo_ranking') == 'top' ? 'selected' : '' }}>📈 Más Vendidos</option>
+                                    <option value="cero" {{ request('tipo_ranking') == 'cero' ? 'selected' : '' }}>📉 Sin Ventas (0)</option>
+                                </select>
+                            </form>
+
+                            <span class="badge bg-light text-dark border">Página {{ $productosTop->currentPage() }} de {{ $productosTop->lastPage() }}</span>
+                        </div>
                     </div>
+
                     <div class="card-body p-0 d-flex flex-column">
                         <div class="table-responsive flex-grow-1">
                             <table class="table table-hover align-middle mb-0">
@@ -148,8 +209,16 @@
                                             </td>
                                             <td class="py-3">
                                                 <div class="d-flex align-items-center">
-                                                    <div class="bg-light rounded p-2 me-3 text-center" style="width: 40px;">
-                                                        🍷</div>
+                                                    <div class="bg-white border rounded p-1 me-3 d-flex justify-content-center align-items-center shadow-sm"
+                                                        style="width: 45px; height: 45px;">
+                                                        @if ($producto->imagen)
+                                                            <img src="{{ asset($producto->imagen) }}" alt="img"
+                                                                class="rounded"
+                                                                style="max-width: 100%; max-height: 100%; object-fit: cover;">
+                                                        @else
+                                                            <span class="fs-5">🍷</span>
+                                                        @endif
+                                                    </div>
                                                     <strong>{{ $producto->nombre }}</strong>
                                                 </div>
                                             </td>
@@ -168,6 +237,7 @@
                                             </td>
                                         </tr>
                                     @empty
+                                        {{-- EMPTY STATE: Si no hay ventas, no se rompe la tabla, se muestra este mensaje amigable --}}
                                         <tr>
                                             <td colspan="3" class="text-center py-5 text-muted">
                                                 <i class="fa-solid fa-box-open fs-2 mb-2 d-block"></i>
@@ -179,8 +249,9 @@
                             </table>
                         </div>
                         <!-- Botones de Paginación -->
+                        <!-- Botones de Paginación -->
                         <div class="border-top p-3 bg-light rounded-bottom-4">
-                            {{ $productosTop->links() }}
+                            {{ $productosTop->fragment('tabla-ranking')->links() }}
                         </div>
                     </div>
                 </div>
@@ -247,29 +318,14 @@
         </div>
     </div>
 
-    <!-- Gráfico de Barras Dinámico (Diario o Mensual) -->
-    <div class="row mb-4">
-        <div class="col-12">
-            <div class="card shadow-sm border-0 rounded-4">
-                <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
-                    <h6 class="m-0 fw-bold text-dark"><i class="fa-solid fa-chart-column text-primary me-2"></i> {{ $tituloGraficoBarras }}</h6>
-                    <span class="badge bg-light text-muted border">Ventas Brutas vs Ganancia Neta</span>
-                </div>
-                <div class="card-body" style="position: relative; height: 350px;">
-                    <canvas id="graficoBarras"
-                        data-etiquetas="{{ $nombresBarras }}"
-                        data-ventas="{{ $datosVentasBarras }}"
-                        data-ganancias="{{ $datosGananciasBarras }}"
-                        data-gastos="{{ $datosGastosBarras }}">
-                    </canvas>
-                </div>
-            </div>
-        </div>
-    </div>
 @endsection
 
 <!-- Gráfico de Ventas por Categoría -->
 @push('scripts')
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <!--Plugin para imprimir etiquetas dentro de los gráficos -->
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
+
     @vite(['resources/js/reportes.js'])
 @endpush

@@ -27,6 +27,7 @@ class ReporteController extends Controller
 
         $ventasTotales = 0;
         $gananciaNeta = 0;
+        $costosTotales = 0;
 
         foreach ($ticketsCompletados as $ticket) {
             $ventasTotales += $ticket->total;
@@ -35,6 +36,8 @@ class ReporteController extends Controller
                     $ingresoProducto = $detalle->precio_unitario * $detalle->cantidad;
                     $costoProducto = $detalle->producto->precio_compra * $detalle->cantidad;
                     $gananciaNeta += ($ingresoProducto - $costoProducto);
+                    $costosTotales += $costoProducto;
+
                 }
             }
         }
@@ -44,16 +47,40 @@ class ReporteController extends Controller
         $ticketsEntregados = $ticketsCompletados->count();
         $ticketsCancelados = Ticket::where('estado', 'cancelado')->whereBetween('created_at', $rangoFechas)->count();
 
-        // ---1: Paginación de TODOS los Productos (Incluyendo 0 ventas) ---
-        $productosTop = Producto::withSum(['detalles as total_vendido' => function($query) use ($rangoFechas) {
+        // =========================================================================
+        // --- NUEVO 1: Paginación Dinámica (Top Ventas o Stock Muerto) ---
+        // =========================================================================
+        $tipoRanking = $request->input('tipo_ranking', 'top');
+
+        $queryProductos = Producto::withSum(['detalles as total_vendido' => function($query) use ($rangoFechas) {
+            $query->whereHas('ticket', function($q) use ($rangoFechas) {
+                $q->where('estado', 'entregado')
+                  ->whereBetween('created_at', $rangoFechas);
+            });
+        }], 'cantidad');
+
+        if ($tipoRanking === 'cero') {
+            // 📉 MODO 0 VENTAS: Productos sin detalles en tickets entregados
+            $queryProductos->whereDoesntHave('detalles', function($query) use ($rangoFechas) {
                 $query->whereHas('ticket', function($q) use ($rangoFechas) {
                     $q->where('estado', 'entregado')
                       ->whereBetween('created_at', $rangoFechas);
                 });
-            }], 'cantidad')
-            ->orderByRaw('COALESCE(total_vendido, 0) DESC') // Ordena tomando los nulos como 0
-            ->paginate(5)
-            ->appends($request->all());
+            })->orderBy('nombre', 'asc'); // Ordenamos alfabéticamente
+            
+        } else {
+            // 📈 MODO TOP VENDIDOS: Productos que SÍ tienen ventas
+            $queryProductos->whereHas('detalles', function($query) use ($rangoFechas) {
+                $query->whereHas('ticket', function($q) use ($rangoFechas) {
+                    $q->where('estado', 'entregado')
+                      ->whereBetween('created_at', $rangoFechas);
+                });
+            })->orderByRaw('COALESCE(total_vendido, 0) DESC');
+        }
+
+        $productosTop = $queryProductos->paginate(5)->appends($request->all());
+        // =========================================================================
+
 
         // --- NUEVO 2: Datos para el Gráfico de Categorías (INCLUYENDO 0 VENTAS) ---
         $detallesParaCategorias = DetalleTicket::whereHas('ticket', function($query) use ($rangoFechas) {
@@ -98,10 +125,10 @@ class ReporteController extends Controller
         $etiquetasBarras = [];
         $ventasBarras = [];
         $gananciasBarras = [];
-        $gastosBarras = []; // <-- NUEVO: Contenedor para los costos
+        $gastosBarras = []; 
         $tituloGraficoBarras = '';
 
-        // MODO 1: Rango de 60 días o menos (Agrupamos por DÍA)
+        // MODO 1: Rango de 60 días o menos agrupamos por DÍA
         if ($diasDiferencia <= 60) {
             $tituloGraficoBarras = 'Rendimiento Diario';
             
@@ -130,7 +157,7 @@ class ReporteController extends Controller
                 }
             }
         } 
-        // MODO 2: Rango mayor a 60 días (Agrupamos por MES)
+        // MODO 2: Rango mayor a 60 días agrupamos por MEs
         else {
             $tituloGraficoBarras = 'Rendimiento Mensual';
             
@@ -164,13 +191,12 @@ class ReporteController extends Controller
         $nombresBarras = json_encode(array_values($etiquetasBarras));
         $datosVentasBarras = json_encode(array_values($ventasBarras));
         $datosGananciasBarras = json_encode(array_values($gananciasBarras));
-        $datosGastosBarras = json_encode(array_values($gastosBarras)); // <-- NUEVO JSON
+        $datosGastosBarras = json_encode(array_values($gastosBarras)); 
 
         return view('reportes.index', compact(
-            'fechaInicio', 'fechaFin', 'ventasTotales', 'gananciaNeta', 
+            'fechaInicio', 'fechaFin', 'ventasTotales', 'gananciaNeta','costosTotales',
             'nuevosUsuarios', 'totalTickets', 'ticketsEntregados', 'ticketsCancelados',
             'productosTop', 'nombresCategorias', 'cantidadesCategorias',
-            // Asegúrate de agregar datosGastosBarras al final de esta lista:
             'tituloGraficoBarras', 'nombresBarras', 'datosVentasBarras', 'datosGananciasBarras', 'datosGastosBarras'
         ));
     }
@@ -191,6 +217,7 @@ class ReporteController extends Controller
 
         $ventasTotales = 0;
         $gananciaNeta = 0;
+        $costosTotales = 0;
 
         foreach ($ticketsCompletados as $ticket) {
             $ventasTotales += $ticket->total;
@@ -198,6 +225,8 @@ class ReporteController extends Controller
                 if ($detalle->producto) {
                     $ingresoProducto = $detalle->precio_unitario * $detalle->cantidad;
                     $costoProducto = $detalle->producto->precio_compra * $detalle->cantidad;
+                    
+                    $costosTotales += $costoProducto;
                     $gananciaNeta += ($ingresoProducto - $costoProducto);
                 }
             }
@@ -246,15 +275,14 @@ class ReporteController extends Controller
 
         $ventasPorCategoria = $ventasPorCategoria->sortDesc();
 
-        // --- NUEVO: CAPTURAR LAS IMÁGENES DE LOS GRÁFICOS ---
+        // --- CAPTURAR LAS IMÁGENES DE LOS GRÁFICOS ---
         $graficoBarras = $request->input('grafico_barras_base64');
         $graficoDona = $request->input('grafico_dona_base64');
 
         $pdf = Pdf::loadView('reportes.pdf', compact(
-            'fechaInicio', 'fechaFin', 'ventasTotales', 'gananciaNeta', 
+            'fechaInicio', 'fechaFin', 'ventasTotales', 'gananciaNeta','costosTotales', 
             'totalTickets', 'ticketsEntregados', 'nuevosUsuarios', 
             'productosVendidos', 'productosCeroVentas', 'ventasPorCategoria',
-            // Enviamos las imágenes al PDF
             'graficoBarras', 'graficoDona'
         ));
 
