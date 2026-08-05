@@ -116,7 +116,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         }
                     },
                     datalabels: {
-                        display: false // Siempre apagadas en las barras
+                        display: false, // Siempre apagadas en las barras ya que se amontonan cuando el rango es por dias
                     }
                 },
                 scales: {
@@ -181,4 +181,53 @@ window.exportarConGraficos = function() {
     } else {
         console.error("No se encontró el formulario formExportarPdf");
     }
+};
+
+// ==========================================
+// FILTROS DE ACCIÓN RÁPIDA AVANZADOS
+// ==========================================
+window.aplicarFiltroRapido = function(tipo) {
+    const inputInicio = document.getElementById('input_fecha_inicio').value;
+    const hoy = new Date();
+    let añoBase = hoy.getFullYear(); 
+
+    if (inputInicio && tipo !== 'limpiar') {
+        const partes = inputInicio.split('-');
+        añoBase = parseInt(partes[0], 10);
+    }
+
+    let inicio, fin;
+
+    const formatoFecha = (fecha) => {
+        const y = fecha.getFullYear();
+        const m = String(fecha.getMonth() + 1).padStart(2, '0');
+        const d = String(fecha.getDate()).padStart(2, '0');
+        return `${y}-${m}-${d}`;
+    };
+
+    if (tipo === 'limpiar' || tipo === 'mes_actual') {
+        // Volvemos a la fecha por defecto: Mes actual en curso
+        inicio = new Date(hoy.getFullYear(), hoy.getMonth(), 1);
+        fin = new Date(hoy.getFullYear(), hoy.getMonth() + 1, 0);
+        document.getElementById('input_modo_agrupacion').value = ''; // Borramos el modo de agrupación
+    } 
+    else if (tipo === 'mes') {
+        inicio = new Date(añoBase, 0, 1);
+        fin = new Date(añoBase, 11, 31);
+        document.getElementById('input_modo_agrupacion').value = tipo;
+    } 
+    else if (tipo === 'trimestre' || tipo === 'semestre') {
+        inicio = new Date(añoBase, 0, 1);
+        fin = new Date(añoBase, 11, 31);
+        document.getElementById('input_modo_agrupacion').value = tipo;
+    } 
+    else if (tipo === 'anual') {
+        inicio = new Date(añoBase - 1, 0, 1);
+        fin = new Date(añoBase + 1, 11, 31);
+        document.getElementById('input_modo_agrupacion').value = tipo;
+    }
+
+    document.getElementById('input_fecha_inicio').value = formatoFecha(inicio);
+    document.getElementById('input_fecha_fin').value = formatoFecha(fin);
+    document.getElementById('formFiltroPrincipal').submit();
 };

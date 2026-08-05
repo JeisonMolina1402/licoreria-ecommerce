@@ -7,16 +7,16 @@ use App\Models\Ticket;
 use App\Models\DetalleTicket;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\DB; //Agregamos esto para poder hacer consultas directas
+use Illuminate\Support\Facades\DB; 
 
 class CheckoutController extends Controller
 {
     public function procesar(Request $request)
     {
-        // 1. Decodificar el JSON de los productos que viene del carrito
+        // 1. Decodificamos el archivo JSON de los productos que viene del carrito
         $carrito = json_decode($request->carrito_datos, true);
 
-        // Si por alguna razón llega vacío, lo regresamos
+        // Si llega vacio devolvemos el carrito
         if (!$carrito || count($carrito) == 0) {
             return redirect()->back()->withErrors(['error' => 'El carrito está vacío.']);
         }
@@ -27,7 +27,7 @@ class CheckoutController extends Controller
             $total += $item['precio'] * $item['cantidad'];
         }
 
-        // 3. Crear el Ticket principal (Cabecera)
+        // 3. Crear el Ticket principal 
         $ticket = Ticket::create([
             'user_id' => Auth::id(),
             'codigo_reserva' => 'LCR-' . strtoupper(Str::random(5)),
@@ -35,8 +35,11 @@ class CheckoutController extends Controller
             'estado' => 'pendiente',
         ]);
 
-        // 4. Guardar cada producto en la tabla de detalles Y DESCONTAR STOCK
+        // 4. Guardamos cada producto en la tabla de detalles Y DESCONTAmos STOCK
         foreach ($carrito as $item) {
+            
+            // Consultamos el producto en la BD para saber su costo de compra actual
+            $producto = \App\Models\Producto::find($item['id']);
             
             // A) Creamos el detalle del ticket
             DetalleTicket::create([
@@ -44,6 +47,7 @@ class CheckoutController extends Controller
                 'producto_id' => $item['id'],
                 'cantidad' => $item['cantidad'],
                 'precio_unitario' => $item['precio'],
+                'precio_compra' => $producto ? $producto->precio_compra : 0, // <--- FOTOGRAFÍA DEL COSTO
             ]);
 
             // B) Descontamos el stock inmediatamente
@@ -52,7 +56,7 @@ class CheckoutController extends Controller
                 ->decrement('stock', $item['cantidad']);
         }
 
-        // 5. Redirigir a la pantalla de éxito (Ticket final)
+        // 5. Redirigir a la pantalla de éxito con el Ticket final
         return redirect()->route('tienda.exito', $ticket->id);
     }
 

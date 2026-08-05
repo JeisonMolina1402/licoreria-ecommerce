@@ -17,7 +17,7 @@
                 <div class="col-md-3">
                     <input type="text" class="form-control" name="nombre" list="sugerenciasProductos" autocomplete="off" placeholder="🔍 Buscar por nombre..." value="{{ request('nombre') }}">
                     
-                    {{-- DATALIST: Despliega sugerencias en tiempo real basadas en los nombres existentes en la base de datos --}}
+                    {{-- esto se llama DATALIST y muestra sugerencias segun los nombres existentes en la base de datos --}}
                     <datalist id="sugerenciasProductos">
                         @foreach($nombresProductos as $nombre)
                             <option value="{{ $nombre }}">
@@ -106,7 +106,7 @@
     <!-- ========================================== -->
     <div class="table-responsive bg-white p-3 rounded-3 shadow-sm mb-4">
         <table class="table table-hover align-middle mb-0">
-            <th class="table-light">
+            <thead class="table-light">
                 <tr>
                     <th>Imagen</th>
                     <th>Nombre Producto</th>
@@ -180,9 +180,24 @@
         </table>
     </div>
 
-    <!-- Paginación con Bootstrap 5 -->
-    <div class="d-flex justify-content-end">
-        {{ $productos->links('pagination::bootstrap-5') }}
+    <!-- ========================================== -->
+    <!-- PAGINACIÓN Y BOTÓN DE DESCARGA PDF         -->
+    <!-- ========================================== -->
+    <div class="d-flex justify-content-between align-items-center mt-4 mb-4">
+        
+        <!-- Botón a la izquierda -->
+        <div>
+            {{-- request()->all() pasa todos los filtros activos al reporte --}}
+            <a href="{{ route('inventario.pdf', request()->all()) }}" class="btn btn-danger btn-sm fw-bold shadow-sm px-3 py-2" target="_blank">
+                <i class="fa-solid fa-file-pdf me-1"></i> Descargar PDF
+            </a>
+        </div>
+
+        <!-- Paginación a la derecha -->
+        <div>
+            {{ $productos->links('pagination::bootstrap-5') }}
+        </div>
+        
     </div>
 
     <!-- ========================================== -->

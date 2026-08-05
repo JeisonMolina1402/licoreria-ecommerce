@@ -2,9 +2,10 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
-use App\Models\Producto;
 use App\Models\Categoria;
+use App\Models\Producto;
+use App\Models\Ticket;
+use Illuminate\Http\Request;
 
 class TiendaController extends Controller
 {
@@ -29,7 +30,7 @@ class TiendaController extends Controller
         $query->where('categoria_id', $categoria->id);
     }
 
-        // 3. Paginamos los productos de 12 en 12 (formato cuadrícula para tienda)
+        // 3. Paginamos los productos de 12 en 12 en cuadrícula 
         $productos = $query->latest()->paginate(12)->appends($request->all());
 
         return view('tienda.index', compact('productos', 'categorias'));
@@ -40,8 +41,8 @@ class TiendaController extends Controller
      */
     public function misPedidos()
     {
-        // Buscamos los tickets que pertenezcan al ID del usuario actual, ordenados del más reciente al más antiguo
-        $tickets = \App\Models\Ticket::with('detalles.producto')
+    
+        $tickets = Ticket::with('detalles.producto')
                     ->where('user_id', auth()->id())
                     ->orderBy('created_at', 'desc')
                     ->get();

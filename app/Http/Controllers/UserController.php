@@ -15,7 +15,6 @@ class UserController extends Controller
     public function index()
     {
         // Separamos al personal de los clientes en dos variables diferentes
-        // Esto nos hará la vida muy fácil al momento de armar las pestañas (Tabs) en la vista Blade.
         $personal = User::whereIn('rol', ['admin', 'vendedor'])->orderBy('id', 'desc')->get();
         $clientes = User::where('rol', 'cliente')->orderBy('id', 'desc')->get();
 
@@ -56,7 +55,7 @@ class UserController extends Controller
      */
     public function update(Request $request, User $usuario)
     {
-        // PROGRAMACIÓN DEFENSIVA: Evitamos que te quites el rol de admin a ti mismo
+        // Evitamos que te quites el rol de admin a ti mismo
         if ($usuario->id === auth()->id() && $request->rol !== 'admin') {
             return back()->withErrors('Acción bloqueada: No puedes quitarte el rol de administrador a ti mismo.');
         }

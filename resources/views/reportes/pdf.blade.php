@@ -27,6 +27,7 @@
         .text-center { text-align: center; }
         .text-danger { color: #dc3545; font-weight: bold; }
         .text-success { color: #198754; font-weight: bold; }
+        .text-primary { color: #0d6efd; font-weight: bold; }    
         
         .footer { margin-top: 40px; font-size: 10px; text-align: center; color: #999; border-top: 1px solid #eee; padding-top: 10px; }
 
@@ -71,7 +72,6 @@
 
     <!-- INYECCIÓN DEL GRÁFICO DE BARRAS -->
     @if(isset($graficoBarras) && $graficoBarras)
-        {{-- Envolvemos el título y el gráfico para que viajen juntos --}}
         <div class="evitar-salto">
             <div class="seccion-titulo">Rendimiento Financiero (Visual)</div>
             <div style="text-align: center; margin-bottom: 30px; background-color: #f9f9f9; border: 1px solid #eee; padding: 10px; border-radius: 8px;">
@@ -80,59 +80,125 @@
         </div>
     @endif
 
-    <!-- TABLA DE VENTAS EXITOSAS -->
+    <!-- TABLA DE RESUMEN POR DÍA O MES (MOVIDA AQUÍ) -->
+    <div class="evitar-salto">
+        <div class="seccion-titulo">Desglose Financiero por {{ $tituloGraficoBarras == 'Rendimiento Diario' ? 'Día' : ($tituloGraficoBarras == 'Rendimiento Mensual' ? 'Mes' : 'Año') }}</div>
+        <table class="datos" style="width: 100%;">
+            <thead>
+                <tr>
+                    <th style="width: 25%;">Período</th>
+                    <th class="text-center">Costos (Inversión)</th>
+                    <th class="text-center">Ingresos (Ventas)</th>
+                    <th class="text-center">Ganancia Neta</th>
+                </tr>
+            </thead>
+            <tbody>
+                @forelse($tablaTemporal as $fila)
+                    {{-- Usamos el if para ocultar los días que estuvieron en cero total (días sin actividad) --}}
+                    @if($fila['ingresos'] > 0 || $fila['costos'] > 0) 
+                        <tr>
+                            <td class="fw-bold">{{ $fila['periodo'] }}</td>
+                            <td class="text-center text-danger">${{ number_format($fila['costos'], 2) }}</td>
+                            <td class="text-center text-primary">${{ number_format($fila['ingresos'], 2) }}</td>
+                            <td class="text-center text-success">${{ number_format($fila['ganancia'], 2) }}</td>
+                        </tr>
+                    @endif
+                @empty
+                    <tr>
+                        <td colspan="4" class="text-center">No hay desglose financiero en este período.</td>
+                    </tr>
+                @endforelse
+            </tbody>
+        </table>
+    </div>
+
+   <!-- TABLA DE VENTAS EXITOSAS -->
     <div class="seccion-titulo">Detalle de Licores Vendidos (1 o más unidades)</div>
     <table class="datos">
         <thead>
             <tr>
-                <th style="width: 10%;" class="text-center">Posición</th>
-                <th style="width: 65%;">Producto</th>
-                <th style="width: 25%;" class="text-center">Unidades Vendidas</th>
+                <th class="text-center">#</th>
+                <th>Producto</th>
+                <th>Categoría</th>
+                <th>Precio Compra</th>
+                <th>Precio Venta</th>
+                <th>Total Inversión</th>
+                <th>Total Venta</th>
+                <th>Ganancia</th>
+                <th class="text-center">Unidades</th>
             </tr>
         </thead>
         <tbody>
             @forelse($productosVendidos as $index => $item)
+                @php
+                    $unidades = $item->total_vendido ?? 0;
+                    $precioCompra = $item->producto->precio_compra ?? 0;
+                    $precioVenta = $item->producto->precio ?? 0;
+                    
+                    $totalVenta = $item->ingreso_generado ?? 0; // Ingreso real del SQL
+                    $ganancia = $item->ganancia_generada ?? 0;  // Ganancia real del SQL
+                    $totalInversion = $totalVenta - $ganancia;  // Inversión real
+                @endphp
                 <tr>
-                    <td class="text-center fw-bold">#{{ $index + 1 }}</td>
+                    <td class="text-center fw-bold">{{ $index + 1 }}</td>
                     <td>{{ $item->producto->nombre ?? 'Producto Eliminado' }}</td>
-                    <td class="text-center text-success">{{ $item->total_vendido }} unid.</td>
+                    <td>{{ $item->producto->categoria->nombre ?? 'Sin Categoría' }}</td>
+                    <td>${{ number_format($precioCompra, 2) }}</td>
+                    <td>${{ number_format($precioVenta, 2) }}</td>
+                    <td class="text-danger">${{ number_format($totalInversion, 2) }}</td>
+                    <td class="text-primary">${{ number_format($totalVenta, 2) }}</td>
+                    <td class="text-success">${{ number_format($ganancia, 2) }}</td>
+                    <td class="text-center text-success">{{ $unidades }} unid.</td>
                 </tr>
             @empty
                 <tr>
-                    <td colspan="3" class="text-center">No hay ventas registradas en este período.</td>
+                    <td colspan="9" class="text-center">No hay ventas registradas en este período.</td>
                 </tr>
             @endforelse
         </tbody>
     </table>
 
-    <!-- TABLA DE ALERTA (INVENTARIO MUERTO) -->
-    <div class="seccion-titulo" style="color: #dc3545;">Atención: Licores Sin Movimiento (0 Ventas)</div>
-    <table class="datos">
-        <thead>
-            <tr>
-                <th style="width: 10%;" class="text-center">Ítem</th>
-                <th style="width: 65%;">Producto</th>
-                <th style="width: 25%;" class="text-center">Unidades Vendidas</th>
-            </tr>
-        </thead>
-        <tbody>
-            @forelse($productosCeroVentas as $index => $producto)
+    <!-- TABLA DE ALERTA (INVENTARIO MUERTO) - AHORA CON EL DIV "EVITAR-SALTO" -->
+    <div class="evitar-salto">
+        <div class="seccion-titulo" style="color: #dc3545;">Atención: Licores Sin Movimiento (0 Ventas)</div>
+        <table class="datos">
+            <thead>
                 <tr>
-                    <td class="text-center fw-bold">-</td>
-                    <td>{{ $producto->nombre }}</td>
-                    <td class="text-center text-danger">0 unid.</td>
+                    <th class="text-center">-</th>
+                    <th>Producto</th>
+                    <th>Categoría</th>
+                    <th>Precio Compra</th>
+                    <th>Precio Venta</th>
+                    <th>Total Inversión</th>
+                    <th>Total Venta</th>
+                    <th>Ganancia</th>
+                    <th class="text-center">Unidades</th>
                 </tr>
-            @empty
-                <tr>
-                    <td colspan="3" class="text-center">¡Excelente! Todo el inventario tuvo al menos 1 venta.</td>
-                </tr>
-            @endforelse
-        </tbody>
-    </table>
+            </thead>
+            <tbody>
+                @forelse($productosCeroVentas as $index => $producto)
+                    <tr>
+                        <td class="text-center fw-bold">-</td>
+                        <td>{{ $producto->nombre }}</td>
+                        <td>{{ $producto->categoria->nombre ?? 'Sin Categoría' }}</td>
+                        <td>${{ number_format($producto->precio_compra, 2) }}</td>
+                        <td>${{ number_format($producto->precio, 2) }}</td>
+                        <td class="text-danger">$0.00</td>
+                        <td class="text-primary">$0.00</td>
+                        <td class="text-success">$0.00</td>
+                        <td class="text-center text-danger">0 unid.</td>
+                    </tr>
+                @empty
+                    <tr>
+                        <td colspan="9" class="text-center">¡Excelente! Todo el inventario tuvo al menos 1 venta.</td>
+                    </tr>
+                @endforelse
+            </tbody>
+        </table>
+    </div>
 
     <!-- INYECCIÓN DEL GRÁFICO DE DONA -->
     @if(isset($graficoDona) && $graficoDona)
-        {{-- Aquí aplicamos la misma lógica para solucionar tu problema específico --}}
         <div class="evitar-salto">
             <div class="seccion-titulo">Distribución de Ventas por Categoría</div>
             <div style="text-align: center; margin-bottom: 35px; background-color: #f9f9f9; border: 1px solid #eee; padding: 15px; border-radius: 8px;">
@@ -142,27 +208,32 @@
     @endif
 
     <!-- TABLA DE RESUMEN POR CATEGORÍAS -->
-    {{-- A esta tabla también le podemos aplicar la clase por si acaso --}}
     <div class="evitar-salto">
-        <div class="seccion-titulo">Resumen de Ventas por Categoría</div>
-        <table class="datos" style="width: 70%;">
+        <div class="seccion-titulo">Rendimiento Financiero por Categoría</div>
+        <table class="datos" style="width: 100%;">
             <thead>
                 <tr>
-                    <th style="width: 70%;">Nombre de Categoría</th>
-                    <th style="width: 30%;" class="text-center">Total Vendidas</th>
+                    <th style="width: 30%;">Categoría</th>
+                    <th class="text-center">Total Inversión</th>
+                    <th class="text-center">Total Venta</th>
+                    <th class="text-center">Ganancia</th>
+                    <th class="text-center">Unidades</th>
                 </tr>
             </thead>
             <tbody>
-                @forelse($ventasPorCategoria as $categoria => $cantidad)
+                @forelse($ventasPorCategoria as $categoria => $datos)
                     <tr>
-                        <td>{{ $categoria }}</td>
-                        <td class="text-center fw-bold @if($cantidad == 0) text-danger @else text-success @endif">
-                            {{ $cantidad }} unid.
+                        <td class="fw-bold">{{ $categoria }}</td>
+                        <td class="text-center text-danger">${{ number_format($datos['inversion'], 2) }}</td>
+                        <td class="text-center text-primary">${{ number_format($datos['ventas'], 2) }}</td>
+                        <td class="text-center text-success">${{ number_format($datos['ganancia'], 2) }}</td>
+                        <td class="text-center fw-bold @if($datos['unidades'] == 0) text-danger @else text-success @endif">
+                            {{ $datos['unidades'] }} unid.
                         </td>
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="2" class="text-center">No hay datos de categorías en este período.</td>
+                        <td colspan="5" class="text-center">No hay datos de categorías en este período.</td>
                     </tr>
                 @endforelse
             </tbody>

@@ -573,8 +573,9 @@
                     <div id="faq11" class="accordion-collapse collapse" data-bs-parent="#accordionFaq">
                         <div class="accordion-body text-muted" style="font-family: 'Lora', serif;">
                             Por el momento, nuestro sistema de reservas en línea opera exclusivamente mediante transferencia bancaria directa. Trabajar sin pasarelas de pago externas nos permite evitar comisiones bancarias adicionales, garantizando que siempre recibas el precio más bajo y justo del mercado en todos nuestros licores.
-                    </div>
-                </div>
+                        </div> <!-- Cierre del accordion-body -->
+                    </div> <!-- Cierre del accordion-collapse -->
+                </div> <!-- 🔥 AQUÍ FALTABA ESTE CIERRE -->
 
                 <div class="accordion-item">
                     <h2 class="accordion-header">
@@ -586,8 +587,9 @@
                     <div id="faq12" class="accordion-collapse collapse" data-bs-parent="#accordionFaq">
                         <div class="accordion-body text-muted" style="font-family: 'Lora', serif;">
                             No, todo el proceso de reserva online se confirma únicamente enviando el comprobante de la transferencia a nuestras cuentas bancarias oficiales indicadas al finalizar tu pedido. Nuestro equipo validará el pago y te notificará de inmediato.
-                    </div>
-                </div>
+                        </div> <!-- Cierre del accordion-body -->
+                    </div> <!-- Cierre del accordion-collapse -->
+                </div> <!-- 🔥 AQUÍ FALTABA ESTE CIERRE -->
 
                 <div class="accordion-item">
                     <h2 class="accordion-header">
@@ -599,8 +601,9 @@
                     <div id="faq13" class="accordion-collapse collapse" data-bs-parent="#accordionFaq">
                         <div class="accordion-body text-muted" style="font-family: 'Lora', serif;">
                             Nuestro sistema web bloquea el stock de las botellas a tu nombre sacándolas del inventario disponible. Por esta razón, la reserva web requiere que la transferencia se realice en los próximos 10 minutos para confirmarse. Si prefieres pagar en efectivo, no es necesario hacer una reserva web; te invitamos a visitarnos directamente en nuestro local físico.
-                    </div>
-                </div>
+                        </div> <!-- Cierre del accordion-body -->
+                    </div> <!-- Cierre del accordion-collapse -->
+                </div> <!-- 🔥 AQUÍ FALTABA ESTE CIERRE -->
 
                 <div class="accordion-item">
                     <h2 class="accordion-header">
@@ -612,8 +615,9 @@
                     <div id="faq14" class="accordion-collapse collapse" data-bs-parent="#accordionFaq">
                         <div class="accordion-body text-muted" style="font-family: 'Lora', serif;">
                             Para las compras que realizas directamente en nuestro mostrador (sin haber hecho una reserva previa en la web), aceptamos pagos en efectivo y transferencias bancarias al momento de la entrega. Toma en cuenta que las compras directas en el local están sujetas al stock disponible en ese instante.
-                    </div>
-                </div>
+                        </div> <!-- Cierre del accordion-body -->
+                    </div> <!-- Cierre del accordion-collapse -->
+                </div> <!-- 🔥 AQUÍ FALTABA ESTE CIERRE -->
 
             </div>
         </div>

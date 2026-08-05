@@ -13,10 +13,14 @@ use Barryvdh\DomPDF\Facade\Pdf;
 
 class ReporteController extends Controller
 {
+    // =========================================================================
+    // MÉTODO 1: VISTA WEB (DASHBOARD)
+    // =========================================================================
     public function index(Request $request)
     {
         $fechaInicio = $request->input('fecha_inicio', Carbon::now()->startOfMonth()->toDateString());
         $fechaFin = $request->input('fecha_fin', Carbon::now()->endOfMonth()->toDateString());
+        $modoAgrupacion = $request->input('modo_agrupacion');
 
         $rangoFechas = [$fechaInicio . ' 00:00:00', $fechaFin . ' 23:59:59'];
 
@@ -34,10 +38,9 @@ class ReporteController extends Controller
             foreach ($ticket->detalles as $detalle) {
                 if ($detalle->producto) {
                     $ingresoProducto = $detalle->precio_unitario * $detalle->cantidad;
-                    $costoProducto = $detalle->producto->precio_compra * $detalle->cantidad;
+                    $costoProducto = $detalle->precio_compra * $detalle->cantidad;
                     $gananciaNeta += ($ingresoProducto - $costoProducto);
                     $costosTotales += $costoProducto;
-
                 }
             }
         }
@@ -47,75 +50,98 @@ class ReporteController extends Controller
         $ticketsEntregados = $ticketsCompletados->count();
         $ticketsCancelados = Ticket::where('estado', 'cancelado')->whereBetween('created_at', $rangoFechas)->count();
 
-        // =========================================================================
-        // --- NUEVO 1: Paginación Dinámica (Top Ventas o Stock Muerto) ---
-        // =========================================================================
-        $tipoRanking = $request->input('tipo_ranking', 'top');
+    
+        // --------------------------------------------------------------
+        // LÓGICA DE PRODUCTOS (WEB)
+        // --------------------------------------------------------------
+        $rankingProductos = $request->input('ranking_productos', 'ventas'); 
 
-        $queryProductos = Producto::withSum(['detalles as total_vendido' => function($query) use ($rangoFechas) {
-            $query->whereHas('ticket', function($q) use ($rangoFechas) {
-                $q->where('estado', 'entregado')
-                  ->whereBetween('created_at', $rangoFechas);
-            });
-        }], 'cantidad');
+        $queryProductos = Producto::with('categoria')
+            ->select('productos.*') 
+            ->withSum(['detalles as total_vendido' => function($query) use ($rangoFechas) {
+                $query->whereHas('ticket', function($q) use ($rangoFechas) {
+                    $q->where('estado', 'entregado')->whereBetween('created_at', $rangoFechas);
+                });
+            }], 'cantidad')
+            ->addSelect(['ingreso_generado' => DetalleTicket::selectRaw('SUM(detalle_tickets.precio_unitario * detalle_tickets.cantidad)')
+                ->whereColumn('detalle_tickets.producto_id', 'productos.id')
+                ->whereHas('ticket', function($q) use ($rangoFechas) {
+                    $q->where('estado', 'entregado')->whereBetween('created_at', $rangoFechas);
+                })
+            ])
+            ->addSelect(['ganancia_generada' => DetalleTicket::selectRaw('SUM((detalle_tickets.precio_unitario - detalle_tickets.precio_compra) * detalle_tickets.cantidad)')
+                ->whereColumn('detalle_tickets.producto_id', 'productos.id')
+                ->whereHas('ticket', function($q) use ($rangoFechas) {
+                    $q->where('estado', 'entregado')->whereBetween('created_at', $rangoFechas);
+                })
+            ]);
 
-        if ($tipoRanking === 'cero') {
-            // 📉 MODO 0 VENTAS: Productos sin detalles en tickets entregados
+        if ($rankingProductos === 'cero') {
             $queryProductos->whereDoesntHave('detalles', function($query) use ($rangoFechas) {
                 $query->whereHas('ticket', function($q) use ($rangoFechas) {
-                    $q->where('estado', 'entregado')
-                      ->whereBetween('created_at', $rangoFechas);
+                    $q->where('estado', 'entregado')->whereBetween('created_at', $rangoFechas);
                 });
-            })->orderBy('nombre', 'asc'); // Ordenamos alfabéticamente
-            
-        } else {
-            // 📈 MODO TOP VENDIDOS: Productos que SÍ tienen ventas
+            })->orderBy('nombre', 'asc');
+        } elseif ($rankingProductos === 'ganancia') {
             $queryProductos->whereHas('detalles', function($query) use ($rangoFechas) {
                 $query->whereHas('ticket', function($q) use ($rangoFechas) {
-                    $q->where('estado', 'entregado')
-                      ->whereBetween('created_at', $rangoFechas);
+                    $q->where('estado', 'entregado')->whereBetween('created_at', $rangoFechas);
+                });
+            })->orderByRaw('COALESCE(ganancia_generada, 0) DESC');
+        } else {
+            $queryProductos->whereHas('detalles', function($query) use ($rangoFechas) {
+                $query->whereHas('ticket', function($q) use ($rangoFechas) {
+                    $q->where('estado', 'entregado')->whereBetween('created_at', $rangoFechas);
                 });
             })->orderByRaw('COALESCE(total_vendido, 0) DESC');
         }
 
-        $productosTop = $queryProductos->paginate(5)->appends($request->all());
-        // =========================================================================
+        $productosTop = $queryProductos->paginate(5, ['*'], 'page_productos')->appends($request->all());
 
+        // --------------------------------------------------------------
+        // LÓGICA DE CATEGORÍAS (WEB)
+        // --------------------------------------------------------------
+        $rankingCategorias = $request->input('ranking_categorias', 'ventas');
 
-        // --- NUEVO 2: Datos para el Gráfico de Categorías (INCLUYENDO 0 VENTAS) ---
         $detallesParaCategorias = DetalleTicket::whereHas('ticket', function($query) use ($rangoFechas) {
                 $query->where('estado', 'entregado')->whereBetween('created_at', $rangoFechas);
             })->with('producto.categoria')->get();
 
-        // 1. Sumamos lo que SÍ se vendió
-        $categoriasVendidas = $detallesParaCategorias->groupBy(function($detalle) {
-            return $detalle->producto->categoria->nombre ?? 'Sin Categoría';
-        })->map(function($grupo) {
-            return $grupo->sum('cantidad');
-        });
+        $ventasPorCategoria = [];
+        $todasLasCategorias = Categoria::pluck('nombre');
 
-        // 2. Traemos TODAS las categorías de la base de datos
-        $todasLasCategorias = \App\Models\Categoria::pluck('nombre');
-        $ventasPorCategoria = collect();
-
-        // 3. Cruzamos los datos: las que no tienen ventas quedan en 0
         foreach ($todasLasCategorias as $nombreCategoria) {
-            $ventasPorCategoria[$nombreCategoria] = $categoriasVendidas->get($nombreCategoria, 0);
+            $ventasPorCategoria[$nombreCategoria] = [
+                'unidades' => 0, 'inversion' => 0, 'ventas' => 0, 'ganancia' => 0
+            ];
         }
-        
-        // Por si hay algún producto sin categoría asignada
-        if ($categoriasVendidas->has('Sin Categoría')) {
-            $ventasPorCategoria['Sin Categoría'] = $categoriasVendidas['Sin Categoría'];
+        $ventasPorCategoria['Sin Categoría'] = ['unidades' => 0, 'inversion' => 0, 'ventas' => 0, 'ganancia' => 0];
+
+        foreach ($detallesParaCategorias as $detalle) {
+            $catNombre = $detalle->producto->categoria->nombre ?? 'Sin Categoría';
+            $inversion = $detalle->precio_compra * $detalle->cantidad;
+            $venta = $detalle->precio_unitario * $detalle->cantidad;
+
+            $ventasPorCategoria[$catNombre]['unidades'] += $detalle->cantidad;
+            $ventasPorCategoria[$catNombre]['inversion'] += $inversion;
+            $ventasPorCategoria[$catNombre]['ventas'] += $venta;
+            $ventasPorCategoria[$catNombre]['ganancia'] += ($venta - $inversion);
         }
 
-        // Ordenamos de mayor a menor para que el gráfico quede proporcionado
-        $ventasPorCategoria = $ventasPorCategoria->sortDesc();
+        if ($rankingCategorias === 'ganancia') {
+            $ventasPorCategoria = collect($ventasPorCategoria)->sortByDesc('ganancia');
+        } elseif ($rankingCategorias === 'cero') {
+            $ventasPorCategoria = collect($ventasPorCategoria)->where('unidades', 0);
+        } else {
+            $ventasPorCategoria = collect($ventasPorCategoria)->sortByDesc('unidades');
+        }
 
-        // Convertimos a JSON para que JavaScript (Chart.js) pueda leerlo
         $nombresCategorias = $ventasPorCategoria->keys()->toJson();
-        $cantidadesCategorias = $ventasPorCategoria->values()->toJson();
+        $cantidadesCategorias = $ventasPorCategoria->pluck('unidades')->toJson();
 
-        // --- NUEVO 3: Gráfico de Barras Dinámico (Diario o Mensual) ---
+        // --------------------------------------------------------------
+        // GRÁFICOS Y AGRUPACIÓN TEMPORAL (WEB)
+        // --------------------------------------------------------------
         $fechaInicioObj = Carbon::parse($fechaInicio);
         $fechaFinObj = Carbon::parse($fechaFin);
         $diasDiferencia = $fechaInicioObj->diffInDays($fechaFinObj);
@@ -127,67 +153,118 @@ class ReporteController extends Controller
         $gananciasBarras = [];
         $gastosBarras = []; 
         $tituloGraficoBarras = '';
+        $tituloTablaTemporal = '';
 
-        // MODO 1: Rango de 60 días o menos agrupamos por DÍA
-        if ($diasDiferencia <= 60) {
-            $tituloGraficoBarras = 'Rendimiento Diario';
+        if ($modoAgrupacion === 'trimestre') {
+            $tituloGraficoBarras = 'Rendimiento Trimestral';
+            $tituloTablaTemporal = 'Trimestre';
+            $nombresTrimestres = [1 => '(Ene - Mar)', 2 => '(Abr - Jun)', 3 => '(Jul - Sep)', 4 => '(Oct - Dic)'];
             
-            for ($date = $fechaInicioObj->copy(); $date->lte($fechaFinObj); $date->addDay()) {
-                $etiqueta = $date->format('d') . ' ' . $mesesEs[$date->format('n')];
+            for ($date = $fechaInicioObj->copy()->startOfQuarter(); $date->lte($fechaFinObj); $date->addQuarter()) {
+                $numTrimestre = ceil($date->format('n') / 3);
+                $etiqueta = 'Trimestre ' . $numTrimestre . ' ' . $nombresTrimestres[$numTrimestre] . ' ' . $date->format('Y');
                 $etiquetasBarras[] = $etiqueta;
-                $ventasBarras[$etiqueta] = 0;
-                $gananciasBarras[$etiqueta] = 0;
-                $gastosBarras[$etiqueta] = 0; // Inicializamos en 0
+                $ventasBarras[$etiqueta] = 0; $gananciasBarras[$etiqueta] = 0; $gastosBarras[$etiqueta] = 0;
             }
-
             foreach ($ticketsCompletados as $ticket) {
-                $etiqueta = $ticket->created_at->format('d') . ' ' . $mesesEs[$ticket->created_at->format('n')];
+                $numTrimestre = ceil($ticket->created_at->format('n') / 3);
+                $etiqueta = 'Trimestre ' . $numTrimestre . ' ' . $nombresTrimestres[$numTrimestre] . ' ' . $ticket->created_at->format('Y');
                 if (isset($ventasBarras[$etiqueta])) {
                     $ventasBarras[$etiqueta] += $ticket->total;
-                    
-                    foreach ($ticket->detalles as $detalle) {
-                        if ($detalle->producto) {
-                            $ingreso = $detalle->precio_unitario * $detalle->cantidad;
-                            $costo = $detalle->producto->precio_compra * $detalle->cantidad;
-                            
-                            $gastosBarras[$etiqueta] += $costo; // Sumamos lo que nos costó
-                            $gananciasBarras[$etiqueta] += ($ingreso - $costo); // Sumamos la ganancia
+                    foreach ($ticket->detalles as $d) {
+                        if ($d->producto) {
+                            $c = $d->producto->precio_compra * $d->cantidad; $v = $d->precio_unitario * $d->cantidad;
+                            $gastosBarras[$etiqueta] += $c; $gananciasBarras[$etiqueta] += ($v - $c);
                         }
                     }
                 }
             }
-        } 
-        // MODO 2: Rango mayor a 60 días agrupamos por MEs
-        else {
+        } elseif ($modoAgrupacion === 'semestre') {
+            $tituloGraficoBarras = 'Rendimiento Semestral';
+            $tituloTablaTemporal = 'Semestre';
+            $nombresSemestres = [1 => '(Ene - Jun)', 2 => '(Jul - Dic)'];
+
+            for ($date = $fechaInicioObj->copy()->startOfYear(); $date->lte($fechaFinObj); $date->addMonths(6)) {
+                $numSemestre = ceil($date->format('n') / 6);
+                $etiqueta = 'Semestre ' . $numSemestre . ' ' . $nombresSemestres[$numSemestre] . ' ' . $date->format('Y');
+                $etiquetasBarras[] = $etiqueta;
+                $ventasBarras[$etiqueta] = 0; $gananciasBarras[$etiqueta] = 0; $gastosBarras[$etiqueta] = 0;
+            }
+            foreach ($ticketsCompletados as $ticket) {
+                $numSemestre = ceil($ticket->created_at->format('n') / 6);
+                $etiqueta = 'Semestre ' . $numSemestre . ' ' . $nombresSemestres[$numSemestre] . ' ' . $ticket->created_at->format('Y');
+                if (isset($ventasBarras[$etiqueta])) {
+                    $ventasBarras[$etiqueta] += $ticket->total;
+                    foreach ($ticket->detalles as $d) {
+                        if ($d->producto) {
+                            $c = $d->producto->precio_compra * $d->cantidad; $v = $d->precio_unitario * $d->cantidad;
+                            $gastosBarras[$etiqueta] += $c; $gananciasBarras[$etiqueta] += ($v - $c);
+                        }
+                    }
+                }
+            }
+        } elseif ($modoAgrupacion === 'anual' || $diasDiferencia >= 365) {
+            $tituloGraficoBarras = 'Rendimiento Anual';
+            $tituloTablaTemporal = 'Año';
+            for ($date = $fechaInicioObj->copy()->startOfYear(); $date->lte($fechaFinObj); $date->addYear()) {
+                $etiqueta = $date->format('Y');
+                $etiquetasBarras[] = $etiqueta;
+                $ventasBarras[$etiqueta] = 0; $gananciasBarras[$etiqueta] = 0; $gastosBarras[$etiqueta] = 0;
+            }
+            foreach ($ticketsCompletados as $ticket) {
+                $etiqueta = $ticket->created_at->format('Y');
+                if (isset($ventasBarras[$etiqueta])) {
+                    $ventasBarras[$etiqueta] += $ticket->total;
+                    foreach ($ticket->detalles as $d) {
+                        if ($d->producto) {
+                            $c = $d->producto->precio_compra * $d->cantidad; $v = $d->precio_unitario * $d->cantidad;
+                            $gastosBarras[$etiqueta] += $c; $gananciasBarras[$etiqueta] += ($v - $c);
+                        }
+                    }
+                }
+            }
+        } elseif ($modoAgrupacion === 'mes' || ($diasDiferencia > 60 && $diasDiferencia < 365)) {
             $tituloGraficoBarras = 'Rendimiento Mensual';
-            
+            $tituloTablaTemporal = 'Mes';
             for ($date = $fechaInicioObj->copy()->startOfMonth(); $date->lte($fechaFinObj); $date->addMonth()) {
                 $etiqueta = $mesesEs[$date->format('n')] . ' ' . $date->format('Y');
                 $etiquetasBarras[] = $etiqueta;
-                $ventasBarras[$etiqueta] = 0;
-                $gananciasBarras[$etiqueta] = 0;
-                $gastosBarras[$etiqueta] = 0; // Inicializamos en 0
+                $ventasBarras[$etiqueta] = 0; $gananciasBarras[$etiqueta] = 0; $gastosBarras[$etiqueta] = 0;
             }
-
             foreach ($ticketsCompletados as $ticket) {
                 $etiqueta = $mesesEs[$ticket->created_at->format('n')] . ' ' . $ticket->created_at->format('Y');
                 if (isset($ventasBarras[$etiqueta])) {
                     $ventasBarras[$etiqueta] += $ticket->total;
-                    
-                    foreach ($ticket->detalles as $detalle) {
-                        if ($detalle->producto) {
-                            $ingreso = $detalle->precio_unitario * $detalle->cantidad;
-                            $costo = $detalle->producto->precio_compra * $detalle->cantidad;
-                            
-                            $gastosBarras[$etiqueta] += $costo; // Sumamos lo que nos costó
-                            $gananciasBarras[$etiqueta] += ($ingreso - $costo); // Sumamos la ganancia
+                    foreach ($ticket->detalles as $d) {
+                        if ($d->producto) {
+                            $c = $d->producto->precio_compra * $d->cantidad; $v = $d->precio_unitario * $d->cantidad;
+                            $gastosBarras[$etiqueta] += $c; $gananciasBarras[$etiqueta] += ($v - $c);
+                        }
+                    }
+                }
+            }
+        } else {
+            $tituloGraficoBarras = 'Rendimiento Diario';
+            $tituloTablaTemporal = 'Día';
+            for ($date = $fechaInicioObj->copy(); $date->lte($fechaFinObj); $date->addDay()) {
+                $etiqueta = $date->format('d') . ' ' . $mesesEs[$date->format('n')];
+                $etiquetasBarras[] = $etiqueta;
+                $ventasBarras[$etiqueta] = 0; $gananciasBarras[$etiqueta] = 0; $gastosBarras[$etiqueta] = 0;
+            }
+            foreach ($ticketsCompletados as $ticket) {
+                $etiqueta = $ticket->created_at->format('d') . ' ' . $mesesEs[$ticket->created_at->format('n')];
+                if (isset($ventasBarras[$etiqueta])) {
+                    $ventasBarras[$etiqueta] += $ticket->total;
+                    foreach ($ticket->detalles as $d) {
+                        if ($d->producto) {
+                            $c = $d->producto->precio_compra * $d->cantidad; $v = $d->precio_unitario * $d->cantidad;
+                            $gastosBarras[$etiqueta] += $c; $gananciasBarras[$etiqueta] += ($v - $c);
                         }
                     }
                 }
             }
         }
 
-        // Convertimos a JSON
         $nombresBarras = json_encode(array_values($etiquetasBarras));
         $datosVentasBarras = json_encode(array_values($ventasBarras));
         $datosGananciasBarras = json_encode(array_values($gananciasBarras));
@@ -196,17 +273,20 @@ class ReporteController extends Controller
         return view('reportes.index', compact(
             'fechaInicio', 'fechaFin', 'ventasTotales', 'gananciaNeta','costosTotales',
             'nuevosUsuarios', 'totalTickets', 'ticketsEntregados', 'ticketsCancelados',
-            'productosTop', 'nombresCategorias', 'cantidadesCategorias',
-            'tituloGraficoBarras', 'nombresBarras', 'datosVentasBarras', 'datosGananciasBarras', 'datosGastosBarras'
+            'productosTop', 'nombresCategorias', 'cantidadesCategorias', 'ventasPorCategoria',
+            'tituloGraficoBarras', 'tituloTablaTemporal', 'nombresBarras', 'datosVentasBarras', 'datosGananciasBarras', 'datosGastosBarras',
+            'rankingProductos', 'rankingCategorias', 'modoAgrupacion'
         ));
     }
      
-      
+    // =========================================================================
+    // MÉTODO 2: EXPORTAR PDF
+    // =========================================================================
     public function exportarPdf(Request $request)
     {
-        // Al ser POST, capturamos los inputs directamente de la petición
         $fechaInicio = $request->input('fecha_inicio', Carbon::now()->startOfMonth()->toDateString());
         $fechaFin = $request->input('fecha_fin', Carbon::now()->endOfMonth()->toDateString());
+        $modoAgrupacion = $request->input('modo_agrupacion');
 
         $rangoFechas = [$fechaInicio . ' 00:00:00', $fechaFin . ' 23:59:59'];
 
@@ -224,8 +304,7 @@ class ReporteController extends Controller
             foreach ($ticket->detalles as $detalle) {
                 if ($detalle->producto) {
                     $ingresoProducto = $detalle->precio_unitario * $detalle->cantidad;
-                    $costoProducto = $detalle->producto->precio_compra * $detalle->cantidad;
-                    
+                    $costoProducto = $detalle->precio_compra * $detalle->cantidad;
                     $costosTotales += $costoProducto;
                     $gananciaNeta += ($ingresoProducto - $costoProducto);
                 }
@@ -236,46 +315,189 @@ class ReporteController extends Controller
         $totalTickets = Ticket::whereBetween('created_at', $rangoFechas)->count();
         $ticketsEntregados = $ticketsCompletados->count();
         
-        $productosVendidos = DetalleTicket::selectRaw('producto_id, SUM(cantidad) as total_vendido')
+        // --------------------------------------------------------------
+        // PRODUCTOS (PDF)
+        // --------------------------------------------------------------
+        $rankingProductos = $request->input('ranking_productos', 'ventas');
+        $queryVendidos = DetalleTicket::selectRaw('
+                producto_id, 
+                SUM(detalle_tickets.cantidad) as total_vendido, 
+                SUM(detalle_tickets.precio_unitario * detalle_tickets.cantidad) as ingreso_generado, 
+                SUM((detalle_tickets.precio_unitario - detalle_tickets.precio_compra) * detalle_tickets.cantidad) as ganancia_generada
+            ')
+            ->join('productos', 'detalle_tickets.producto_id', '=', 'productos.id')
             ->whereHas('ticket', function($query) use ($rangoFechas) {
-                $query->where('estado', 'entregado')
-                      ->whereBetween('created_at', $rangoFechas);
+                $query->where('estado', 'entregado')->whereBetween('created_at', $rangoFechas);
             })
             ->groupBy('producto_id')
-            ->orderByDesc('total_vendido')
-            ->with('producto')
-            ->get();
+            ->with('producto.categoria');
 
+        if ($rankingProductos === 'ganancia') { $queryVendidos->orderByDesc('ganancia_generada'); } 
+        else { $queryVendidos->orderByDesc('total_vendido'); }
+
+        $productosVendidos = $queryVendidos->get();
         $idsVendidos = $productosVendidos->pluck('producto_id')->toArray();
 
-        $productosCeroVentas = Producto::whereNotIn('id', $idsVendidos)
-            ->orderBy('nombre', 'asc')
-            ->get();
+        $productosCeroVentas = Producto::with('categoria')->whereNotIn('id', $idsVendidos)->orderBy('nombre', 'asc')->get();
 
+        // --------------------------------------------------------------
+        // CATEGORÍAS (PDF)
+        // --------------------------------------------------------------
+        $rankingCategorias = $request->input('ranking_categorias', 'ventas');
         $detallesParaCategorias = DetalleTicket::whereHas('ticket', function($query) use ($rangoFechas) {
                 $query->where('estado', 'entregado')->whereBetween('created_at', $rangoFechas);
             })->with('producto.categoria')->get();
 
-        $categoriasVendidas = $detallesParaCategorias->groupBy(function($detalle) {
-            return $detalle->producto->categoria->nombre ?? 'Sin Categoría';
-        })->map(function($grupo) {
-            return $grupo->sum('cantidad');
-        });
-
+        $ventasPorCategoria = []; 
         $todasLasCategorias = Categoria::pluck('nombre');
-        $ventasPorCategoria = collect();
-
         foreach ($todasLasCategorias as $nombreCategoria) {
-            $ventasPorCategoria[$nombreCategoria] = $categoriasVendidas->get($nombreCategoria, 0);
+            $ventasPorCategoria[$nombreCategoria] = [ 'unidades' => 0, 'inversion' => 0, 'ventas' => 0, 'ganancia' => 0 ];
         }
-        
-        if ($categoriasVendidas->has('Sin Categoría')) {
-            $ventasPorCategoria['Sin Categoría'] = $categoriasVendidas['Sin Categoría'];
+        $ventasPorCategoria['Sin Categoría'] = ['unidades' => 0, 'inversion' => 0, 'ventas' => 0, 'ganancia' => 0];
+
+        foreach ($detallesParaCategorias as $detalle) {
+            $catNombre = $detalle->producto->categoria->nombre ?? 'Sin Categoría';
+            $inversion = $detalle->precio_compra * $detalle->cantidad;
+            $venta = $detalle->precio_unitario * $detalle->cantidad;
+
+            $ventasPorCategoria[$catNombre]['unidades'] += $detalle->cantidad;
+            $ventasPorCategoria[$catNombre]['inversion'] += $inversion;
+            $ventasPorCategoria[$catNombre]['ventas'] += $venta;
+            $ventasPorCategoria[$catNombre]['ganancia'] += ($venta - $inversion);
         }
 
-        $ventasPorCategoria = $ventasPorCategoria->sortDesc();
+        if ($rankingCategorias === 'ganancia') { $ventasPorCategoria = collect($ventasPorCategoria)->sortByDesc('ganancia'); } 
+        elseif ($rankingCategorias === 'cero') { $ventasPorCategoria = collect($ventasPorCategoria)->where('unidades', 0); } 
+        else { $ventasPorCategoria = collect($ventasPorCategoria)->sortByDesc('unidades'); }
 
-        // --- CAPTURAR LAS IMÁGENES DE LOS GRÁFICOS ---
+        // --------------------------------------------------------------
+        // TABLA TEMPORAL AVANZADA (PDF)
+        // --------------------------------------------------------------
+        $fechaInicioObj = Carbon::parse($fechaInicio);
+        $fechaFinObj = Carbon::parse($fechaFin);
+        $diasDiferencia = $fechaInicioObj->diffInDays($fechaFinObj);
+        $mesesEs = ['', 'Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+        $etiquetasBarras = []; $ventasBarras = []; $gananciasBarras = []; $gastosBarras = []; 
+        $tituloGraficoBarras = '';
+        $tituloTablaTemporal = '';
+
+        if ($modoAgrupacion === 'trimestre') {
+            $tituloGraficoBarras = 'Rendimiento Trimestral';
+            $tituloTablaTemporal = 'Trimestre';
+            $nombresTrimestres = [1 => '(Ene - Mar)', 2 => '(Abr - Jun)', 3 => '(Jul - Sep)', 4 => '(Oct - Dic)'];
+            
+            for ($date = $fechaInicioObj->copy()->startOfQuarter(); $date->lte($fechaFinObj); $date->addQuarter()) {
+                $numTrimestre = ceil($date->format('n') / 3);
+                $etiqueta = 'Trimestre ' . $numTrimestre . ' ' . $nombresTrimestres[$numTrimestre] . ' ' . $date->format('Y');
+                $etiquetasBarras[] = $etiqueta;
+                $ventasBarras[$etiqueta] = 0; $gananciasBarras[$etiqueta] = 0; $gastosBarras[$etiqueta] = 0;
+            }
+            foreach ($ticketsCompletados as $ticket) {
+                $numTrimestre = ceil($ticket->created_at->format('n') / 3);
+                $etiqueta = 'Trimestre ' . $numTrimestre . ' ' . $nombresTrimestres[$numTrimestre] . ' ' . $ticket->created_at->format('Y');
+                if (isset($ventasBarras[$etiqueta])) {
+                    $ventasBarras[$etiqueta] += $ticket->total;
+                    foreach ($ticket->detalles as $d) {
+                        if ($d->producto) {
+                            $c = $d->producto->precio_compra * $d->cantidad; $v = $d->precio_unitario * $d->cantidad;
+                            $gastosBarras[$etiqueta] += $c; $gananciasBarras[$etiqueta] += ($v - $c);
+                        }
+                    }
+                }
+            }
+        } elseif ($modoAgrupacion === 'semestre') {
+            $tituloGraficoBarras = 'Rendimiento Semestral';
+            $tituloTablaTemporal = 'Semestre';
+            $nombresSemestres = [1 => '(Ene - Jun)', 2 => '(Jul - Dic)'];
+
+            for ($date = $fechaInicioObj->copy()->startOfYear(); $date->lte($fechaFinObj); $date->addMonths(6)) {
+                $numSemestre = ceil($date->format('n') / 6);
+                $etiqueta = 'Semestre ' . $numSemestre . ' ' . $nombresSemestres[$numSemestre] . ' ' . $date->format('Y');
+                $etiquetasBarras[] = $etiqueta;
+                $ventasBarras[$etiqueta] = 0; $gananciasBarras[$etiqueta] = 0; $gastosBarras[$etiqueta] = 0;
+            }
+            foreach ($ticketsCompletados as $ticket) {
+                $numSemestre = ceil($ticket->created_at->format('n') / 6);
+                $etiqueta = 'Semestre ' . $numSemestre . ' ' . $nombresSemestres[$numSemestre] . ' ' . $ticket->created_at->format('Y');
+                if (isset($ventasBarras[$etiqueta])) {
+                    $ventasBarras[$etiqueta] += $ticket->total;
+                    foreach ($ticket->detalles as $d) {
+                        if ($d->producto) {
+                            $c = $d->producto->precio_compra * $d->cantidad; $v = $d->precio_unitario * $d->cantidad;
+                            $gastosBarras[$etiqueta] += $c; $gananciasBarras[$etiqueta] += ($v - $c);
+                        }
+                    }
+                }
+            }
+        } elseif ($modoAgrupacion === 'anual' || $diasDiferencia >= 365) {
+            $tituloGraficoBarras = 'Rendimiento Anual';
+            $tituloTablaTemporal = 'Año';
+            for ($date = $fechaInicioObj->copy()->startOfYear(); $date->lte($fechaFinObj); $date->addYear()) {
+                $etiqueta = $date->format('Y');
+                $etiquetasBarras[] = $etiqueta;
+                $ventasBarras[$etiqueta] = 0; $gananciasBarras[$etiqueta] = 0; $gastosBarras[$etiqueta] = 0;
+            }
+            foreach ($ticketsCompletados as $ticket) {
+                $etiqueta = $ticket->created_at->format('Y');
+                if (isset($ventasBarras[$etiqueta])) {
+                    $ventasBarras[$etiqueta] += $ticket->total;
+                    foreach ($ticket->detalles as $d) {
+                        if ($d->producto) {
+                            $c = $d->producto->precio_compra * $d->cantidad; $v = $d->precio_unitario * $d->cantidad;
+                            $gastosBarras[$etiqueta] += $c; $gananciasBarras[$etiqueta] += ($v - $c);
+                        }
+                    }
+                }
+            }
+        } elseif ($modoAgrupacion === 'mes' || ($diasDiferencia > 60 && $diasDiferencia < 365)) {
+            $tituloGraficoBarras = 'Rendimiento Mensual';
+            $tituloTablaTemporal = 'Mes';
+            for ($date = $fechaInicioObj->copy()->startOfMonth(); $date->lte($fechaFinObj); $date->addMonth()) {
+                $etiqueta = $mesesEs[$date->format('n')] . ' ' . $date->format('Y');
+                $etiquetasBarras[] = $etiqueta;
+                $ventasBarras[$etiqueta] = 0; $gananciasBarras[$etiqueta] = 0; $gastosBarras[$etiqueta] = 0;
+            }
+            foreach ($ticketsCompletados as $ticket) {
+                $etiqueta = $mesesEs[$ticket->created_at->format('n')] . ' ' . $ticket->created_at->format('Y');
+                if (isset($ventasBarras[$etiqueta])) {
+                    $ventasBarras[$etiqueta] += $ticket->total;
+                    foreach ($ticket->detalles as $d) {
+                        if ($d->producto) {
+                            $c = $d->producto->precio_compra * $d->cantidad; $v = $d->precio_unitario * $d->cantidad;
+                            $gastosBarras[$etiqueta] += $c; $gananciasBarras[$etiqueta] += ($v - $c);
+                        }
+                    }
+                }
+            }
+        } else {
+            $tituloGraficoBarras = 'Rendimiento Diario';
+            $tituloTablaTemporal = 'Día';
+            for ($date = $fechaInicioObj->copy(); $date->lte($fechaFinObj); $date->addDay()) {
+                $etiqueta = $date->format('d') . ' ' . $mesesEs[$date->format('n')];
+                $etiquetasBarras[] = $etiqueta;
+                $ventasBarras[$etiqueta] = 0; $gananciasBarras[$etiqueta] = 0; $gastosBarras[$etiqueta] = 0;
+            }
+            foreach ($ticketsCompletados as $ticket) {
+                $etiqueta = $ticket->created_at->format('d') . ' ' . $mesesEs[$ticket->created_at->format('n')];
+                if (isset($ventasBarras[$etiqueta])) {
+                    $ventasBarras[$etiqueta] += $ticket->total;
+                    foreach ($ticket->detalles as $d) {
+                        if ($d->producto) {
+                            $c = $d->producto->precio_compra * $d->cantidad; $v = $d->precio_unitario * $d->cantidad;
+                            $gastosBarras[$etiqueta] += $c; $gananciasBarras[$etiqueta] += ($v - $c);
+                        }
+                    }
+                }
+            }
+        }
+
+        $tablaTemporal = [];
+        foreach ($etiquetasBarras as $etiqueta) {
+            $tablaTemporal[] = [
+                'periodo' => $etiqueta, 'ingresos' => $ventasBarras[$etiqueta], 'costos' => $gastosBarras[$etiqueta], 'ganancia' => $gananciasBarras[$etiqueta]
+            ];
+        }
+
         $graficoBarras = $request->input('grafico_barras_base64');
         $graficoDona = $request->input('grafico_dona_base64');
 
@@ -283,10 +505,9 @@ class ReporteController extends Controller
             'fechaInicio', 'fechaFin', 'ventasTotales', 'gananciaNeta','costosTotales', 
             'totalTickets', 'ticketsEntregados', 'nuevosUsuarios', 
             'productosVendidos', 'productosCeroVentas', 'ventasPorCategoria',
-            'graficoBarras', 'graficoDona'
+            'graficoBarras', 'graficoDona', 'tablaTemporal', 'tituloGraficoBarras', 'tituloTablaTemporal'
         ));
 
         return $pdf->download('Reporte_Ventas_'.$fechaInicio.'_al_'.$fechaFin.'.pdf');
     }
-
 }

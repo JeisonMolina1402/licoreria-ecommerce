@@ -3,11 +3,12 @@
 use App\Http\Controllers\CheckoutController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\InventarioController;
-use App\Http\Controllers\ProfileController; 
+use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ReporteController;
 use App\Http\Controllers\TicketController;
 use App\Http\Controllers\TiendaController;
-use App\Http\Controllers\UserController; // <-- IMPORTANTE: Agregamos el nuevo controlador
+use App\Http\Controllers\TurnoCajaController;
+use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
 
 // ==========================================
@@ -50,6 +51,7 @@ Route::middleware(['auth', 'admin'])->group(function () {
 
     // Módulo de Inventario
     Route::get('/inventario', [InventarioController::class, 'index'])->name('inventario');
+    Route::get('/inventario/pdf', [InventarioController::class, 'exportarPdf'])->name('inventario.pdf')->middleware('auth');
     Route::post('/inventario/guardar', [InventarioController::class, 'store'])->name('inventario.store');
     Route::post('/inventario/actualizar/{id}', [InventarioController::class, 'update'])->name('inventario.update');
     Route::delete('/inventario/eliminar/{id}', [InventarioController::class, 'destroy'])->name('inventario.destroy');
@@ -63,6 +65,10 @@ Route::middleware(['auth', 'admin'])->group(function () {
     Route::get('/tickets/nueva-venta', [TicketController::class, 'create'])->name('tickets.create');
     Route::post('/tickets/estado/{id}', [TicketController::class, 'cambiarEstado'])->name('tickets.estado');
     Route::post('/tickets', [TicketController::class, 'store'])->name('tickets.store');
+    
+    // Rutas para el Control de Caja
+    Route::post('/caja/abrir', [TurnoCajaController::class, 'abrir'])->name('caja.abrir');
+    Route::post('/caja/cerrar', [TurnoCajaController::class, 'cerrar'])->name('caja.cerrar');
 
     // ==========================================
     // NUEVO: MÓDULO DE USUARIOS (ADMINISTRACIÓN)
@@ -71,7 +77,6 @@ Route::middleware(['auth', 'admin'])->group(function () {
     Route::post('/usuarios', [UserController::class, 'store'])->name('usuarios.store');
     Route::put('/usuarios/{usuario}', [UserController::class, 'update'])->name('usuarios.update');
     Route::patch('/usuarios/{usuario}/estado', [UserController::class, 'toggleEstado'])->name('usuarios.toggle');
-
 });
 
 // ==========================================

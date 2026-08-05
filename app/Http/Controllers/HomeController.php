@@ -5,7 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\Producto;
 use App\Models\Ticket;
-use Carbon\Carbon; // Necesario para manejar las fechas de hoy
+use Carbon\Carbon; 
 
 class HomeController extends Controller
 {

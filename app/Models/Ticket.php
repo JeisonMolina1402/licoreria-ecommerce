@@ -14,6 +14,7 @@ class Ticket extends Model
         'user_id', 
         'codigo_reserva', 
         'estado', 
+        'metodo_pago',
         'total', 
         'comprobante_whatsapp'
     ];

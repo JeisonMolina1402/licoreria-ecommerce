@@ -2,14 +2,14 @@
 
 console.log('Script de recarga automática de tickets INICIADO.'); 
 
-// Ejecutar cada 10 segundos (10000 milisegundos) para la demostración
+// Ejecutar cada 10 segundos que son 10000 milisegundos 
 setInterval(() => {
-    // 1. Verificamos que no haya ningún Modal (recuadro negro) abierto
+    // 1. Verificamos que no haya ningún Modal  abierto
     if (!document.body.classList.contains('modal-open')) {
         
         console.log('Buscando actualizaciones...'); 
         
-        // 2. Traemos la información más fresca de la base de datos de forma invisible
+        // 2. Traemos la información nueva de la base de datos 
         fetch(window.location.href)
             .then(response => response.text())
             .then(html => {

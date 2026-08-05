@@ -20,11 +20,13 @@
 
         <form id="formExportarPdf" action="{{ route('reportes.pdf') }}" method="POST" class="d-none">
             @csrf
-            <!-- Mantenemos las fechas para que el PDF sepa qué rango exportar -->
             <input type="hidden" name="fecha_inicio" value="{{ request('fecha_inicio', $fechaInicio) }}">
             <input type="hidden" name="fecha_fin" value="{{ request('fecha_fin', $fechaFin) }}">
-            
-            <!-- Aquí JavaScript inyectará las imágenes de los gráficos -->
+
+            <input type="hidden" name="ranking_productos" value="{{ $rankingProductos }}">
+            <input type="hidden" name="ranking_categorias" value="{{ $rankingCategorias }}">
+            <input type="hidden" name="modo_agrupacion" value="{{ $modoAgrupacion }}"> <!-- NUEVO -->
+
             <input type="hidden" name="grafico_barras_base64" id="grafico_barras_base64">
             <input type="hidden" name="grafico_dona_base64" id="grafico_dona_base64">
         </form>
@@ -32,22 +34,41 @@
 
         <div class="card shadow-sm border-0 mb-4">
             <div class="card-body p-4">
-                <form action="{{ route('reportes.index') }}" method="GET" class="row align-items-end g-3">
-                    <div class="col-md-4">
-                        <label class="form-label text-muted small fw-bold text-uppercase"><i
-                                class="fa-regular fa-calendar me-1"></i> Desde</label>
-                        <input type="date" name="fecha_inicio" class="form-control form-control-lg bg-light"
-                            value="{{ $fechaInicio }}">
+                <!-- Agregamos el ID formFiltroPrincipal -->
+                <form action="{{ route('reportes.index') }}" method="GET" id="formFiltroPrincipal">
+                    <!-- Input oculto para la agrupación rápida -->
+                    <input type="hidden" name="modo_agrupacion" id="input_modo_agrupacion" value="{{ $modoAgrupacion }}">
+                    <div class="row align-items-end g-3">
+                        <div class="col-md-4">
+                            <label class="form-label text-muted small fw-bold text-uppercase"><i class="fa-regular fa-calendar me-1"></i> Desde</label>
+                            <!-- Agregamos el ID input_fecha_inicio -->
+                            <input type="date" name="fecha_inicio" id="input_fecha_inicio" class="form-control form-control-lg bg-light" value="{{ $fechaInicio }}">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label text-muted small fw-bold text-uppercase"><i class="fa-regular fa-calendar-check me-1"></i> Hasta</label>
+                            <!-- Agregamos el ID input_fecha_fin -->
+                            <input type="date" name="fecha_fin" id="input_fecha_fin" class="form-control form-control-lg bg-light" value="{{ $fechaFin }}">
+                        </div>
+                        <div class="col-md-4">
+                            <!-- Al hacer clic manualmente, borramos el modo de agrupación para que actúe por días -->
+                            <button type="submit" class="btn btn-primary btn-lg w-100 fw-bold shadow-sm" onclick="document.getElementById('input_modo_agrupacion').value=''">
+                                <i class="fa-solid fa-filter me-2"></i> Filtrar Datos
+                            </button>
+                        </div>
                     </div>
-                    <div class="col-md-4">
-                        <label class="form-label text-muted small fw-bold text-uppercase"><i
-                                class="fa-regular fa-calendar-check me-1"></i> Hasta</label>
-                        <input type="date" name="fecha_fin" class="form-control form-control-lg bg-light"
-                            value="{{ $fechaFin }}">
-                    </div>
-                    <div class="col-md-4">
-                        <button type="submit" class="btn btn-primary btn-lg w-100 fw-bold shadow-sm">
-                            <i class="fa-solid fa-filter me-2"></i> Filtrar Datos
+
+                    <!-- BOTONES DE ACCIÓN RÁPIDA -->
+                    <div class="mt-3 pt-3 border-top d-flex flex-wrap gap-2 align-items-center">
+                        <span class="text-muted small fw-bold me-2"><i class="fa-solid fa-bolt text-warning me-1"></i> Atajos:</span>
+                        <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill px-3 fw-bold" onclick="aplicarFiltroRapido('mes')">Mes</button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill px-3 fw-bold" onclick="aplicarFiltroRapido('trimestre')">Trimestre</button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill px-3 fw-bold" onclick="aplicarFiltroRapido('semestre')">Semestre</button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill px-3 fw-bold" onclick="aplicarFiltroRapido('anual')">Anual (3 años)</button>
+
+                        <div class="vr mx-1"></div> <!-- Línea divisoria vertical -->
+                        
+                        <button type="button" class="btn btn-sm btn-light border text-danger rounded-pill px-3 fw-bold" onclick="aplicarFiltroRapido('limpiar')">
+                            <i class="fa-solid fa-eraser me-1"></i> Limpiar Filtro
                         </button>
                     </div>
                 </form>
@@ -163,51 +184,70 @@
             </div>
         </div>
 
-        <!-- Fila 2: Tablas y Gráficos -->
-        <div class="row g-4">
-
-            <!-- Lista de Productos Paginada -->
-            <div class="col-lg-7" id="tabla-ranking">
+        <!-- Fila 2: TABLA DE RENDIMIENTO (ANCHO COMPLETO) -->
+        <div class="row mb-4">
+            <div class="col-12" id="tabla-ranking">
                 <div class="card shadow-sm border-0 h-100 rounded-4">
                     <div class="card-header bg-white py-3 border-bottom d-flex align-items-center justify-content-between">
                         <h6 class="m-0 fw-bold text-primary">
                             <i class="fa-solid fa-trophy text-warning me-2"></i> Rendimiento de Productos
                         </h6>
-                        
+
                         <div class="d-flex align-items-center gap-3">
-                            <!-- Filtro de Estado de Ventas -->
                             <form action="{{ route('reportes.index') }}#tabla-ranking" method="GET" class="m-0">
-                                <!-- Mantenemos las fechas actuales ocultas para no perder ese filtro al cambiar de ranking -->
-                                <input type="hidden" name="fecha_inicio" value="{{ request('fecha_inicio', $fechaInicio) }}">
+                                <input type="hidden" name="fecha_inicio"
+                                    value="{{ request('fecha_inicio', $fechaInicio) }}">
                                 <input type="hidden" name="fecha_fin" value="{{ request('fecha_fin', $fechaFin) }}">
-                                
-                                <select name="tipo_ranking" class="form-select form-select-sm border-primary fw-bold text-primary" onchange="this.form.submit()" style="cursor: pointer;">
-                                    <option value="top" {{ request('tipo_ranking') == 'top' ? 'selected' : '' }}>📈 Más Vendidos</option>
-                                    <option value="cero" {{ request('tipo_ranking') == 'cero' ? 'selected' : '' }}>📉 Sin Ventas (0)</option>
+                                <input type="hidden" name="ranking_categorias" value="{{ $rankingCategorias }}">
+                                <input type="hidden" name="modo_agrupacion" value="{{ $modoAgrupacion }}"> <!-- NUEVO -->
+
+                                <select name="ranking_productos"
+                                    class="form-select form-select-sm border-primary fw-bold text-primary"
+                                    onchange="this.form.submit()" style="cursor: pointer;">
+                                    <option value="ventas" {{ $rankingProductos == 'ventas' ? 'selected' : '' }}>🥇 Más
+                                        Vendidos (Unidades)</option>
+                                    <option value="ganancia" {{ $rankingProductos == 'ganancia' ? 'selected' : '' }}>💰
+                                        Mayor Ganancia (Dinero)</option>
+                                    <option value="cero" {{ $rankingProductos == 'cero' ? 'selected' : '' }}>📉 Sin
+                                        Movimiento (0 Ventas)</option>
                                 </select>
                             </form>
-
-                            <span class="badge bg-light text-dark border">Página {{ $productosTop->currentPage() }} de {{ $productosTop->lastPage() }}</span>
+                            <span class="badge bg-light text-dark border">Página {{ $productosTop->currentPage() }} de
+                                {{ $productosTop->lastPage() }}</span>
                         </div>
                     </div>
 
                     <div class="card-body p-0 d-flex flex-column">
                         <div class="table-responsive flex-grow-1">
-                            <table class="table table-hover align-middle mb-0">
+                            <table class="table table-hover align-middle text-center mb-0">
                                 <thead class="table-light">
                                     <tr>
-                                        <th class="px-4 py-3 text-uppercase text-muted small">Posición</th>
-                                        <th class="py-3 text-uppercase text-muted small">Producto</th>
-                                        <th class="py-3 text-uppercase text-muted small text-center">Unidades</th>
+                                        <th class="px-4 py-3 text-uppercase text-muted small text-start">Posición</th>
+                                        <th class="py-3 text-uppercase text-muted small text-start">Producto</th>
+                                        <th class="py-3 text-uppercase text-muted small">Categoría</th>
+                                        <th class="py-3 text-uppercase text-muted small">P. Compra</th>
+                                        <th class="py-3 text-uppercase text-muted small">P. Venta Actual</th>
+                                        <th class="py-3 text-uppercase text-muted small border-start">Total Inversión</th>
+                                        <th class="py-3 text-uppercase text-muted small">Total Venta</th>
+                                        <th class="py-3 text-uppercase text-muted small text-success fw-bold">Ganancia
+                                            Total</th>
+                                        <th class="py-3 text-uppercase text-muted small border-start">Unidades</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     @forelse($productosTop as $index => $producto)
+                                        @php
+                                            // Cálculos basados en el historial real de la base de datos
+                                            $unidades = $producto->total_vendido ?? 0;
+                                            $totalVenta = $producto->ingreso_generado ?? 0; // Usamos el ingreso real
+                                            $ganancia = $producto->ganancia_generada ?? 0;  // Usamos la ganancia real
+                                            $totalInversion = $totalVenta - $ganancia;      // Inversión calculada por diferencia matemática
+                                        @endphp
                                         <tr>
-                                            <td class="px-4 py-3 fw-bold text-muted">
+                                            <td class="px-4 py-3 fw-bold text-muted text-start">
                                                 #{{ ($productosTop->currentPage() - 1) * $productosTop->perPage() + $loop->iteration }}
                                             </td>
-                                            <td class="py-3">
+                                            <td class="py-3 text-start">
                                                 <div class="d-flex align-items-center">
                                                     <div class="bg-white border rounded p-1 me-3 d-flex justify-content-center align-items-center shadow-sm"
                                                         style="width: 45px; height: 45px;">
@@ -222,70 +262,133 @@
                                                     <strong>{{ $producto->nombre }}</strong>
                                                 </div>
                                             </td>
-                                            <td class="py-3 text-center">
-                                                @if (($producto->total_vendido ?? 0) > 0)
+                                            <td class="py-3">{{ $producto->categoria->nombre ?? 'Sin Categoría' }}</td>
+                                            <td class="py-3 text-muted">${{ number_format($producto->precio_compra, 2) }}
+                                            </td>
+                                            <td class="py-3">${{ number_format($producto->precio, 2) }}</td>
+
+                                            <td class="py-3 border-start text-danger">
+                                                ${{ number_format($totalInversion, 2) }}</td>
+                                            <td class="py-3 text-primary fw-bold">${{ number_format($totalVenta, 2) }}
+                                            </td>
+                                            <td class="py-3 text-success fw-bold">${{ number_format($ganancia, 2) }}</td>
+
+                                            <td class="py-3 border-start">
+                                                @if ($unidades > 0)
                                                     <span class="badge bg-success rounded-pill px-3 py-2"
-                                                        style="font-size: 0.9rem;">
-                                                        {{ $producto->total_vendido }} unid.
-                                                    </span>
+                                                        style="font-size: 0.9rem;">{{ $unidades }} unid.</span>
                                                 @else
                                                     <span class="badge bg-danger rounded-pill px-3 py-2"
-                                                        style="font-size: 0.9rem;">
-                                                        0 unid.
-                                                    </span>
+                                                        style="font-size: 0.9rem;">0 unid.</span>
                                                 @endif
                                             </td>
                                         </tr>
                                     @empty
-                                        {{-- EMPTY STATE: Si no hay ventas, no se rompe la tabla, se muestra este mensaje amigable --}}
                                         <tr>
-                                            <td colspan="3" class="text-center py-5 text-muted">
+                                            <td colspan="9" class="text-center py-5 text-muted">
                                                 <i class="fa-solid fa-box-open fs-2 mb-2 d-block"></i>
-                                                No hay productos en el inventario.
+                                                No hay productos en este rango.
                                             </td>
                                         </tr>
                                     @endforelse
                                 </tbody>
                             </table>
                         </div>
-                        <!-- Botones de Paginación -->
-                        <!-- Botones de Paginación -->
                         <div class="border-top p-3 bg-light rounded-bottom-4">
                             {{ $productosTop->fragment('tabla-ranking')->links() }}
                         </div>
                     </div>
                 </div>
             </div>
+        </div>
 
-            <!-- Columna Derecha: Gráfico y Estado -->
-            <div class="col-lg-5 d-flex flex-column gap-4">
+        <!-- Fila 3: GRÁFICO DE DONA Y ESTADOS DE RESERVA ABAJO -->
+        <div class="row g-4">
+            <div class="col-lg-7" id="tabla-categorias">
+                <div class="card shadow-sm border-0 rounded-4 h-100">
+                    <div class="card-header bg-white py-3 border-bottom d-flex align-items-center justify-content-between">
+                        <h6 class="m-0 fw-bold text-dark"><i class="fa-solid fa-chart-pie text-success me-2"></i>
+                            Rendimiento por Categoría</h6>
 
-                <!-- Gráfico de Dona: Ventas por Categoría -->
-                <div class="card shadow-sm border-0 rounded-4 flex-grow-1">
-                    <div class="card-header bg-white py-3 border-bottom">
-                        <h6 class="m-0 fw-bold text-dark"><i class="fa-solid fa-chart-pie text-success me-2"></i> Ventas
-                            por Categoría</h6>
+                        <form action="{{ route('reportes.index') }}#tabla-categorias" method="GET" class="m-0">
+                            <input type="hidden" name="fecha_inicio"
+                                value="{{ request('fecha_inicio', $fechaInicio) }}">
+                            <input type="hidden" name="fecha_fin" value="{{ request('fecha_fin', $fechaFin) }}">
+                            <input type="hidden" name="ranking_productos" value="{{ $rankingProductos }}">
+                            <input type="hidden" name="modo_agrupacion" value="{{ $modoAgrupacion }}"> <!-- NUEVO -->
+
+                            <select name="ranking_categorias"
+                                class="form-select form-select-sm border-success fw-bold text-success"
+                                onchange="this.form.submit()" style="cursor: pointer;">
+                                <option value="ventas" {{ $rankingCategorias == 'ventas' ? 'selected' : '' }}>🥇 Más
+                                    Vendidos (Unidades)</option>
+                                <option value="ganancia" {{ $rankingCategorias == 'ganancia' ? 'selected' : '' }}>💰 Mayor
+                                    Ganancia (Dinero)</option>
+                                <option value="cero" {{ $rankingCategorias == 'cero' ? 'selected' : '' }}>📉 Sin
+                                    Movimiento (0 Ventas)</option>
+                            </select>
+                        </form>
                     </div>
-                    <div class="card-body d-flex justify-content-center align-items-center"
-                        style="position: relative; min-height: 350px;">
-                        @if ($totalTickets > 0)
-                            <canvas id="graficoCategorias" data-nombres="{{ $nombresCategorias }}"
-                                data-cantidades="{{ $cantidadesCategorias }}">
-                            </canvas>
-                        @else
-                            <div class="text-center text-muted">
-                                <i class="fa-solid fa-chart-simple fs-1 mb-2"></i>
-                                <p>No hay datos suficientes.</p>
-                            </div>
-                        @endif
+
+                    <div class="card-body p-4 d-flex flex-column">
+                        <div class="d-flex justify-content-center align-items-center mb-4"
+                            style="position: relative; min-height: 250px;">
+                            @if ($totalTickets > 0)
+                                <canvas id="graficoCategorias" data-nombres="{{ $nombresCategorias }}"
+                                    data-cantidades="{{ $cantidadesCategorias }}"></canvas>
+                            @else
+                                <div class="text-center text-muted">
+                                    <i class="fa-solid fa-chart-simple fs-1 mb-2"></i>
+                                    <p>No hay datos suficientes.</p>
+                                </div>
+                            @endif
+                        </div>
+
+                        <div class="table-responsive border rounded-3 mt-2 flex-grow-1">
+                            <table class="table table-hover align-middle text-center mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th class="py-2 text-uppercase text-muted small text-start ps-3">Categoría</th>
+                                        <th class="py-2 text-uppercase text-muted small">Inversión</th>
+                                        <th class="py-2 text-uppercase text-muted small">Ventas</th>
+                                        <th class="py-2 text-uppercase text-muted small text-success fw-bold">Ganancia</th>
+                                        <th class="py-2 text-uppercase text-muted small">Unidades</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @forelse($ventasPorCategoria as $categoria => $datos)
+                                        <tr>
+                                            <td class="py-2 text-start ps-3 fw-bold">{{ $categoria }}</td>
+                                            <td class="py-2 text-danger">${{ number_format($datos['inversion'], 2) }}</td>
+                                            <td class="py-2 text-primary fw-bold">
+                                                ${{ number_format($datos['ventas'], 2) }}</td>
+                                            <td class="py-2 text-success fw-bold">
+                                                ${{ number_format($datos['ganancia'], 2) }}</td>
+                                            <td class="py-2">
+                                                <span
+                                                    class="badge @if ($datos['unidades'] == 0) bg-danger @else bg-success @endif rounded-pill px-2">
+                                                    {{ $datos['unidades'] }} unid.
+                                                </span>
+                                            </td>
+                                        </tr>
+                                    @empty
+                                        <tr>
+                                            <td colspan="5" class="py-4 text-center text-muted">No hay datos en este
+                                                rango.</td>
+                                        </tr>
+                                    @endforelse
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
+            </div>
 
-                <!-- Resumen de Efectividad -->
-                <div class="card shadow-sm border-0 rounded-4">
-                    <div class="card-body p-4">
+            <!-- Resumen de Efectividad -->
+            <div class="col-lg-5">
+                <div class="card shadow-sm border-0 rounded-4 h-100">
+                    <div class="card-body p-4 d-flex flex-column justify-content-center">
                         <h6 class="fw-bold text-dark mb-4 border-bottom pb-2">Estado de Reservas</h6>
-
                         <div class="mb-4">
                             <div class="d-flex justify-content-between mb-1">
                                 <span class="fw-bold text-success">Entregados (Completados)</span>
@@ -298,7 +401,6 @@
                                 </div>
                             </div>
                         </div>
-
                         <div>
                             <div class="d-flex justify-content-between mb-1">
                                 <span class="fw-bold text-danger">Cancelados / Vencidos</span>
@@ -313,19 +415,17 @@
                         </div>
                     </div>
                 </div>
-
             </div>
         </div>
-    </div>
 
-@endsection
+    @endsection
 
-<!-- Gráfico de Ventas por Categoría -->
-@push('scripts')
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Gráfico de Ventas por Categoría -->
+    @push('scripts')
+        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-    <!--Plugin para imprimir etiquetas dentro de los gráficos -->
-    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
+        <!--Plugin para imprimir etiquetas dentro de los gráficos -->
+        <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
 
-    @vite(['resources/js/reportes.js'])
-@endpush
+        @vite(['resources/js/reportes.js'])
+    @endpush

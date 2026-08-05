@@ -24,8 +24,8 @@ class CancelarTicketsVencidos extends Command
      */
     public function handle()
     {
-        // 1. Calculamos la hora límite (hace 10 minutos exactos)
-        $limite = Carbon::now()->subMinutes(10);
+        // 1. Calculamos la hora límite hace 10 minutos exactos
+        $limite = Carbon::now()->subMinutes(1);
 
         // 2. Buscamos tickets "pendientes" creados antes de esa hora límite
         $ticketsVencidos = Ticket::where('estado', 'pendiente')
@@ -51,7 +51,7 @@ class CancelarTicketsVencidos extends Command
                 // Recorremos los detalles de ese ticket para devolver las botellas
                 foreach ($ticket->detalles as $detalle) {
                     if ($detalle->producto) {
-                        // "increment" hace lo opuesto a "decrement", suma la cantidad al stock
+                        // increment hace lo opuesto a decrement suma la cantidad al stock
                         $detalle->producto->increment('stock', $detalle->cantidad);
                     }
                 }

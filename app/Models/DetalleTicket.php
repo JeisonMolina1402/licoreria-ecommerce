@@ -16,7 +16,8 @@ class DetalleTicket extends Model
         'ticket_id', 
         'producto_id', 
         'cantidad', 
-        'precio_unitario'
+        'precio_unitario',
+        'precio_compra'
     ];
 
     public function ticket()

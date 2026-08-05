@@ -70,7 +70,8 @@
             <!-- Visible solo en pantallas pequeñas (d-md-none) -->
             <!-- ========================================== -->
             <div class="col-12 d-md-none bg-dark p-3 d-flex justify-content-between align-items-center">
-                <h5 class="text-white mb-0">🍷 Licorería Admin</h5>
+                <img src="{{ asset('images/logos/logo.png') }}" alt="Licorería Admin"
+                    style="height: 60px; filter: brightness(0) invert(1);">
 
                 <!-- Botón disparador del panel lateral Offcanvas de Bootstrap -->
                 <button class="btn btn-outline-light btn-sm" type="button" data-bs-toggle="offcanvas"
@@ -89,7 +90,12 @@
                 <div class="position-sticky pt-4 menu-estatico"
                     style="top: 0; height: 100vh; overflow-y: auto; overflow-x: hidden;">
 
-                    <h5 class="text-white text-center mb-4">🍷 Licorería</h5>
+                    <div class="text-center mb-4 px-3 mt-3">
+                        <a href="{{ route('home') }}">
+                            <img src="{{ asset('images/logos/logo.png') }}" alt="Licorería Panel" class="img-fluid"
+                                style="max-height: 100px; filter: brightness(0) invert(1);">
+                        </a>
+                    </div>
 
                     <!-- Agregamos pb-5 (Padding Bottom) para que los últimos enlaces no queden pegados al borde inferior de la pantalla -->
                     <ul class="nav flex-column text-white px-2 pb-5">
@@ -138,7 +144,10 @@
             <!-- ========================================== -->
             <div class="offcanvas offcanvas-start bg-dark text-white" tabindex="-1" id="menuMovil">
                 <div class="offcanvas-header border-bottom border-secondary">
-                    <h5 class="offcanvas-title">🍷 Licorería</h5>
+                    <h5 class="offcanvas-title d-flex align-items-center">
+                        <img src="{{ asset('images/logos/logo.png') }}" alt="Licorería Menu"
+                            style="height: 60px; filter: brightness(0) invert(1);">
+                    </h5>
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas"></button>
                 </div>
                 <div class="offcanvas-body px-2">
