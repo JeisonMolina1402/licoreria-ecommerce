@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AuditoriaController;
 use App\Http\Controllers\CheckoutController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\InventarioController;
@@ -20,25 +21,28 @@ Route::get('/', [TiendaController::class, 'index'])->name('tienda.index');
 Route::get('/categoria/{categoria}', [TiendaController::class, 'index'])->name('tienda.categoria');
 
 // ==========================================
-// PROCESO DE COMPRA (CHECKOUT) - REQUIERE LOGIN DE CLIENTE
+// PROCESO DE COMPRA (CHECKOUT) - REQUIERE LOGIN DE CLIENTE Y VERIFICACIÓN
 // ==========================================
 Route::post('/checkout', [CheckoutController::class, 'procesar'])
-    ->middleware('auth')
+    ->middleware(['auth', 'verified']) // <-- Añadido el 'verified'
     ->name('checkout.procesar');
 
 Route::get('/checkout/exito/{id}', [CheckoutController::class, 'exito'])
-    ->middleware('auth')
+    ->middleware(['auth', 'verified']) // <-- Añadido el 'verified'
     ->name('tienda.exito');
 
 // Historial de pedidos del cliente
 Route::get('/mis-pedidos', [TiendaController::class, 'misPedidos'])
-    ->middleware('auth')
+    ->middleware(['auth', 'verified']) // <-- Añadido el 'verified'
     ->name('tienda.mis-pedidos');
 
 // ==========================================
 // PANEL ADMINISTRATIVO Y PERFIL - PROTEGIDO (SOLO ADMIN Y VENDEDOR)
 // ==========================================
 Route::middleware(['auth', 'admin'])->group(function () {
+
+//mas adelante verificar admins y vendedores con correors verificados reales
+//Route::middleware(['auth', 'verified', 'admin'])->group(function () {
 
     // Rutas del Perfil de Usuario 
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
@@ -69,6 +73,9 @@ Route::middleware(['auth', 'admin'])->group(function () {
     // Rutas para el Control de Caja
     Route::post('/caja/abrir', [TurnoCajaController::class, 'abrir'])->name('caja.abrir');
     Route::post('/caja/cerrar', [TurnoCajaController::class, 'cerrar'])->name('caja.cerrar');
+
+    //Módulo de Auditoria
+    Route::get('/auditoria', [AuditoriaController::class, 'index'])->name('auditoria.index');
 
     // ==========================================
     // NUEVO: MÓDULO DE USUARIOS (ADMINISTRACIÓN)

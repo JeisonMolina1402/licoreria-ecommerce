@@ -77,8 +77,22 @@
                                         <tr>
                                             <td class="fw-bold">{{ $usuario->name }}</td>
                                             <td>
-                                                <div class="small"><i class="fa-solid fa-envelope text-muted me-1"></i>
-                                                    {{ $usuario->email }}</div>
+                                                <div>
+                                                    <i class="fas fa-envelope text-muted"></i> {{ $usuario->email }}
+                                                </div>
+
+                                                {{-- NUEVO: Etiqueta de Verificación --}}
+                                                <div class="mt-1">
+                                                    @if ($usuario->email_verified_at)
+                                                        <span class="badge bg-success" style="font-size: 0.7rem;">
+                                                            <i class="fas fa-check-circle"></i> Verificado
+                                                        </span>
+                                                    @else
+                                                        <span class="badge bg-warning text-dark" style="font-size: 0.7rem;">
+                                                            <i class="fas fa-clock"></i> Pendiente de verificar
+                                                        </span>
+                                                    @endif
+                                                </div>
                                                 <div class="small"><i class="fa-solid fa-phone text-muted me-1"></i>
                                                     {{ $usuario->telefono ?? 'N/A' }}</div>
                                                 <div class="small"><i class="fa-solid fa-id-card text-muted me-1"></i>
@@ -155,8 +169,23 @@
                                         <tr>
                                             <td class="fw-bold">{{ $cliente->name }}</td>
                                             <td>
-                                                <div class="small"><i class="fa-solid fa-envelope text-muted me-1"></i>
-                                                    {{ $cliente->email }}</div>
+                                                <div>
+                                                    <i class="fas fa-envelope text-muted"></i> {{ $usuario->email }}
+                                                </div>
+
+                                                {{-- NUEVO: Etiqueta de Verificación --}}
+                                                <div class="mt-1">
+                                                    @if ($usuario->email_verified_at)
+                                                        <span class="badge bg-success" style="font-size: 0.7rem;">
+                                                            <i class="fas fa-check-circle"></i> Verificado
+                                                        </span>
+                                                    @else
+                                                        <span class="badge bg-warning text-dark"
+                                                            style="font-size: 0.7rem;">
+                                                            <i class="fas fa-clock"></i> Pendiente de verificar
+                                                        </span>
+                                                    @endif
+                                                </div>
                                                 <div class="small"><i class="fa-solid fa-phone text-muted me-1"></i>
                                                     {{ $cliente->telefono ?? 'N/A' }}</div>
                                             </td>

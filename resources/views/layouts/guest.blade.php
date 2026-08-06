@@ -3,42 +3,43 @@
     <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
-        
-        {{-- TOKEN CSRF: Directiva de seguridad inyectada por Laravel para validar que el formulario de Login/Registro provenga de esta app y no de un atacante (Cross-Site Request Forgery) --}}
         <meta name="csrf-token" content="{{ csrf_token() }}">
-
-        {{-- TÍTULO DINÁMICO: Busca el nombre de la app en el archivo .env (APP_NAME), si no lo encuentra, usa 'Laravel' por defecto --}}
         <title>{{ config('app.name', 'Laravel') }}</title>
 
-        <!-- Preconexión a servidores de fuentes para optimizar el tiempo de carga (Performance) -->
         <link rel="preconnect" href="https://fonts.bunny.net">
         <link href="https://fonts.bunny.net/css?family=figtree:400,500,600&display=swap" rel="stylesheet" />
 
-        {{-- VITE ASSET BUNDLING: Carga los estilos de Tailwind y los scripts base específicos para la autenticación --}}
         @vite(['resources/css/app.css', 'resources/js/app.js'])
     </head>
     
-    <!-- Clases utilitarias de Tailwind CSS para la tipografía base y el suavizado de fuentes (antialiased) -->
     <body class="font-sans text-gray-900 antialiased">
-        
-        <!-- CONTENEDOR PRINCIPAL: Usa Flexbox (flex) para centrar vertical y horizontalmente (sm:justify-center items-center) ocupando el 100% del alto de la pantalla (min-h-screen) -->
-        <div class="min-h-screen flex flex-col sm:justify-center items-center pt-6 sm:pt-0 bg-gray-100">
+        <div class="flex min-h-screen bg-white">
             
-            <!-- BLOQUE DEL LOGOTIPO -->
-            <div>
-                <a href="/">
-                    {{-- COMPONENTE ANÓNIMO DE BLADE: La etiqueta <x- ...> no es HTML estándar. Le indica a Laravel que busque el archivo resources/views/components/application-logo.blade.php y lo inyecte aquí --}}
-                    <x-application-logo class="w-20 h-20 fill-current text-gray-500" />
-                </a>
+            {{-- PANEL IZQUIERDO: Imagen fotográfica --}}
+            <div class="hidden md:block md:w-1/2 lg:w-2/3 bg-cover bg-center bg-no-repeat relative"
+                 style="background-image: url('{{ asset('images/logos/fondo-login.png') }}');">
+                <div class="absolute inset-0 bg-black/40"></div>
             </div>
 
-            <!-- TARJETA DEL FORMULARIO (CARD) -->
-            <!-- Se adapta a dispositivos móviles (w-full) pero tiene un ancho máximo en pantallas grandes (sm:max-w-md), agregando sombra (shadow-md) y bordes redondeados (sm:rounded-lg) -->
-            <div class="w-full sm:max-w-md mt-6 px-6 py-4 bg-white shadow-md overflow-hidden sm:rounded-lg">
+            {{-- PANEL DERECHO: Fondo gris muy claro para que la sombra sea visible --}}
+            <div class="w-full md:w-1/2 lg:w-1/3 flex flex-col justify-center items-center p-4 sm:p-12 bg-gray-50 z-10">
                 
-                {{-- ARQUITECTURA BASADA EN COMPONENTES (SLOT) --}}
-                {{-- A diferencia del @yield que usamos en app.blade.php, Breeze usa la variable $slot. Todo el código de auth/login.blade.php o auth/register.blade.php se inyectará matemáticamente en esta línea --}}
-                {{ $slot }}
+                {{-- TARJETA FLOTANTE CON SOMBRA SUAVE (Estilo LinkedIn/Apple) --}}
+                <div class="w-full max-w-sm bg-white px-8 py-10 rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.12)] border border-gray-100">
+                    
+                    {{-- TU LOGO OFICIAL --}}
+                    <div class="flex justify-center mb-8">
+                        <a href="/">
+                            <img src="{{ asset('images/logos/logo.png') }}" 
+                                 alt="Logo Licorería" 
+                                 class="h-20 object-contain">
+                        </a>
+                    </div>
+
+                    {{-- Aquí se inyecta el Login, Registro o Verificación --}}
+                    {{ $slot }}
+
+                </div>
                 
             </div>
         </div>

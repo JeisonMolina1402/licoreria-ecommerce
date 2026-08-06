@@ -109,6 +109,12 @@
                             </a>
                         </li>
                         <li class="nav-item mb-2">
+                            <a class="nav-link {{ request()->routeIs('auditoria.index') ? 'active-menu' : 'text-white' }}"
+                                href="{{ route('auditoria.index') }}">
+                                🛡️ Auditoría
+                            </a>
+                        </li>
+                        <li class="nav-item mb-2">
                             <a class="nav-link {{ request()->routeIs('inventario') ? 'active-menu' : 'text-white' }}"
                                 href="{{ route('inventario') }}">
                                 📦 Inventario
@@ -156,6 +162,12 @@
                         <li class="nav-item mb-2"><a
                                 class="nav-link {{ request()->routeIs('home') || request()->routeIs('dashboard') ? 'active-menu' : 'text-white' }}"
                                 href="{{ route('home') }}">📊 Dashboard</a></li>
+                        <li class="nav-item mb-2">
+                            <a class="nav-link {{ request()->routeIs('auditoria.index') ? 'active-menu' : 'text-white' }}"
+                                href="{{ route('auditoria.index') }}">
+                                🛡️ Auditoría
+                            </a>
+                        </li>
                         <li class="nav-item mb-2"><a
                                 class="nav-link {{ request()->routeIs('inventario') ? 'active-menu' : 'text-white' }}"
                                 href="{{ route('inventario') }}">📦 Inventario</a></li>
