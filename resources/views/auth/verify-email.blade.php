@@ -29,3 +29,19 @@
         </form>
     </div>
 </x-guest-layout>
+
+{{-- Script para mostrar SweetAlert2 SOLO si viene de un registro nuevo --}}
+@if (session('registro_exitoso'))
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            Swal.fire({
+                title: '¡Bienvenido a la Licorería!',
+                text: 'Tu cuenta ha sido creada con éxito. Por favor revisa tu bandeja de entrada (y la carpeta de spam) para verificar tu correo electrónico antes de empezar a comprar.',
+                icon: 'success',
+                confirmButtonColor: '#991b1b', // Color rojo vino para combinar con la tienda
+                confirmButtonText: '¡Entendido, iré a revisar!',
+                allowOutsideClick: false // Obliga al usuario a hacer clic en el botón
+            });
+        });
+    </script>
+@endif

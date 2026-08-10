@@ -46,6 +46,7 @@ class RegisteredUserController extends Controller
 
         Auth::login($user);
 
-        return redirect()->route('tienda.index');
+        // Redirigimos a la vista de verificación y enviamos un "mensaje secreto" por sesión
+        return redirect()->route('verification.notice')->with('registro_exitoso', true);
     }
 }
