@@ -99,116 +99,27 @@
     </section>
 
     {{-- catálogo --}}
+    @livewire('catalogo-publico')
 
-    <div class="container py-2 " id="catalogo">
-
-        <div class="text-center mb-5">
-            <h2 class="titulo-premium mb-2 text-uppercase"
-                style="font-size: 2.8rem; text-shadow: 1px 1px 2px var(--sombra_dorada);">Nuestro Catálogo</h2>
-            <p class="text-muted" style="font-size: 1.1rem;">Selecciona tus botellas y resérvalas en minutos.</p>
-
-            <form action="{{ route('tienda.index') }}#catalogo" method="GET"
-                class="d-flex justify-content-center mx-auto mt-4" style="max-width: 650px;">
-                <div class="position-relative w-100 me-2">
-                    <input class="form-control form-control-lg rounded-pill bg-white shadow-sm" type="search"
-                        name="buscar" placeholder="Busca tu licor favorito..." value="{{ request('buscar') }}"
-                        style="padding-left: 1.5rem; border: 1px solid #e0e0e0; font-family: 'Lora', serif;">
-                </div>
-                <button class="btn btn-premium rounded-pill px-5 fw-bold text-uppercase shadow-sm" type="submit"
-                    style="letter-spacing: 1px;">Buscar</button>
-            </form>
-        </div>
-
-        <div class="row">
-            <div class="col-lg-3 mb-4 d-none d-lg-block">
-                <div class="card border border-light shadow-sm rounded-0 sticky-top" style="top: 110px;">
-                    <div class="card-header bg-white fw-bold py-3 fs-5 border-bottom border-light">
-                        <span style="color: var(--color_primario);">🏷️</span> Categorías
-                    </div>
-                    <div class="list-group list-group-flush">
-                        <a href="{{ route('tienda.index') }}#catalogo"
-                            class="list-group-item list-group-item-action py-3 {{ !request('categoria') ? 'fw-bold bg-light text-dark' : 'text-muted' }}"
-                            style="{{ !request('categoria') ? 'border-left: 4px solid var(--color_primario);' : 'border-left: 4px solid transparent;' }}">
-                            Todas las botellas
-                        </a>
-                        @foreach ($categorias as $cat)
-                            <a href="{{ route('tienda.categoria', $cat->slug) }}#catalogo"
-                                class="list-group-item list-group-item-action py-3 {{ request()->is('categoria/' . $cat->slug) ? 'fw-bold bg-light text-dark' : 'text-muted' }}"
-                                style="{{ request()->is('categoria/' . $cat->slug) ? 'border-left: 4px solid var(--color_primario);' : 'border-left: 4px solid transparent;' }}">
-                                {{ $cat->nombre }}
-                            </a>
-                        @endforeach
-                    </div>
-                </div>
-            </div>
-
-        @section('categorias_movil')
+    @section('categorias_movil')
             <div class="w-100">
                 <h6 class="text-uppercase text-white-50 mb-3 mt-3 px-4 text-start"
                     style="font-family: 'Cinzel', serif; font-size: 0.85rem;">🏷️ Nuestras Categorías</h6>
                 <div class="list-group list-group-flush text-start">
                     <a href="{{ route('tienda.index') }}#catalogo"
-                        class="list-group-item list-group-item-action bg-transparent text-white border-secondary py-3 px-4 {{ !request('categoria') ? 'fw-bold' : '' }}"
-                        style="{{ !request('categoria') ? 'border-left: 3px solid var(--color_primario);' : 'border-left: 3px solid transparent;' }}">
+                        class="list-group-item list-group-item-action bg-transparent text-white border-secondary py-3 px-4 fw-bold"
+                        style="border-left: 3px solid var(--color_primario);">
                         Todas las botellas
                     </a>
                     @foreach ($categorias as $cat)
-                        <a href="{{ route('tienda.categoria', $cat->slug) }}#catalogo"
-                            class="list-group-item list-group-item-action bg-transparent text-white border-secondary py-3 px-4 {{ request()->is('categoria/' . $cat->slug) ? 'fw-bold' : '' }}"
-                            style="{{ request()->is('categoria/' . $cat->slug) ? 'border-left: 3px solid var(--color_primario);' : 'border-left: 3px solid transparent;' }}">
+                        <a href="{{ route('tienda.index', ['categoria' => $cat->slug]) }}#catalogo"
+                            class="list-group-item list-group-item-action bg-transparent text-white border-secondary py-3 px-4">
                             {{ $cat->nombre }}
                         </a>
                     @endforeach
                 </div>
             </div>
         @endsection
-
-        <div class="col-lg-9">
-            <div class="row g-3">
-                @forelse($productos as $producto)
-                    <div class="col-6 col-md-4 col-xl-4">
-                        <div class="card h-100 shadow-sm product-card">
-                            <div class="card-img-container">
-                                @if ($producto->imagen)
-                                    <img src="{{ asset($producto->imagen) }}" alt="{{ $producto->nombre }}">
-                                @else
-                                    <span style="font-size: 3rem; color: #ccc;">🍾</span>
-                                @endif
-                            </div>
-
-                            <div class="card-body d-flex flex-column text-center p-3">
-                                <h5 class="titulo-producto" title="{{ $producto->nombre }}">{{ $producto->nombre }}
-                                </h5>
-                                <small class="text-muted mb-2">{{ $producto->descripcion ?? '750ml' }}</small>
-
-                                <h4 class="fw-bold mb-3 mt-auto" style="color: var(--color_primario);">
-                                    ${{ number_format($producto->precio, 2) }}</h4>
-
-                                <!-- AQUÍ ESTÁ EL BOTÓN MODIFICADO PARA EL CARRITO -->
-                                <button class="btn btn-outline-dark w-100 rounded-pill fw-bold btn-agregar"
-                                    data-id="{{ $producto->id }}" data-nombre="{{ $producto->nombre }}"
-                                    data-precio="{{ $producto->precio }}"
-                                    data-imagen="{{ asset($producto->imagen) }}">
-                                    + Agregar
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                @empty
-                    <div class="col-12 text-center py-5">
-                        <span style="font-size: 4rem;">🍷</span>
-                        <h3 class="text-muted mt-3">No encontramos licores con ese filtro.</h3>
-                        <a href="{{ route('tienda.index') }}#catalogo"
-                            class="btn btn-premium mt-3 rounded-pill px-4">Ver todo el catálogo</a>
-                    </div>
-                @endforelse
-            </div>
-
-            <div class="d-flex justify-content-center mt-5">
-                {{ $productos->links('pagination::bootstrap-5') }}
-            </div>
-        </div>
-    </div>
 </div>
 
 {{-- como realizar pedidos --}}
@@ -617,7 +528,7 @@
                             Para las compras que realizas directamente en nuestro mostrador (sin haber hecho una reserva previa en la web), aceptamos pagos en efectivo y transferencias bancarias al momento de la entrega. Toma en cuenta que las compras directas en el local están sujetas al stock disponible en ese instante.
                         </div> <!-- Cierre del accordion-body -->
                     </div> <!-- Cierre del accordion-collapse -->
-                </div> <!-- 🔥 AQUÍ FALTABA ESTE CIERRE -->
+                </div> 
 
             </div>
         </div>

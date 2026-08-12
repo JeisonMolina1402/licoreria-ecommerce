@@ -153,8 +153,19 @@
         </div>
     </div>
 
-    <!-- ... Contenedor Principal ... -->
+   <!-- ... Contenedor Principal ... -->
     <main style="margin-top: 80px; min-height: 80vh;">
+        
+        {{-- ALERTA GLOBAL PARA ERRORES DE CHECKOUT O VALIDACIONES --}}
+        @if ($errors->any())
+            <div class="container mt-4">
+                <div class="alert alert-danger alert-dismissible fade show shadow-sm" role="alert">
+                    <strong>¡Atención!</strong> {{ $errors->first() }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            </div>
+        @endif
+
         @yield('content')
     </main>
 

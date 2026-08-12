@@ -231,3 +231,37 @@ window.aplicarFiltroRapido = function(tipo) {
     document.getElementById('input_fecha_fin').value = formatoFecha(fin);
     document.getElementById('formFiltroPrincipal').submit();
 };
+
+// 1. Escuchar a Livewire para animar el Gráfico de Dona sin recargar la pantalla
+document.addEventListener('livewire:init', () => {
+    Livewire.on('actualizarGraficoDona', (event) => {
+        if (chartDonaInstance) {
+            const data = event[0]; // Extraemos los datos que envió PHP
+            chartDonaInstance.data.labels = data.labels;
+            chartDonaInstance.data.datasets[0].data = data.valores;
+            chartDonaInstance.update();
+        }
+    });
+});
+
+// 2. Ajuste en la función exportarConGraficos para enviar la URL actual
+window.exportarConGraficos = function() {
+    const canvasBarras = document.getElementById('graficoBarras');
+    const canvasDona = document.getElementById('graficoCategorias'); 
+    const inputBarras = document.getElementById('grafico_barras_base64');
+    const inputDona = document.getElementById('grafico_dona_base64');
+
+    // Capturamos los filtros de Livewire directamente de la URL
+    const params = new URLSearchParams(window.location.search);
+    document.querySelector('input[name="ranking_productos"]').value = params.get('ranking_productos') || 'ventas';
+    document.querySelector('input[name="ranking_categorias"]').value = params.get('ranking_categorias') || 'ventas';
+
+    // (Aquí va tu código original intacto de canvasBarras y canvasDona.toDataURL...)
+    // ...
+    // ...
+
+    const formExportar = document.getElementById('formExportarPdf');
+    if (formExportar) {
+        formExportar.submit();
+    }
+};

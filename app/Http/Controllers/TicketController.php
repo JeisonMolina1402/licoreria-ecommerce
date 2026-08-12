@@ -28,77 +28,19 @@ class TicketController extends Controller
      */
     public function index(Request $request)
     {
-        // 1. OPTIMIZACIÓN : 
-        // Usamos 'with' para traer los datos del usuario y los productos asociados en la misma consulta SQL.
-        // evitamos el Problema de las N+1 consultas, haciendo que la página cargue instantáneamente 
-        // sin importar si hay 10 o 1000 tickets.
-        $query = Ticket::with(['user', 'detalles.producto']);
-
-        // 2. FILTROS DINÁMICOS:
-        // Búsqueda por el código único generado aleatoriamente
-        if ($request->filled('buscar_codigo')) {
-            $query->where('codigo_reserva', 'LIKE', '%' . $request->buscar_codigo . '%');
-        }
-
-        // Filtro exacto por el estado actual del ticket
-        if ($request->filled('estado')) {
-            $query->where('estado', $request->estado);
-        }
-
-        // 3. PAGINACIÓN: Ordenamos del más reciente al más antiguo conlatest y mantenemos los filtros en la URL con appends
-        $tickets = $query->latest()->paginate(10)->appends($request->all());
-
-        // BUSCAMOS SI EL VENDEDOR TIENE UN TURNO DE CAJA ABIERTO
+        // BUSCAMOS SI EL VENDEDOR TIENE UN TURNO DE CAJA ABIERTO PARA EL WIDGET SUPERIOR
         $turnoAbierto = TurnoCaja::where('user_id', Auth::id())
                                  ->where('estado', 'abierto')
                                  ->first();
 
-        return view('tickets.index', compact('tickets', 'turnoAbierto'));
+        return view('tickets.index', compact('turnoAbierto'));
     }
 
-    /**
-     * MÉTODO CREATE: Prepara y muestra la pantalla del Punto de Venta 
-     * aplica los filtros del catálogo.
-     */
+    // MÉTODO CREATE: Prepara y muestra la pantalla del Punto de Venta mediante livewire
+
     public function create(Request $request)
     {
-        // 1. Obtenemos todas las categorías ordenadas alfabéticamente para el selector
-        $categorias = Categoria::orderBy('nombre', 'asc')->get();
-
-        // 2. Preparamos la consulta base: Solo productos con stock > 0
-        $query = Producto::where('stock', '>', 0);
-
-        // 3. APLICAMOS LOS FILTROS DINÁMICOS
-
-        // Filtro por Nombre
-        if ($request->filled('nombre')) {
-            $query->where('nombre', 'LIKE', '%' . $request->nombre . '%');
-        }
-
-        // Filtro por Categoría
-        if ($request->filled('categoria_id')) {
-            $query->where('categoria_id', $request->categoria_id);
-        }
-
-        // Ordenamiento por Stock
-        if ($request->filled('orden_stock')) {
-            $query->orderBy('stock', $request->orden_stock);
-        }
-
-        // Ordenamiento por Precio
-        if ($request->filled('orden_precio')) {
-            $query->orderBy('precio', $request->orden_precio);
-        }
-
-        // Si el usuario no aplicó ningún orden específico, mostramos alfabéticamente por defecto
-        if (!$request->filled('orden_stock') && !$request->filled('orden_precio')) {
-            $query->orderBy('nombre', 'asc');
-        }
-
-        // 4. Ejecutamos la consulta final
-        $productos = $query->get();
-
-        return view('tickets.create', compact('productos', 'categorias'));
+        return view('tickets.create');
     }
 
     /**
@@ -161,6 +103,7 @@ class TicketController extends Controller
             'productos.*.id' => 'required|exists:productos,id',
             'productos.*.cantidad' => 'required|integer|min:1',
             'productos.*.precio' => 'required|numeric|min:0',
+            'metodo_pago' => 'required|in:efectivo,transferencia',
         ], [
             'productos.required' => 'Debes agregar al menos un producto al ticket antes de cobrar.'
         ]);
@@ -183,12 +126,11 @@ class TicketController extends Controller
                 }
 
                 // PASO B: CREACIÓN DEL TICKET
-                // PASO B: CREACIÓN DEL TICKET
                 $ticket = Ticket::create([
                     'user_id' => Auth::id(),
                     'codigo_reserva' => strtoupper(Str::random(8)),
                     'estado' => 'entregado',
-                    'metodo_pago' => 'efectivo', // <--- MARCAMOS COMO EFECTIVO
+                    'metodo_pago' => $request->metodo_pago,
                     'total' => $totalReal,
                 ]);
 
@@ -198,10 +140,14 @@ class TicketController extends Controller
                                          ->first();
 
                 if ($turnoAbierto) {
-                    $turnoAbierto->total_efectivo += $totalReal;
+                    // Verificamos el método de pago para sumar en el lugar correcto
+                    if ($request->metodo_pago == 'efectivo') {
+                        $turnoAbierto->total_efectivo += $totalReal;
+                    } else {
+                        $turnoAbierto->total_transferencias += $totalReal;
+                    }
                     $turnoAbierto->save();
                 } else {
-                    // Si no tiene turno abierto, lanzamos error y abortamos la transacción
                     throw new \Exception("Debes abrir un turno de caja antes de realizar cobros.");
                 }
 

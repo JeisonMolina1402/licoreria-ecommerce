@@ -13,7 +13,7 @@ use Barryvdh\DomPDF\Facade\Pdf;
 
 class ReporteController extends Controller
 {
-    // =========================================================================
+   // =========================================================================
     // MÉTODO 1: VISTA WEB (DASHBOARD)
     // =========================================================================
     public function index(Request $request)
@@ -24,6 +24,7 @@ class ReporteController extends Controller
 
         $rangoFechas = [$fechaInicio . ' 00:00:00', $fechaFin . ' 23:59:59'];
 
+        // Calculamos las métricas globales (Tarjetas superiores)
         $ticketsCompletados = Ticket::with('detalles.producto')
                                     ->where('estado', 'entregado')
                                     ->whereBetween('created_at', $rangoFechas)
@@ -50,97 +51,8 @@ class ReporteController extends Controller
         $ticketsEntregados = $ticketsCompletados->count();
         $ticketsCancelados = Ticket::where('estado', 'cancelado')->whereBetween('created_at', $rangoFechas)->count();
 
-    
         // --------------------------------------------------------------
-        // LÓGICA DE PRODUCTOS (WEB)
-        // --------------------------------------------------------------
-        $rankingProductos = $request->input('ranking_productos', 'ventas'); 
-
-        $queryProductos = Producto::with('categoria')
-            ->select('productos.*') 
-            ->withSum(['detalles as total_vendido' => function($query) use ($rangoFechas) {
-                $query->whereHas('ticket', function($q) use ($rangoFechas) {
-                    $q->where('estado', 'entregado')->whereBetween('created_at', $rangoFechas);
-                });
-            }], 'cantidad')
-            ->addSelect(['ingreso_generado' => DetalleTicket::selectRaw('SUM(detalle_tickets.precio_unitario * detalle_tickets.cantidad)')
-                ->whereColumn('detalle_tickets.producto_id', 'productos.id')
-                ->whereHas('ticket', function($q) use ($rangoFechas) {
-                    $q->where('estado', 'entregado')->whereBetween('created_at', $rangoFechas);
-                })
-            ])
-            ->addSelect(['ganancia_generada' => DetalleTicket::selectRaw('SUM((detalle_tickets.precio_unitario - detalle_tickets.precio_compra) * detalle_tickets.cantidad)')
-                ->whereColumn('detalle_tickets.producto_id', 'productos.id')
-                ->whereHas('ticket', function($q) use ($rangoFechas) {
-                    $q->where('estado', 'entregado')->whereBetween('created_at', $rangoFechas);
-                })
-            ]);
-
-        if ($rankingProductos === 'cero') {
-            $queryProductos->whereDoesntHave('detalles', function($query) use ($rangoFechas) {
-                $query->whereHas('ticket', function($q) use ($rangoFechas) {
-                    $q->where('estado', 'entregado')->whereBetween('created_at', $rangoFechas);
-                });
-            })->orderBy('nombre', 'asc');
-        } elseif ($rankingProductos === 'ganancia') {
-            $queryProductos->whereHas('detalles', function($query) use ($rangoFechas) {
-                $query->whereHas('ticket', function($q) use ($rangoFechas) {
-                    $q->where('estado', 'entregado')->whereBetween('created_at', $rangoFechas);
-                });
-            })->orderByRaw('COALESCE(ganancia_generada, 0) DESC');
-        } else {
-            $queryProductos->whereHas('detalles', function($query) use ($rangoFechas) {
-                $query->whereHas('ticket', function($q) use ($rangoFechas) {
-                    $q->where('estado', 'entregado')->whereBetween('created_at', $rangoFechas);
-                });
-            })->orderByRaw('COALESCE(total_vendido, 0) DESC');
-        }
-
-        $productosTop = $queryProductos->paginate(5, ['*'], 'page_productos')->appends($request->all());
-
-        // --------------------------------------------------------------
-        // LÓGICA DE CATEGORÍAS (WEB)
-        // --------------------------------------------------------------
-        $rankingCategorias = $request->input('ranking_categorias', 'ventas');
-
-        $detallesParaCategorias = DetalleTicket::whereHas('ticket', function($query) use ($rangoFechas) {
-                $query->where('estado', 'entregado')->whereBetween('created_at', $rangoFechas);
-            })->with('producto.categoria')->get();
-
-        $ventasPorCategoria = [];
-        $todasLasCategorias = Categoria::pluck('nombre');
-
-        foreach ($todasLasCategorias as $nombreCategoria) {
-            $ventasPorCategoria[$nombreCategoria] = [
-                'unidades' => 0, 'inversion' => 0, 'ventas' => 0, 'ganancia' => 0
-            ];
-        }
-        $ventasPorCategoria['Sin Categoría'] = ['unidades' => 0, 'inversion' => 0, 'ventas' => 0, 'ganancia' => 0];
-
-        foreach ($detallesParaCategorias as $detalle) {
-            $catNombre = $detalle->producto->categoria->nombre ?? 'Sin Categoría';
-            $inversion = $detalle->precio_compra * $detalle->cantidad;
-            $venta = $detalle->precio_unitario * $detalle->cantidad;
-
-            $ventasPorCategoria[$catNombre]['unidades'] += $detalle->cantidad;
-            $ventasPorCategoria[$catNombre]['inversion'] += $inversion;
-            $ventasPorCategoria[$catNombre]['ventas'] += $venta;
-            $ventasPorCategoria[$catNombre]['ganancia'] += ($venta - $inversion);
-        }
-
-        if ($rankingCategorias === 'ganancia') {
-            $ventasPorCategoria = collect($ventasPorCategoria)->sortByDesc('ganancia');
-        } elseif ($rankingCategorias === 'cero') {
-            $ventasPorCategoria = collect($ventasPorCategoria)->where('unidades', 0);
-        } else {
-            $ventasPorCategoria = collect($ventasPorCategoria)->sortByDesc('unidades');
-        }
-
-        $nombresCategorias = $ventasPorCategoria->keys()->toJson();
-        $cantidadesCategorias = $ventasPorCategoria->pluck('unidades')->toJson();
-
-        // --------------------------------------------------------------
-        // GRÁFICOS Y AGRUPACIÓN TEMPORAL (WEB)
+        // GRÁFICOS Y AGRUPACIÓN TEMPORAL (GRÁFICO DE BARRAS)
         // --------------------------------------------------------------
         $fechaInicioObj = Carbon::parse($fechaInicio);
         $fechaFinObj = Carbon::parse($fechaFin);
@@ -273,9 +185,8 @@ class ReporteController extends Controller
         return view('reportes.index', compact(
             'fechaInicio', 'fechaFin', 'ventasTotales', 'gananciaNeta','costosTotales',
             'nuevosUsuarios', 'totalTickets', 'ticketsEntregados', 'ticketsCancelados',
-            'productosTop', 'nombresCategorias', 'cantidadesCategorias', 'ventasPorCategoria',
             'tituloGraficoBarras', 'tituloTablaTemporal', 'nombresBarras', 'datosVentasBarras', 'datosGananciasBarras', 'datosGastosBarras',
-            'rankingProductos', 'rankingCategorias', 'modoAgrupacion'
+            'modoAgrupacion'
         ));
     }
      

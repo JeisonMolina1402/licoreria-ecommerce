@@ -18,7 +18,7 @@ class AuditoriaController extends Controller
     {
         // Traemos el historial ordenado por fecha descendente
         // 'with(causer)' trae automáticamente los datos del usuario que hizo el cambio
-        $logs = Activity::with('causer')->latest()->paginate(15);
+        $logs = Activity::with('causer')->latest()->paginate(10);
         
         return view('auditoria.index', compact('logs'));
     }

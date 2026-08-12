@@ -59,6 +59,8 @@
             border-radius: 8px;
         }
     </style>
+
+    @livewireStyles
 </head>
 
 <body class="bg-light">
@@ -271,6 +273,7 @@
     <!-- ========================================== -->
     {{-- Permite que vistas hijas (como Inventario) empujen (push) sus propios scripts JS aquí, evitando cargar código innecesario en vistas que no lo necesitan --}}
     @stack('scripts')
+    @livewireScripts
 </body>
 
 </html>

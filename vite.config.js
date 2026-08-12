@@ -22,7 +22,6 @@ export default defineConfig({
                 // Scripts del Panel Administrativo (Backend)
                 'resources/js/inventario.js',
                 'resources/js/pos.js',
-                'resources/js/tickets.js',
                 'resources/js/reportes.js',
                 'resources/js/usuarios.js',
             ],

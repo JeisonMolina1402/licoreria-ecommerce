@@ -19,50 +19,11 @@ class InventarioController extends Controller
     }
 
     /**
-     * MÉTODO INDEX mostramos la tabla del inventario con filtros.
+     * MÉTODO INDEX mostramos la tabla del inventario con filtros de livewire.
      */
-    public function index(Request $request)
+   public function index(Request $request)
     {
-        // 1. Traemos todas las categorías para llenar el desplegable Select de los filtros.
-        $categorias = Categoria::all();
-        
-        // 2. Extraemos una lista única de los nombres de los productos para el autocompletado del buscador.
-        $nombresProductos = Producto::select('nombre')->distinct()->pluck('nombre');
-        
-        // 3. Iniciamos el Constructor de Consultas de Eloquent.
-        $query = Producto::query();
-
-        // 4. APLICACIÓN DE FILTROS DINÁMICOS:
-        // Verificamos si el usuario envió algún filtro en la URL y ajustamos la consulta SQL automáticamente.
-        if ($request->filled('nombre')) {
-            // Búsqueda por coincidencia de texto es como un LIKE en SQL
-            $query->where('nombre', 'LIKE', '%' . $request->nombre . '%');
-        }
-        if ($request->filled('categoria_id')) {
-            // Filtro exacto por el ID de la categoría
-            $query->where('categoria_id', $request->categoria_id);
-        }
-        if ($request->filled('orden_stock')) {
-            // Ordenamiento ascendente o descendente según la cantidad física
-            $query->orderBy('stock', $request->orden_stock);
-        }
-        if ($request->filled('orden_precio')) {
-            // Ordenamiento por precio
-            $query->orderBy('precio', $request->orden_precio);
-        }
-        
-        // Si no hay un filtro  mostramos los productos más nuevos primero.
-        if (!$request->filled('orden_stock') && (!$request->filled('orden_precio'))) {
-            $query->latest();
-        }
-
-        // 5. PAGINACIÓN: traemos bloques de 10.
-        // con $request->all() es para que memorize los filtros en la URL 
-        // para que al pasar de paginano se pierda la búsqueda actual.
-        $productos = $query->paginate(10)->appends($request->all());
-
-        // 6. Enviamos todos los datos a la vista .
-        return view('inventario.inventario', compact('productos', 'categorias', 'nombresProductos'));
+        return view('inventario.inventario');
     }
 
     /**
@@ -70,42 +31,24 @@ class InventarioController extends Controller
      */
     public function store(Request $request)
     {
-        // 1. Reemplazamos las comas por puntos en los precios para evitar errores matemáticos en MySQL.
+        // 1. Reemplazamos las comas por puntos en los precios
         $request->merge([
             'precio_compra' => str_replace(',', '.', $request->precio_compra),
             'precio' => str_replace(',', '.', $request->precio),
         ]);
 
         // 2. REGLAS DE VALIDACIÓN 
-        // para proteger la bd exigiendo tipos de datos especificos (strings, números, imágenes permitidas).
-        $reglas = [
+        $request->validate([
             'nombre' => 'required|string|max:255',
             'categoria_id' => 'required',
+            'descripcion' => 'required|string|max:255',
             'precio' => 'required|numeric|min:0',
-            'precio_compra' => 'nullable|numeric|min:0',
+            'precio_compra' => 'required|numeric|min:0',
             'stock' => 'required|integer|min:0',
             'imagen' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048', 
-        ];
-
-        // Mensajes para mejorar la experiencia del usuario cuando haya errires .
-        $mensajes = [
-            'nombre.required' => 'El nombre del licor es obligatorio.',
-            'categoria_id.required' => 'Debes seleccionar una categoría.',
-            'precio.required' => 'El precio de venta es obligatorio.',
-            'precio.min' => 'El precio de venta no puede ser negativo.',
-            'precio_compra.min' => 'El precio de compra no puede ser negativo.',
-            'stock.required' => 'La cantidad en stock es obligatoria.',
-            'stock.min' => 'El stock no puede ser menor a 0.',
-            'imagen.image' => 'El archivo debe ser una imagen válida.',
-            'imagen.mimes' => 'La imagen debe ser formato jpeg, png, jpg o webp.',
-            'imagen.max' => 'La imagen es muy pesada. Máximo 2MB permitidos.',
-        ];
-
-        // Ejecutamos la validación. Si falla vuelve al formulario automáticamente mostrando los errores.
-        $request->validate($reglas, $mensajes);
+        ]);
 
         // 3. CONTROL DE CATEGORÍAS HUÉRFANAS
-        // Si se envían un ID de categoría que no existe la creamos  para evitar que el sistema colapse.
         Categoria::firstOrCreate(
             ['id' => $request->categoria_id],
             ['nombre' => 'Categoría General', 'descripcion' => 'Generada automáticamente por el sistema']
@@ -114,26 +57,22 @@ class InventarioController extends Controller
         // 4. GESTIÓN DE LA IMAGEN
         $rutaImagen = null;
         if ($request->hasFile('imagen')) {
-            // Renombramos el archivo usando la hora actual con (time()) para evitar que dos imágenes se llamen igual y se sobrescriban.
             $nombreImagen = time() . '.' . $request->imagen->extension();
-            // Movemos la imagen de la memoria temporal del servidor a la carpeta pública.
             $request->imagen->move(public_path('uploads/productos'), $nombreImagen);
-            $rutaImagen = 'uploads/productos/' . $nombreImagen; // Guardamos la ruta de texto para la base de datos.
+            $rutaImagen = 'uploads/productos/' . $nombreImagen; 
         }
 
         // 5. GUARDAMOS EN LA BASE DE DATOS 
-        // Instanciamos un nuevo objeto Producto y le asignamos los valores limpios.
         $producto = new Producto();
         $producto->categoria_id = $request->categoria_id;
         $producto->nombre = $request->nombre;
         $producto->descripcion = $request->descripcion;
-        $producto->precio_compra = $request->precio_compra ?: 0; // Si no hay precio de compra, guardamos 0
+        $producto->precio_compra = $request->precio_compra ?: 0; 
         $producto->precio = $request->precio;
         $producto->stock = $request->stock;
         $producto->imagen = $rutaImagen;
         $producto->save(); 
 
-        // Refrescamos la pantalla con un mensaje verde de éxito.
         return redirect()->back()->with('success', '¡Producto agregado exitosamente al inventario!');
     }
 
@@ -155,8 +94,9 @@ class InventarioController extends Controller
         $reglas = [
             'nombre' => 'required|string|max:255',
             'categoria_id' => 'required',
+            'descripcion' => 'required|string|max:255',
             'precio' => 'required|numeric|min:0',
-            'precio_compra' => 'nullable|numeric|min:0',
+            'precio_compra' => 'required|numeric|min:0',
             'stock' => 'required|integer|min:0',
             'imagen' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
         ];

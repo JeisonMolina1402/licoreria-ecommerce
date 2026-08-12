@@ -170,12 +170,12 @@
                                             <td class="fw-bold">{{ $cliente->name }}</td>
                                             <td>
                                                 <div>
-                                                    <i class="fas fa-envelope text-muted"></i> {{ $usuario->email }}
+                                                    <i class="fas fa-envelope text-muted"></i> {{ $cliente->email }}
                                                 </div>
 
                                                 {{-- NUEVO: Etiqueta de Verificación --}}
                                                 <div class="mt-1">
-                                                    @if ($usuario->email_verified_at)
+                                                    @if ($cliente->email_verified_at)
                                                         <span class="badge bg-success" style="font-size: 0.7rem;">
                                                             <i class="fas fa-check-circle"></i> Verificado
                                                         </span>
@@ -253,41 +253,71 @@
                 </div>
 
                 <div class="modal-body px-4">
+                    <!-- NOMBRE -->
                     <div class="mb-3">
                         <label class="form-label fw-bold small text-muted">NOMBRE COMPLETO *</label>
-                        <input type="text" class="form-control" name="name" id="userName" required>
+                        <input type="text" class="form-control @error('name') is-invalid @enderror" 
+                               name="name" id="userName" value="{{ old('name') }}" >
+                        @error('name')
+                            <div class="invalid-feedback fw-bold">{{ $message }}</div>
+                        @enderror
                     </div>
 
+                    <!-- CORREO -->
                     <div class="mb-3">
                         <label class="form-label fw-bold small text-muted">CORREO ELECTRÓNICO *</label>
-                        <input type="email" class="form-control" name="email" id="userEmail" required>
+                        <input type="email" class="form-control @error('email') is-invalid @enderror" 
+                               name="email" id="userEmail" value="{{ old('email') }}" required>
+                        @error('email')
+                            <div class="invalid-feedback fw-bold">{{ $message }}</div>
+                        @enderror
                     </div>
 
                     <div class="row mb-3">
+                        <!-- CÉDULA -->
                         <div class="col-6">
                             <label class="form-label fw-bold small text-muted">CÉDULA</label>
-                            <input type="text" class="form-control" name="cedula" id="userCedula">
+                            <input type="text" class="form-control @error('cedula') is-invalid @enderror" 
+                                   name="cedula" id="userCedula" value="{{ old('cedula') }}">
+                            @error('cedula')
+                                <div class="invalid-feedback fw-bold">{{ $message }}</div>
+                            @enderror
                         </div>
+                        
+                        <!-- TELÉFONO -->
                         <div class="col-6">
                             <label class="form-label fw-bold small text-muted">TELÉFONO</label>
-                            <input type="text" class="form-control" name="telefono" id="userTelefono">
+                            <input type="text" class="form-control @error('telefono') is-invalid @enderror" 
+                                   name="telefono" id="userTelefono" value="{{ old('telefono') }}">
+                            @error('telefono')
+                                <div class="invalid-feedback fw-bold">{{ $message }}</div>
+                            @enderror
                         </div>
                     </div>
 
                     <div class="row mb-3">
+                        <!-- ROL -->
                         <div class="col-6">
                             <label class="form-label fw-bold small text-muted">NIVEL DE ACCESO (ROL) *</label>
-                            <select class="form-select" name="rol" id="userRol" required>
-                                <option value="vendedor">Vendedor (POS y Pedidos)</option>
-                                <option value="admin">Administrador (Control Total)</option>
-                                <option value="cliente">Cliente (Solo Catálogo)</option>
+                            <select class="form-select @error('rol') is-invalid @enderror" name="rol" id="userRol" required>
+                                <option value="vendedor" {{ old('rol') == 'vendedor' ? 'selected' : '' }}>Vendedor</option>
+                                <option value="admin" {{ old('rol') == 'admin' ? 'selected' : '' }}>Administrador</option>
+                                <option value="cliente" {{ old('rol') == 'cliente' ? 'selected' : '' }}>Cliente</option>
                             </select>
+                            @error('rol')
+                                <div class="invalid-feedback fw-bold">{{ $message }}</div>
+                            @enderror
                         </div>
+                        
+                        <!-- CONTRASEÑA -->
                         <div class="col-6">
                             <label class="form-label fw-bold small text-muted">CONTRASEÑA</label>
-                            <input type="password" class="form-control" name="password" id="userPassword">
-                            <small class="text-muted d-none" id="helpPassword" style="font-size: 0.7rem;">Dejar en blanco
-                                para mantener la actual.</small>
+                            <input type="password" class="form-control @error('password') is-invalid @enderror" 
+                                   name="password" id="userPassword">
+                            <small class="text-muted d-none" id="helpPassword" style="font-size: 0.7rem;">Dejar en blanco para mantener la actual.</small>
+                            @error('password')
+                                <div class="invalid-feedback fw-bold">{{ $message }}</div>
+                            @enderror
                         </div>
                     </div>
                 </div>
@@ -308,6 +338,18 @@
     <script>
         window.urlBaseUsuarios = "{{ url('/usuarios') }}";
     </script>
+
+    <!-- Reabrir Modal automáticamente si hay errores de validación -->
+    @if ($errors->any())
+        <button type="button" id="btnAutoOpenModal" data-bs-toggle="modal" data-bs-target="#modalUsuario" class="d-none"></button>
+        <script>
+            window.addEventListener('DOMContentLoaded', () => {
+                setTimeout(() => {
+                    document.getElementById('btnAutoOpenModal').click();
+                }, 150);
+            });
+        </script>
+    @endif
 
     {{-- Llamamos a nuestro archivo externo compilado --}}
     @vite(['resources/js/usuarios.js'])
