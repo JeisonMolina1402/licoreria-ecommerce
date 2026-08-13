@@ -39,8 +39,8 @@ Route::get('/mis-pedidos', [TiendaController::class, 'misPedidos'])
 // ==========================================
 Route::middleware(['auth', 'admin'])->group(function () {
 
-//mas adelante verificar admins y vendedores con correors verificados reales
-//Route::middleware(['auth', 'verified', 'admin'])->group(function () {
+    //mas adelante verificar admins y vendedores con correors verificados reales
+    //Route::middleware(['auth', 'verified', 'admin'])->group(function () {
 
     // Rutas del Perfil de Usuario 
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
@@ -67,7 +67,7 @@ Route::middleware(['auth', 'admin'])->group(function () {
     Route::get('/tickets/nueva-venta', [TicketController::class, 'create'])->name('tickets.create');
     Route::post('/tickets/estado/{id}', [TicketController::class, 'cambiarEstado'])->name('tickets.estado');
     Route::post('/tickets', [TicketController::class, 'store'])->name('tickets.store');
-    
+
     // Rutas para el Control de Caja
     Route::post('/caja/abrir', [TurnoCajaController::class, 'abrir'])->name('caja.abrir');
     Route::post('/caja/cerrar', [TurnoCajaController::class, 'cerrar'])->name('caja.cerrar');
@@ -83,6 +83,36 @@ Route::middleware(['auth', 'admin'])->group(function () {
     Route::put('/usuarios/{usuario}', [UserController::class, 'update'])->name('usuarios.update');
     Route::patch('/usuarios/{usuario}/estado', [UserController::class, 'toggleEstado'])->name('usuarios.toggle');
 });
+
+// ==========================================
+// NOTIFICACIONES GENERALES (ACCESO PARA TODOS LOS LOGEADOS)
+// ==========================================
+Route::post('/notificaciones/leer', function () {
+    auth()->user()->unreadNotifications->markAsRead();
+    return response()->json(['success' => true]);
+})->middleware('auth')->name('notificaciones.leer');
+
+// NUEVA RUTA: Consulta en tiempo real (AJAX Polling) sin recargar página
+Route::get('/notificaciones/check', function () {
+    if (!auth()->check()) return response()->json(['count' => 0]);
+    
+    $user = auth()->user();
+    
+    // Formateamos las últimas 5 notificaciones para que JS las entienda fácilmente
+    $notificaciones = $user->notifications()->take(10)->get()->map(function($notif) {
+        return [
+            'id'      => $notif->id,
+            'data'    => $notif->data, // Aquí vienen titulo, mensaje, icono, url
+            'read_at' => $notif->read_at,
+            'tiempo'  => $notif->created_at->diffForHumans() // Ej: "hace 2 minutos"
+        ];
+    });
+
+    return response()->json([
+        'count'          => $user->unreadNotifications()->count(),
+        'notificaciones' => $notificaciones
+    ]);
+})->name('notificaciones.check');
 
 // ==========================================
 // RUTAS DE SEGURIDAD DE LARAVEL BREEZE

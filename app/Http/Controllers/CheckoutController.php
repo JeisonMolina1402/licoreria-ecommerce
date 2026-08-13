@@ -5,6 +5,9 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\Ticket;
 use App\Models\DetalleTicket;
+use App\Models\User; // <-- Importamos el modelo User
+use App\Notifications\TicketCreadoClienteNotification; // <-- Importamos la notificación del cliente
+use App\Notifications\NuevoTicketAdminNotification; // <-- Importamos la notificación del admin
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB; 
@@ -56,7 +59,21 @@ class CheckoutController extends Controller
                 ->decrement('stock', $item['cantidad']);
         }
 
-        // 5. Redirigir a la pantalla de éxito con el Ticket final
+        // ==========================================
+        // 5. DISPARAR NOTIFICACIONES Y CORREOS
+        // ==========================================
+        
+        // A) Notificar al cliente (Email + Campanita)
+        $ticket->user->notify(new TicketCreadoClienteNotification($ticket));
+
+        // B) Notificar a todo el personal (Admins y Vendedores) en su campanita
+        $personal = User::whereIn('rol', ['admin', 'vendedor'])->get();
+        foreach ($personal as $miembro) {
+            $miembro->notify(new NuevoTicketAdminNotification($ticket));
+        }
+        // ==========================================
+
+        // 6. Redirigir a la pantalla de éxito con el Ticket final
         return redirect()->route('tienda.exito', $ticket->id);
     }
 

@@ -11,6 +11,9 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
 use App\Models\TurnoCaja;
 
+// 🔥 IMPORTAMOS LA NOTIFICACIÓN PARA EL CLIENTE
+use App\Notifications\TicketListoClienteNotification;
+
 class TicketController extends Controller
 {
     /**
@@ -37,7 +40,6 @@ class TicketController extends Controller
     }
 
     // MÉTODO CREATE: Prepara y muestra la pantalla del Punto de Venta mediante livewire
-
     public function create(Request $request)
     {
         return view('tickets.create');
@@ -50,7 +52,7 @@ class TicketController extends Controller
     {
         // 1. SEGURIDAD: Validamos los estados permitidos
         $request->validate([
-            'estado' => 'required|in:pendiente,pagado,listo,entregado,cancelado' // Añadido 'listo' de una vez
+            'estado' => 'required|in:pendiente,pagado,listo,entregado,cancelado' 
         ], [
             'estado.in' => 'El estado seleccionado no es válido.'
         ]);
@@ -90,8 +92,18 @@ class TicketController extends Controller
         $ticket->estado = $request->estado;
         $ticket->save();
 
+        // ==========================================
+        // 4. DISPARAR NOTIFICACIÓN AL CLIENTE
+        // ==========================================
+        // Verificamos si el nuevo estado es "listo" para avisarle que venga al local
+        if ($request->estado === 'listo' && $ticket->user) {
+            $ticket->user->notify(new TicketListoClienteNotification($ticket));
+        }
+        // ==========================================
+
         return redirect()->back()->with('success', '¡El estado del ticket ha sido actualizado!');
     }
+
     /**
      * MÉTODO STORE (COBRAR):Guardamos la venta, creamos detalles y restamos stock.
      */

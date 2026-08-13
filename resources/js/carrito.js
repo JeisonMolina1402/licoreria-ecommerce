@@ -97,9 +97,14 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             renderizarCarrito();
             
-            // Abrir el panel lateral automáticamente
-            const carritoOffcanvas = new bootstrap.Offcanvas(document.getElementById('carritoOffcanvas'));
-            carritoOffcanvas.show();
+            // Abrir el panel lateral automáticamente (Sin depender de variables globales)
+            const panelCarrito = document.getElementById('carritoOffcanvas');
+            const botonAbrirCarrito = document.querySelector('[data-bs-target="#carritoOffcanvas"]');
+            
+            // Verificamos si el carrito está cerrado para no cerrarlo accidentalmente si ya está abierto
+            if (panelCarrito && !panelCarrito.classList.contains('show') && botonAbrirCarrito) {
+                botonAbrirCarrito.click(); // Simulamos el clic
+            }
         }
 
         // B) SUMAR CANTIDAD (Dentro del panel)

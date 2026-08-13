@@ -5,6 +5,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
+    {{-- TOKEN CSRF: Vital para que AJAX/Fetch funcione en la tienda --}}
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+
     {{-- TÍTULO DINÁMICO --}}
     <title>Licorería Premium | @yield('titulo', 'Inicio')</title>
 
@@ -90,6 +93,46 @@
                             <span class="d-none d-md-inline ms-1">Mis Pedidos</span>
                         </a>
                     @endif
+
+                     <!-- ========================================== -->
+                    <!-- CAMPANITA DE NOTIFICACIONES (NUEVO)        -->
+                    <!-- ========================================== -->
+                    <div class="dropdown ms-2 me-2">
+                        <button class="nav-icon border-0 position-relative bg-transparent text-dark p-0" type="button" id="bellDropdownTienda" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="fa-solid fa-bell fs-5"></i>
+                            @if(isset($unreadCount) && $unreadCount > 0)
+                                <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="font-size: 0.6rem;">
+                                    {{ $unreadCount }}
+                                </span>
+                            @endif
+                        </button>
+
+                        <ul class="dropdown-menu dropdown-menu-end shadow border-0 mt-2" aria-labelledby="bellDropdownTienda" style="width: 320px; max-height: 400px; overflow-y: auto;">
+                            <li><h6 class="dropdown-header fw-bold border-bottom pb-2">Mis Notificaciones</h6></li>
+                            
+                            @if(isset($notifications) && $notifications->count() > 0)
+                                @foreach($notifications as $notificacion)
+                                    <li>
+                                        <a class="dropdown-item d-flex align-items-start py-3 border-bottom {{ is_null($notificacion->read_at) ? 'bg-light' : '' }}" 
+                                           href="{{ $notificacion->data['url'] }}">
+                                            <div class="me-3 mt-1">
+                                                <i class="{{ $notificacion->data['icono'] }} fs-5"></i>
+                                            </div>
+                                            <div style="white-space: normal;">
+                                                <strong class="d-block mb-1 {{ is_null($notificacion->read_at) ? 'text-dark' : 'text-muted' }}">{{ $notificacion->data['titulo'] }}</strong>
+                                                <span class="small text-muted d-block">{{ $notificacion->data['mensaje'] }}</span>
+                                                <small class="text-secondary" style="font-size: 0.7rem;">{{ $notificacion->created_at->diffForHumans() }}</small>
+                                            </div>
+                                        </a>
+                                    </li>
+                                @endforeach
+                            @else
+                                <li><span class="dropdown-item text-center text-muted py-4 small">No tienes notificaciones nuevas</span></li>
+                            @endif
+                        </ul>
+                    </div>   
+
+
                     <form action="{{ route('logout') }}" method="POST" class="m-0 p-0">
                         @csrf
                         <button type="submit" class="nav-icon border-0 bg-transparent text-danger p-0"
@@ -304,7 +347,109 @@
 
     {{-- CARGA TARDÍA JS --}}
     @vite(['resources/js/app.js', 'resources/js/carrito.js'])
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+
+
+  <!-- ========================================== -->
+    <!-- SCRIPT DE NOTIFICACIONES EN TIEMPO REAL    -->
+    <!-- ========================================== -->
+  <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Seleccionamos ambos tipos de campana por si acaso
+            const campanaAdmin = document.getElementById('bellDropdownAdmin');
+            const campanaTienda = document.getElementById('bellDropdownTienda');
+            const campanaActiva = campanaAdmin || campanaTienda;
+
+            if (campanaActiva) {
+                // 1. USAR EL EVENTO OFICIAL DE BOOTSTRAP (Se dispara justo cuando el menú se abre)
+                // Esto garantiza al 100% que la petición se envíe sin importar la interfaz
+                const dropdownElement = campanaActiva.closest('.dropdown');
+                
+                if (dropdownElement) {
+                    dropdownElement.addEventListener('shown.bs.dropdown', function () {
+                        let badge = campanaActiva.querySelector('.bg-danger');
+                        if (badge) {
+                            badge.remove(); // Borra el globito rojo visualmente al abrir
+                            
+                            // Petición silenciosa a la base de datos
+                            fetch('{{ route("notificaciones.leer") }}', {
+                                method: 'POST',
+                                headers: {
+                                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                                    'Content-Type': 'application/json',
+                                    'Accept': 'application/json'
+                                }
+                            });
+                        }
+                    });
+                }
+
+                // 2. CONSULTA EN TIEMPO REAL (Cada 15 segundos) SIN RECARGAR
+                setInterval(() => {
+                    fetch('{{ route("notificaciones.check") }}')
+                        .then(response => response.json())
+                        .then(data => {
+                            let badge = campanaActiva.querySelector('.bg-danger');
+                            let currentCount = badge ? parseInt(badge.innerText) : 0;
+                            
+                            // Si hay MÁS notificaciones nuevas de las que vemos en pantalla...
+                            if (data.count > currentCount) {
+                                
+                                // A. Alerta visual flotante (SweetAlert)
+                                if(typeof Swal !== 'undefined') {
+                                    Swal.fire({
+                                        toast: true,
+                                        position: 'top-end',
+                                        icon: 'info',
+                                        title: '¡Tienes una nueva notificación!',
+                                        showConfirmButton: false,
+                                        timer: 4000
+                                    });
+                                }
+                                
+                                // B. Actualizar o crear el número rojo (Badge)
+                                if (badge) {
+                                    badge.innerText = data.count;
+                                } else {
+                                    campanaActiva.innerHTML += `<span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="font-size: 0.6rem;">${data.count}</span>`;
+                                }
+
+                                // C. Reconstruir la lista desplegable dinámicamente
+                                let listaDropdown = campanaActiva.nextElementSibling; 
+                                let html = '<li><h6 class="dropdown-header fw-bold border-bottom pb-2">Notificaciones</h6></li>';
+                                
+                                if (data.notificaciones.length > 0) {
+                                    data.notificaciones.forEach(notif => {
+                                        let isUnread = notif.read_at === null;
+                                        let bgClass = isUnread ? 'bg-light' : '';
+                                        let textClass = isUnread ? 'text-dark' : 'text-muted';
+                                        
+                                        html += `
+                                            <li>
+                                                <a class="dropdown-item d-flex align-items-start py-3 border-bottom ${bgClass}" href="${notif.data.url}">
+                                                    <div class="me-3 mt-1">
+                                                        <i class="${notif.data.icono} fs-5"></i>
+                                                    </div>
+                                                    <div style="white-space: normal;">
+                                                        <strong class="d-block mb-1 ${textClass}">${notif.data.titulo}</strong>
+                                                        <span class="small text-muted d-block">${notif.data.mensaje}</span>
+                                                        <small class="text-secondary" style="font-size: 0.7rem;">${notif.tiempo}</small>
+                                                    </div>
+                                                </a>
+                                            </li>
+                                        `;
+                                    });
+                                } else {
+                                    html += '<li><span class="dropdown-item text-center text-muted py-4 small">No tienes notificaciones nuevas</span></li>';
+                                }
+
+                                listaDropdown.innerHTML = html;
+                            }
+                        });
+                }, 5000); // 15 segundos
+            }
+        });
+    </script>
 </body>
 
 </html>
