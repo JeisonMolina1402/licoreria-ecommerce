@@ -11,10 +11,12 @@ return Application::configure(basePath: dirname(__DIR__))
         commands: __DIR__.'/../routes/console.php',
         health: '/up',
     )
-    ->withMiddleware(function (Middleware $middleware): void {
-        // Registramos nuestro vigilante de roles con el alias 'admin'
+    ->withMiddleware(function (Middleware $middleware) {
+        // AQUÍ LE "PRESENTAMOS" LOS MIDDLEWARES DE SPATIE A LARAVEL 12
         $middleware->alias([
-            'admin' => \App\Http\Middleware\CheckRole::class,
+            'role' => \Spatie\Permission\Middleware\RoleMiddleware::class,
+            'permission' => \Spatie\Permission\Middleware\PermissionMiddleware::class,
+            'role_or_permission' => \Spatie\Permission\Middleware\RoleOrPermissionMiddleware::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

@@ -79,58 +79,73 @@
             <!-- SECCIÓN DERECHA -->
             <div class="d-flex justify-content-end align-items-center gap-2 gap-lg-4" style="flex: 1;">
                 @auth
-                    @if (in_array(Auth::user()->rol, ['admin', 'vendedor']))
+                    {{-- SPATIE: Si el usuario tiene el rol 'admin' O 'vendedor' --}}
+                    @hasanyrole('admin|vendedor')
                         <a href="{{ route('home') }}" class="btn btn-outline-dark btn-sm rounded-pill px-2 px-md-3"
                             title="Ver Panel">
                             <i class="fa-solid fa-chart-column"></i>
                             <span class="d-none d-md-inline ms-1">Panel Administrativo</span>
                         </a>
-                    @endif
-                    @if (auth()->user()->rol !== 'admin')
+                    @endhasanyrole
+
+                    {{-- SPATIE: Si el usuario NO ES 'admin' ni 'vendedor' (es decir, es solo un cliente) --}}
+                    @unlessrole('admin|vendedor')
                         <a href="{{ route('tienda.mis-pedidos') }}"
                             class="btn btn-outline-dark btn-sm rounded-pill px-2 px-md-3" title="Ver mis Pedidos">
                             <i class="fa-solid fa-ticket"></i>
                             <span class="d-none d-md-inline ms-1">Mis Pedidos</span>
                         </a>
-                    @endif
+                    @endunlessrole
 
-                     <!-- ========================================== -->
+                    <!-- ... Aquí sigue tu campanita de notificaciones sin cambios ... -->
+
+                    <!-- ========================================== -->
                     <!-- CAMPANITA DE NOTIFICACIONES (NUEVO)        -->
                     <!-- ========================================== -->
                     <div class="dropdown ms-2 me-2">
-                        <button class="nav-icon border-0 position-relative bg-transparent text-dark p-0" type="button" id="bellDropdownTienda" data-bs-toggle="dropdown" aria-expanded="false">
+                        <button class="nav-icon border-0 position-relative bg-transparent text-dark p-0" type="button"
+                            id="bellDropdownTienda" data-bs-toggle="dropdown" aria-expanded="false">
                             <i class="fa-solid fa-bell fs-5"></i>
-                            @if(isset($unreadCount) && $unreadCount > 0)
-                                <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="font-size: 0.6rem;">
+                            @if (isset($unreadCount) && $unreadCount > 0)
+                                <span
+                                    class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
+                                    style="font-size: 0.6rem;">
                                     {{ $unreadCount }}
                                 </span>
                             @endif
                         </button>
 
-                        <ul class="dropdown-menu dropdown-menu-end shadow border-0 mt-2" aria-labelledby="bellDropdownTienda" style="width: 320px; max-height: 400px; overflow-y: auto;">
-                            <li><h6 class="dropdown-header fw-bold border-bottom pb-2">Mis Notificaciones</h6></li>
-                            
-                            @if(isset($notifications) && $notifications->count() > 0)
-                                @foreach($notifications as $notificacion)
+                        <ul class="dropdown-menu dropdown-menu-end shadow border-0 mt-2"
+                            aria-labelledby="bellDropdownTienda" style="width: 320px; max-height: 400px; overflow-y: auto;">
+                            <li>
+                                <h6 class="dropdown-header fw-bold border-bottom pb-2">Mis Notificaciones</h6>
+                            </li>
+
+                            @if (isset($notifications) && $notifications->count() > 0)
+                                @foreach ($notifications as $notificacion)
                                     <li>
-                                        <a class="dropdown-item d-flex align-items-start py-3 border-bottom {{ is_null($notificacion->read_at) ? 'bg-light' : '' }}" 
-                                           href="{{ $notificacion->data['url'] }}">
+                                        <a class="dropdown-item d-flex align-items-start py-3 border-bottom {{ is_null($notificacion->read_at) ? 'bg-light' : '' }}"
+                                            href="{{ $notificacion->data['url'] }}">
                                             <div class="me-3 mt-1">
                                                 <i class="{{ $notificacion->data['icono'] }} fs-5"></i>
                                             </div>
                                             <div style="white-space: normal;">
-                                                <strong class="d-block mb-1 {{ is_null($notificacion->read_at) ? 'text-dark' : 'text-muted' }}">{{ $notificacion->data['titulo'] }}</strong>
-                                                <span class="small text-muted d-block">{{ $notificacion->data['mensaje'] }}</span>
-                                                <small class="text-secondary" style="font-size: 0.7rem;">{{ $notificacion->created_at->diffForHumans() }}</small>
+                                                <strong
+                                                    class="d-block mb-1 {{ is_null($notificacion->read_at) ? 'text-dark' : 'text-muted' }}">{{ $notificacion->data['titulo'] }}</strong>
+                                                <span
+                                                    class="small text-muted d-block">{{ $notificacion->data['mensaje'] }}</span>
+                                                <small class="text-secondary"
+                                                    style="font-size: 0.7rem;">{{ $notificacion->created_at->diffForHumans() }}</small>
                                             </div>
                                         </a>
                                     </li>
                                 @endforeach
                             @else
-                                <li><span class="dropdown-item text-center text-muted py-4 small">No tienes notificaciones nuevas</span></li>
+                                <li><span class="dropdown-item text-center text-muted py-4 small">No tienes notificaciones
+                                        nuevas</span></li>
                             @endif
                         </ul>
-                    </div>   
+                    </div>
 
 
                     <form action="{{ route('logout') }}" method="POST" class="m-0 p-0">
@@ -182,7 +197,8 @@
                 <div class="d-flex justify-content-center gap-4">
                     <a href="#" class="text-white social-icon fs-3 m-0"><i
                             class="fa-brands fa-facebook-f"></i></a>
-                    <a href="#" class="text-white social-icon fs-3 m-0"><i class="fa-brands fa-instagram"></i></a>
+                    <a href="#" class="text-white social-icon fs-3 m-0"><i
+                            class="fa-brands fa-instagram"></i></a>
                 </div>
             </div>
             @guest
@@ -196,9 +212,9 @@
         </div>
     </div>
 
-   <!-- ... Contenedor Principal ... -->
+    <!-- ... Contenedor Principal ... -->
     <main style="margin-top: 80px; min-height: 80vh;">
-        
+
         {{-- ALERTA GLOBAL PARA ERRORES DE CHECKOUT O VALIDACIONES --}}
         @if ($errors->any())
             <div class="container mt-4">
@@ -350,10 +366,10 @@
 
 
 
-  <!-- ========================================== -->
+    <!-- ========================================== -->
     <!-- SCRIPT DE NOTIFICACIONES EN TIEMPO REAL    -->
     <!-- ========================================== -->
-  <script>
+    <script>
         document.addEventListener('DOMContentLoaded', function() {
             // Seleccionamos ambos tipos de campana por si acaso
             const campanaAdmin = document.getElementById('bellDropdownAdmin');
@@ -364,18 +380,19 @@
                 // 1. USAR EL EVENTO OFICIAL DE BOOTSTRAP (Se dispara justo cuando el menú se abre)
                 // Esto garantiza al 100% que la petición se envíe sin importar la interfaz
                 const dropdownElement = campanaActiva.closest('.dropdown');
-                
+
                 if (dropdownElement) {
-                    dropdownElement.addEventListener('shown.bs.dropdown', function () {
+                    dropdownElement.addEventListener('shown.bs.dropdown', function() {
                         let badge = campanaActiva.querySelector('.bg-danger');
                         if (badge) {
                             badge.remove(); // Borra el globito rojo visualmente al abrir
-                            
+
                             // Petición silenciosa a la base de datos
-                            fetch('{{ route("notificaciones.leer") }}', {
+                            fetch('{{ route('notificaciones.leer') }}', {
                                 method: 'POST',
                                 headers: {
-                                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                                    'X-CSRF-TOKEN': document.querySelector(
+                                        'meta[name="csrf-token"]').content,
                                     'Content-Type': 'application/json',
                                     'Accept': 'application/json'
                                 }
@@ -386,17 +403,17 @@
 
                 // 2. CONSULTA EN TIEMPO REAL (Cada 15 segundos) SIN RECARGAR
                 setInterval(() => {
-                    fetch('{{ route("notificaciones.check") }}')
+                    fetch('{{ route('notificaciones.check') }}')
                         .then(response => response.json())
                         .then(data => {
                             let badge = campanaActiva.querySelector('.bg-danger');
                             let currentCount = badge ? parseInt(badge.innerText) : 0;
-                            
+
                             // Si hay MÁS notificaciones nuevas de las que vemos en pantalla...
                             if (data.count > currentCount) {
-                                
+
                                 // A. Alerta visual flotante (SweetAlert)
-                                if(typeof Swal !== 'undefined') {
+                                if (typeof Swal !== 'undefined') {
                                     Swal.fire({
                                         toast: true,
                                         position: 'top-end',
@@ -406,24 +423,26 @@
                                         timer: 4000
                                     });
                                 }
-                                
+
                                 // B. Actualizar o crear el número rojo (Badge)
                                 if (badge) {
                                     badge.innerText = data.count;
                                 } else {
-                                    campanaActiva.innerHTML += `<span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="font-size: 0.6rem;">${data.count}</span>`;
+                                    campanaActiva.innerHTML +=
+                                        `<span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="font-size: 0.6rem;">${data.count}</span>`;
                                 }
 
                                 // C. Reconstruir la lista desplegable dinámicamente
-                                let listaDropdown = campanaActiva.nextElementSibling; 
-                                let html = '<li><h6 class="dropdown-header fw-bold border-bottom pb-2">Notificaciones</h6></li>';
-                                
+                                let listaDropdown = campanaActiva.nextElementSibling;
+                                let html =
+                                    '<li><h6 class="dropdown-header fw-bold border-bottom pb-2">Notificaciones</h6></li>';
+
                                 if (data.notificaciones.length > 0) {
                                     data.notificaciones.forEach(notif => {
                                         let isUnread = notif.read_at === null;
                                         let bgClass = isUnread ? 'bg-light' : '';
                                         let textClass = isUnread ? 'text-dark' : 'text-muted';
-                                        
+
                                         html += `
                                             <li>
                                                 <a class="dropdown-item d-flex align-items-start py-3 border-bottom ${bgClass}" href="${notif.data.url}">
@@ -440,7 +459,8 @@
                                         `;
                                     });
                                 } else {
-                                    html += '<li><span class="dropdown-item text-center text-muted py-4 small">No tienes notificaciones nuevas</span></li>';
+                                    html +=
+                                        '<li><span class="dropdown-item text-center text-muted py-4 small">No tienes notificaciones nuevas</span></li>';
                                 }
 
                                 listaDropdown.innerHTML = html;

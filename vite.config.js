@@ -24,6 +24,9 @@ export default defineConfig({
                 'resources/js/pos.js',
                 'resources/js/reportes.js',
                 'resources/js/usuarios.js',
+
+                //Scripts de roles y permisos
+                'resources/js/roles.js',
             ],
             refresh: true,
         }),

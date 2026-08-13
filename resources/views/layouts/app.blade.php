@@ -110,12 +110,15 @@
                                 📊 Dashboard
                             </a>
                         </li>
-                        <li class="nav-item mb-2">
-                            <a class="nav-link {{ request()->routeIs('auditoria.index') ? 'active-menu' : 'text-white' }}"
-                                href="{{ route('auditoria.index') }}">
-                                🛡️ Auditoría
-                            </a>
-                        </li>
+                        {{-- SPATIE: Solo muestra esto si tiene el permiso exacto --}}
+                        @can('ver auditoria')
+                            <li class="nav-item mb-2">
+                                <a class="nav-link {{ request()->routeIs('auditoria.index') ? 'active-menu' : 'text-white' }}"
+                                    href="{{ route('auditoria.index') }}">
+                                    🛡️ Auditoría
+                                </a>
+                            </li>
+                        @endcan
                         <li class="nav-item mb-2">
                             <a class="nav-link {{ request()->routeIs('inventario') ? 'active-menu' : 'text-white' }}"
                                 href="{{ route('inventario') }}">
@@ -128,20 +131,51 @@
                                 🎟️ Tickets
                             </a>
                         </li>
-                        <li class="nav-item mb-2">
-                            <a class="nav-link {{ request()->routeIs('reportes.index') ? 'active-menu' : 'text-white' }}"
-                                href="{{ route('reportes.index') }}">
-                                📄 Reportes
-                            </a>
-                        </li>
+                        @can('ver reportes')
+                            <li class="nav-item mb-2">
+                                <a class="nav-link {{ request()->routeIs('reportes.index') ? 'active-menu' : 'text-white' }}"
+                                    href="{{ route('reportes.index') }}">
+                                    📄 Reportes
+                                </a>
+                            </li>
+                        @endcan
 
-                        {{-- NUEVO ENLACE: MÓDULO DE USUARIOS --}}
+
+                        {{-- MENÚ AGRUPADO DE CONFIGURACIÓN / SEGURIDAD --}}
+                        @can('gestionar usuarios') {{-- o 'gestionar roles y permisos' --}}
                         <li class="nav-item mb-2">
-                            <a class="nav-link {{ request()->routeIs('usuarios.*') ? 'active-menu' : 'text-white' }}"
-                                href="{{ route('usuarios.index') }}">
-                                👥 Usuarios
+                            <a class="nav-link d-flex justify-content-between align-items-center" data-bs-toggle="collapse" href="#collapseSeguridad" role="button" aria-expanded="false" aria-controls="collapseSeguridad">
+                                <span><i class="fa-solid fa-gears me-2"></i> Configuración</span>
+                                <i class="fa-solid fa-chevron-down small"></i>
                             </a>
+                            <div class="collapse {{ request()->routeIs('usuarios.*') || request()->routeIs('roles.*') || request()->routeIs('permisos.*') ? 'show' : '' }}" id="collapseSeguridad">
+                                <ul class="nav flex-column ms-3 mt-1 pb-1" style="border-left: 2px solid #495057;">
+                                    
+                                    @can('gestionar usuarios')
+                                    <li class="nav-item mb-1">
+                                        <a class="nav-link py-1 {{ request()->routeIs('usuarios.*') ? 'text-white fw-bold' : 'text-muted' }}" href="{{ route('usuarios.index') }}">
+                                            <i class="fa-solid fa-users me-2 small"></i> Usuarios
+                                        </a>
+                                    </li>
+                                    @endcan
+
+                                    @can('gestionar roles y permisos')
+                                    <li class="nav-item mb-1">
+                                        <a class="nav-link py-1 {{ request()->routeIs('roles.*') ? 'text-white fw-bold' : 'text-muted' }}" href="{{ route('roles.index') }}">
+                                            <i class="fa-solid fa-user-shield me-2 small"></i> Roles
+                                        </a>
+                                    </li>
+                                    <li class="nav-item mb-1">
+                                        <a class="nav-link py-1 {{ request()->routeIs('permisos.*') ? 'text-white fw-bold' : 'text-muted' }}" href="{{ route('permisos.index') }}">
+                                            <i class="fa-solid fa-key me-2 small"></i> Permisos
+                                        </a>
+                                    </li>
+                                    @endcan
+
+                                </ul>
+                            </div>
                         </li>
+                        @endcan
                     </ul>
                 </div>
             </nav>
@@ -164,32 +198,64 @@
                         <li class="nav-item mb-2"><a
                                 class="nav-link {{ request()->routeIs('home') || request()->routeIs('dashboard') ? 'active-menu' : 'text-white' }}"
                                 href="{{ route('home') }}">📊 Dashboard</a></li>
-                        <li class="nav-item mb-2">
-                            <a class="nav-link {{ request()->routeIs('auditoria.index') ? 'active-menu' : 'text-white' }}"
-                                href="{{ route('auditoria.index') }}">
-                                🛡️ Auditoría
-                            </a>
-                        </li>
+                        @can('ver auditoria')
+                            <li class="nav-item mb-2">
+                                <a class="nav-link {{ request()->routeIs('auditoria.index') ? 'active-menu' : 'text-white' }}"
+                                    href="{{ route('auditoria.index') }}">
+                                    🛡️ Auditoría
+                                </a>
+                            </li>
+                        @endcan
                         <li class="nav-item mb-2"><a
                                 class="nav-link {{ request()->routeIs('inventario') ? 'active-menu' : 'text-white' }}"
                                 href="{{ route('inventario') }}">📦 Inventario</a></li>
                         <li class="nav-item mb-2"><a
                                 class="nav-link {{ request()->routeIs('tickets.index') ? 'active-menu' : 'text-white' }}"
                                 href="{{ route('tickets.index') }}">🎟️ Tickets</a></li>
-                        <li class="nav-item mb-2">
-                            <a class="nav-link {{ request()->routeIs('reportes.index') ? 'active-menu' : 'text-white' }}"
-                                href="{{ route('reportes.index') }}">
-                                📄 Reportes
-                            </a>
-                        </li>
+                        @can('ver reportes')
+                            <li class="nav-item mb-2">
+                                <a class="nav-link {{ request()->routeIs('reportes.index') ? 'active-menu' : 'text-white' }}"
+                                    href="{{ route('reportes.index') }}">
+                                    📄 Reportes
+                                </a>
+                            </li>
+                        @endcan
 
-                        {{-- NUEVO ENLACE MÓVIL: MÓDULO DE USUARIOS --}}
+                        {{-- MENÚ AGRUPADO DE CONFIGURACIÓN / SEGURIDAD --}}
+                        @can('gestionar usuarios') {{-- o 'gestionar roles y permisos' --}}
                         <li class="nav-item mb-2">
-                            <a class="nav-link {{ request()->routeIs('usuarios.*') ? 'active-menu' : 'text-white' }}"
-                                href="{{ route('usuarios.index') }}">
-                                👥 Usuarios
+                            <a class="nav-link d-flex justify-content-between align-items-center" data-bs-toggle="collapse" href="#collapseSeguridad" role="button" aria-expanded="false" aria-controls="collapseSeguridad">
+                                <span><i class="fa-solid fa-gears me-2"></i> Configuración</span>
+                                <i class="fa-solid fa-chevron-down small"></i>
                             </a>
+                            <div class="collapse {{ request()->routeIs('usuarios.*') || request()->routeIs('roles.*') || request()->routeIs('permisos.*') ? 'show' : '' }}" id="collapseSeguridad">
+                                <ul class="nav flex-column ms-3 mt-1 pb-1" style="border-left: 2px solid #495057;">
+                                    
+                                    @can('gestionar usuarios')
+                                    <li class="nav-item mb-1">
+                                        <a class="nav-link py-1 {{ request()->routeIs('usuarios.*') ? 'text-white fw-bold' : 'text-muted' }}" href="{{ route('usuarios.index') }}">
+                                            <i class="fa-solid fa-users me-2 small"></i> Usuarios
+                                        </a>
+                                    </li>
+                                    @endcan
+
+                                    @can('gestionar roles y permisos')
+                                    <li class="nav-item mb-1">
+                                        <a class="nav-link py-1 {{ request()->routeIs('roles.*') ? 'text-white fw-bold' : 'text-muted' }}" href="{{ route('roles.index') }}">
+                                            <i class="fa-solid fa-user-shield me-2 small"></i> Roles
+                                        </a>
+                                    </li>
+                                    <li class="nav-item mb-1">
+                                        <a class="nav-link py-1 {{ request()->routeIs('permisos.*') ? 'text-white fw-bold' : 'text-muted' }}" href="{{ route('permisos.index') }}">
+                                            <i class="fa-solid fa-key me-2 small"></i> Permisos
+                                        </a>
+                                    </li>
+                                    @endcan
+
+                                </ul>
+                            </div>
                         </li>
+                        @endcan
                     </ul>
                 </div>
             </div>
@@ -226,36 +292,47 @@
                         <!-- CAMPANITA DE NOTIFICACIONES (NUEVO)        -->
                         <!-- ========================================== -->
                         <div class="dropdown me-3">
-                            <button class="btn btn-light position-relative border-0 bg-transparent" type="button" id="bellDropdownAdmin" data-bs-toggle="dropdown" aria-expanded="false">
+                            <button class="btn btn-light position-relative border-0 bg-transparent" type="button"
+                                id="bellDropdownAdmin" data-bs-toggle="dropdown" aria-expanded="false">
                                 <i class="fa-solid fa-bell fs-5 text-dark"></i>
-                                @if(isset($unreadCount) && $unreadCount > 0)
-                                    <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="font-size: 0.6rem;">
+                                @if (isset($unreadCount) && $unreadCount > 0)
+                                    <span
+                                        class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
+                                        style="font-size: 0.6rem;">
                                         {{ $unreadCount }}
                                     </span>
                                 @endif
                             </button>
 
-                            <ul class="dropdown-menu dropdown-menu-end shadow border-0 mt-2" aria-labelledby="bellDropdownAdmin" style="width: 320px; max-height: 400px; overflow-y: auto;">
-                                <li><h6 class="dropdown-header fw-bold border-bottom pb-2">Notificaciones</h6></li>
-                                
-                                @if(isset($notifications) && $notifications->count() > 0)
-                                    @foreach($notifications as $notificacion)
+                            <ul class="dropdown-menu dropdown-menu-end shadow border-0 mt-2"
+                                aria-labelledby="bellDropdownAdmin"
+                                style="width: 320px; max-height: 400px; overflow-y: auto;">
+                                <li>
+                                    <h6 class="dropdown-header fw-bold border-bottom pb-2">Notificaciones</h6>
+                                </li>
+
+                                @if (isset($notifications) && $notifications->count() > 0)
+                                    @foreach ($notifications as $notificacion)
                                         <li>
-                                            <a class="dropdown-item d-flex align-items-start py-3 border-bottom {{ is_null($notificacion->read_at) ? 'bg-light' : '' }}" 
-                                               href="{{ $notificacion->data['url'] }}">
+                                            <a class="dropdown-item d-flex align-items-start py-3 border-bottom {{ is_null($notificacion->read_at) ? 'bg-light' : '' }}"
+                                                href="{{ $notificacion->data['url'] }}">
                                                 <div class="me-3 mt-1">
                                                     <i class="{{ $notificacion->data['icono'] }} fs-5"></i>
                                                 </div>
                                                 <div style="white-space: normal;">
-                                                    <strong class="d-block mb-1 {{ is_null($notificacion->read_at) ? 'text-dark' : 'text-muted' }}">{{ $notificacion->data['titulo'] }}</strong>
-                                                    <span class="small text-muted d-block">{{ $notificacion->data['mensaje'] }}</span>
-                                                    <small class="text-secondary" style="font-size: 0.7rem;">{{ $notificacion->created_at->diffForHumans() }}</small>
+                                                    <strong
+                                                        class="d-block mb-1 {{ is_null($notificacion->read_at) ? 'text-dark' : 'text-muted' }}">{{ $notificacion->data['titulo'] }}</strong>
+                                                    <span
+                                                        class="small text-muted d-block">{{ $notificacion->data['mensaje'] }}</span>
+                                                    <small class="text-secondary"
+                                                        style="font-size: 0.7rem;">{{ $notificacion->created_at->diffForHumans() }}</small>
                                                 </div>
                                             </a>
                                         </li>
                                     @endforeach
                                 @else
-                                    <li><span class="dropdown-item text-center text-muted py-4 small">No tienes notificaciones nuevas</span></li>
+                                    <li><span class="dropdown-item text-center text-muted py-4 small">No tienes
+                                            notificaciones nuevas</span></li>
                                 @endif
                             </ul>
                         </div>
@@ -265,7 +342,8 @@
                             <!-- ... (El resto del botón de perfil y logout se queda exactamente igual) ... -->
                             <button
                                 class="btn btn-light dropdown-toggle d-flex align-items-center border-0 bg-transparent"
-                                type="button" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-expanded="false">
+                                type="button" id="dropdownMenuButton" data-bs-toggle="dropdown"
+                                aria-expanded="false">
                                 <span
                                     class="bg-secondary text-white rounded-circle d-flex align-items-center justify-content-center me-2"
                                     style="width: 35px; height: 35px;">👤</span>
@@ -313,7 +391,7 @@
     @stack('scripts')
     @livewireScripts
 
-  <!-- ========================================== -->
+    <!-- ========================================== -->
     <!-- SCRIPT DE NOTIFICACIONES EN TIEMPO REAL    -->
     <!-- ========================================== -->
     <script>
@@ -327,18 +405,19 @@
                 // 1. USAR EL EVENTO OFICIAL DE BOOTSTRAP (Se dispara justo cuando el menú se abre)
                 // Esto garantiza al 100% que la petición se envíe sin importar la interfaz
                 const dropdownElement = campanaActiva.closest('.dropdown');
-                
+
                 if (dropdownElement) {
-                    dropdownElement.addEventListener('shown.bs.dropdown', function () {
+                    dropdownElement.addEventListener('shown.bs.dropdown', function() {
                         let badge = campanaActiva.querySelector('.bg-danger');
                         if (badge) {
                             badge.remove(); // Borra el globito rojo visualmente al abrir
-                            
+
                             // Petición silenciosa a la base de datos
-                            fetch('{{ route("notificaciones.leer") }}', {
+                            fetch('{{ route('notificaciones.leer') }}', {
                                 method: 'POST',
                                 headers: {
-                                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                                    'X-CSRF-TOKEN': document.querySelector(
+                                        'meta[name="csrf-token"]').content,
                                     'Content-Type': 'application/json',
                                     'Accept': 'application/json'
                                 }
@@ -349,17 +428,17 @@
 
                 // 2. CONSULTA EN TIEMPO REAL (Cada 15 segundos) SIN RECARGAR
                 setInterval(() => {
-                    fetch('{{ route("notificaciones.check") }}')
+                    fetch('{{ route('notificaciones.check') }}')
                         .then(response => response.json())
                         .then(data => {
                             let badge = campanaActiva.querySelector('.bg-danger');
                             let currentCount = badge ? parseInt(badge.innerText) : 0;
-                            
+
                             // Si hay MÁS notificaciones nuevas de las que vemos en pantalla...
                             if (data.count > currentCount) {
-                                
+
                                 // A. Alerta visual flotante (SweetAlert)
-                                if(typeof Swal !== 'undefined') {
+                                if (typeof Swal !== 'undefined') {
                                     Swal.fire({
                                         toast: true,
                                         position: 'top-end',
@@ -369,24 +448,26 @@
                                         timer: 4000
                                     });
                                 }
-                                
+
                                 // B. Actualizar o crear el número rojo (Badge)
                                 if (badge) {
                                     badge.innerText = data.count;
                                 } else {
-                                    campanaActiva.innerHTML += `<span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="font-size: 0.6rem;">${data.count}</span>`;
+                                    campanaActiva.innerHTML +=
+                                        `<span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="font-size: 0.6rem;">${data.count}</span>`;
                                 }
 
                                 // C. Reconstruir la lista desplegable dinámicamente
-                                let listaDropdown = campanaActiva.nextElementSibling; 
-                                let html = '<li><h6 class="dropdown-header fw-bold border-bottom pb-2">Notificaciones</h6></li>';
-                                
+                                let listaDropdown = campanaActiva.nextElementSibling;
+                                let html =
+                                    '<li><h6 class="dropdown-header fw-bold border-bottom pb-2">Notificaciones</h6></li>';
+
                                 if (data.notificaciones.length > 0) {
                                     data.notificaciones.forEach(notif => {
                                         let isUnread = notif.read_at === null;
                                         let bgClass = isUnread ? 'bg-light' : '';
                                         let textClass = isUnread ? 'text-dark' : 'text-muted';
-                                        
+
                                         html += `
                                             <li>
                                                 <a class="dropdown-item d-flex align-items-start py-3 border-bottom ${bgClass}" href="${notif.data.url}">
@@ -403,7 +484,8 @@
                                         `;
                                     });
                                 } else {
-                                    html += '<li><span class="dropdown-item text-center text-muted py-4 small">No tienes notificaciones nuevas</span></li>';
+                                    html +=
+                                        '<li><span class="dropdown-item text-center text-muted py-4 small">No tienes notificaciones nuevas</span></li>';
                                 }
 
                                 listaDropdown.innerHTML = html;
@@ -413,7 +495,7 @@
             }
         });
     </script>
-    
+
 </body>
 
 </html>

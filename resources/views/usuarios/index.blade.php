@@ -296,13 +296,19 @@
                     </div>
 
                     <div class="row mb-3">
-                        <!-- ROL -->
+                       <!-- ROL DINÁMICO -->
                         <div class="col-6">
                             <label class="form-label fw-bold small text-muted">NIVEL DE ACCESO (ROL) *</label>
                             <select class="form-select @error('rol') is-invalid @enderror" name="rol" id="userRol" required>
-                                <option value="vendedor" {{ old('rol') == 'vendedor' ? 'selected' : '' }}>Vendedor</option>
-                                <option value="admin" {{ old('rol') == 'admin' ? 'selected' : '' }}>Administrador</option>
-                                <option value="cliente" {{ old('rol') == 'cliente' ? 'selected' : '' }}>Cliente</option>
+                                <option value="">Seleccione un rol...</option>
+                                
+                                {{-- Iteramos sobre los roles reales de la base de datos --}}
+                                @foreach($roles as $role)
+                                    <option value="{{ $role->name }}" {{ old('rol') == $role->name ? 'selected' : '' }}>
+                                        {{ ucfirst($role->name) }}
+                                    </option>
+                                @endforeach
+
                             </select>
                             @error('rol')
                                 <div class="invalid-feedback fw-bold">{{ $message }}</div>
