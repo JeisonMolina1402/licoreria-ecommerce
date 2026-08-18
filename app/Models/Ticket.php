@@ -27,7 +27,7 @@ class Ticket extends Model
     public function getActivitylogOptions(): LogOptions
     {
         return LogOptions::defaults()
-            ->logOnly(['estado', 'total', 'metodo_pago']) 
+            ->logOnly(['codigo_reserva','estado', 'total', 'metodo_pago']) 
             ->logOnlyDirty()
             ->dontSubmitEmptyLogs()
             ->useLogName('ventas');

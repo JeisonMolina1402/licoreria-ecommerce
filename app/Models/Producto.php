@@ -21,6 +21,7 @@ class Producto extends Model
         'stock',
         'imagen',
         'slug',
+        'estado',
     ];
 
     // Reglas de la auditoría

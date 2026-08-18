@@ -131,24 +131,24 @@ class InventarioController extends Controller
     }
 
     /**
-     * MÉTODO DESTROY para borrar un producto del sistema tanto en BD y Archivos.
+     * MÉTODO DESTROY (Ahora hace un Borrado Lógico / Desactivación)
      */
     public function destroy($id)
     {
-        // 1. Buscamos el producto asegurándonos de que exista.
         $producto = Producto::findOrFail($id);
         
-        // 2. LIMPIEZA DE SERVIDOR: 
-        // Verificamos si el producto tiene una imagen vinculada y comprobamos que el archivo físico realmente exista.
-        if ($producto->imagen && file_exists(public_path($producto->imagen))) {
-            // con unlink() es para que borreel archivo físico del disco duro
-            unlink(public_path($producto->imagen));
+        // Alternamos el estado como si fuera un interruptor
+        if ($producto->estado === 'activo' || $producto->estado === null) {
+            $producto->estado = 'inactivo';
+            $accion = 'desactivado (Oculto del catálogo)';
+        } else {
+            $producto->estado = 'activo';
+            $accion = 'activado (Visible en el catálogo)';
         }
         
-        // 3. Borramos el registro de la base de datos es como un DELETE FROM ENSQL.
-        $producto->delete();
+        $producto->save();
         
-        return redirect()->back()->with('success', '¡Producto eliminado correctamente del inventario!');
+        return redirect()->back()->with('success', "¡El producto fue $accion correctamente!");
     }
 
     public function exportarPdf(Request $request)

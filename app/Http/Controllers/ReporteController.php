@@ -13,7 +13,7 @@ use Barryvdh\DomPDF\Facade\Pdf;
 
 class ReporteController extends Controller
 {
-   // =========================================================================
+    // =========================================================================
     // MÉTODO 1: VISTA WEB (DASHBOARD)
     // =========================================================================
     public function index(Request $request)
@@ -23,10 +23,11 @@ class ReporteController extends Controller
         $modoAgrupacion = $request->input('modo_agrupacion');
 
         $rangoFechas = [$fechaInicio . ' 00:00:00', $fechaFin . ' 23:59:59'];
+        $estadosValidos = ['pagado', 'listo', 'entregado'];
 
         // Calculamos las métricas globales (Tarjetas superiores)
         $ticketsCompletados = Ticket::with('detalles.producto')
-                                    ->where('estado', 'entregado')
+                                    ->whereIn('estado', $estadosValidos)
                                     ->whereBetween('created_at', $rangoFechas)
                                     ->get();
 
@@ -37,12 +38,12 @@ class ReporteController extends Controller
         foreach ($ticketsCompletados as $ticket) {
             $ventasTotales += $ticket->total;
             foreach ($ticket->detalles as $detalle) {
-                if ($detalle->producto) {
-                    $ingresoProducto = $detalle->precio_unitario * $detalle->cantidad;
-                    $costoProducto = $detalle->precio_compra * $detalle->cantidad;
-                    $gananciaNeta += ($ingresoProducto - $costoProducto);
-                    $costosTotales += $costoProducto;
-                }
+                // Sumamos usando los datos históricos del detalle, sin importar si el producto se eliminó
+                $ingresoProducto = $detalle->precio_unitario * $detalle->cantidad;
+                $costoProducto = $detalle->precio_compra * $detalle->cantidad;
+                
+                $gananciaNeta += ($ingresoProducto - $costoProducto);
+                $costosTotales += $costoProducto;
             }
         }
 
@@ -84,10 +85,11 @@ class ReporteController extends Controller
                 if (isset($ventasBarras[$etiqueta])) {
                     $ventasBarras[$etiqueta] += $ticket->total;
                     foreach ($ticket->detalles as $d) {
-                        if ($d->producto) {
-                            $c = $d->producto->precio_compra * $d->cantidad; $v = $d->precio_unitario * $d->cantidad;
-                            $gastosBarras[$etiqueta] += $c; $gananciasBarras[$etiqueta] += ($v - $c);
-                        }
+                        // USAMOS EL COSTO HISTÓRICO ($d->precio_compra) NO EL DEL PRODUCTO ACTUAL
+                        $c = $d->precio_compra * $d->cantidad; 
+                        $v = $d->precio_unitario * $d->cantidad;
+                        $gastosBarras[$etiqueta] += $c; 
+                        $gananciasBarras[$etiqueta] += ($v - $c);
                     }
                 }
             }
@@ -108,10 +110,10 @@ class ReporteController extends Controller
                 if (isset($ventasBarras[$etiqueta])) {
                     $ventasBarras[$etiqueta] += $ticket->total;
                     foreach ($ticket->detalles as $d) {
-                        if ($d->producto) {
-                            $c = $d->producto->precio_compra * $d->cantidad; $v = $d->precio_unitario * $d->cantidad;
-                            $gastosBarras[$etiqueta] += $c; $gananciasBarras[$etiqueta] += ($v - $c);
-                        }
+                        $c = $d->precio_compra * $d->cantidad; 
+                        $v = $d->precio_unitario * $d->cantidad;
+                        $gastosBarras[$etiqueta] += $c; 
+                        $gananciasBarras[$etiqueta] += ($v - $c);
                     }
                 }
             }
@@ -128,10 +130,10 @@ class ReporteController extends Controller
                 if (isset($ventasBarras[$etiqueta])) {
                     $ventasBarras[$etiqueta] += $ticket->total;
                     foreach ($ticket->detalles as $d) {
-                        if ($d->producto) {
-                            $c = $d->producto->precio_compra * $d->cantidad; $v = $d->precio_unitario * $d->cantidad;
-                            $gastosBarras[$etiqueta] += $c; $gananciasBarras[$etiqueta] += ($v - $c);
-                        }
+                        $c = $d->precio_compra * $d->cantidad; 
+                        $v = $d->precio_unitario * $d->cantidad;
+                        $gastosBarras[$etiqueta] += $c; 
+                        $gananciasBarras[$etiqueta] += ($v - $c);
                     }
                 }
             }
@@ -148,10 +150,10 @@ class ReporteController extends Controller
                 if (isset($ventasBarras[$etiqueta])) {
                     $ventasBarras[$etiqueta] += $ticket->total;
                     foreach ($ticket->detalles as $d) {
-                        if ($d->producto) {
-                            $c = $d->producto->precio_compra * $d->cantidad; $v = $d->precio_unitario * $d->cantidad;
-                            $gastosBarras[$etiqueta] += $c; $gananciasBarras[$etiqueta] += ($v - $c);
-                        }
+                        $c = $d->precio_compra * $d->cantidad; 
+                        $v = $d->precio_unitario * $d->cantidad;
+                        $gastosBarras[$etiqueta] += $c; 
+                        $gananciasBarras[$etiqueta] += ($v - $c);
                     }
                 }
             }
@@ -168,10 +170,10 @@ class ReporteController extends Controller
                 if (isset($ventasBarras[$etiqueta])) {
                     $ventasBarras[$etiqueta] += $ticket->total;
                     foreach ($ticket->detalles as $d) {
-                        if ($d->producto) {
-                            $c = $d->producto->precio_compra * $d->cantidad; $v = $d->precio_unitario * $d->cantidad;
-                            $gastosBarras[$etiqueta] += $c; $gananciasBarras[$etiqueta] += ($v - $c);
-                        }
+                        $c = $d->precio_compra * $d->cantidad; 
+                        $v = $d->precio_unitario * $d->cantidad;
+                        $gastosBarras[$etiqueta] += $c; 
+                        $gananciasBarras[$etiqueta] += ($v - $c);
                     }
                 }
             }
@@ -200,9 +202,10 @@ class ReporteController extends Controller
         $modoAgrupacion = $request->input('modo_agrupacion');
 
         $rangoFechas = [$fechaInicio . ' 00:00:00', $fechaFin . ' 23:59:59'];
+        $estadosValidos = ['pagado', 'listo', 'entregado'];
 
         $ticketsCompletados = Ticket::with('detalles.producto')
-                                    ->where('estado', 'entregado')
+                                    ->whereIn('estado', $estadosValidos)
                                     ->whereBetween('created_at', $rangoFechas)
                                     ->get();
 
@@ -213,12 +216,10 @@ class ReporteController extends Controller
         foreach ($ticketsCompletados as $ticket) {
             $ventasTotales += $ticket->total;
             foreach ($ticket->detalles as $detalle) {
-                if ($detalle->producto) {
-                    $ingresoProducto = $detalle->precio_unitario * $detalle->cantidad;
-                    $costoProducto = $detalle->precio_compra * $detalle->cantidad;
-                    $costosTotales += $costoProducto;
-                    $gananciaNeta += ($ingresoProducto - $costoProducto);
-                }
+                $ingresoProducto = $detalle->precio_unitario * $detalle->cantidad;
+                $costoProducto = $detalle->precio_compra * $detalle->cantidad;
+                $costosTotales += $costoProducto;
+                $gananciaNeta += ($ingresoProducto - $costoProducto);
             }
         }
 
@@ -232,13 +233,12 @@ class ReporteController extends Controller
         $rankingProductos = $request->input('ranking_productos', 'ventas');
         $queryVendidos = DetalleTicket::selectRaw('
                 producto_id, 
-                SUM(detalle_tickets.cantidad) as total_vendido, 
-                SUM(detalle_tickets.precio_unitario * detalle_tickets.cantidad) as ingreso_generado, 
-                SUM((detalle_tickets.precio_unitario - detalle_tickets.precio_compra) * detalle_tickets.cantidad) as ganancia_generada
+                SUM(cantidad) as total_vendido, 
+                SUM(precio_unitario * cantidad) as ingreso_generado, 
+                SUM((precio_unitario - precio_compra) * cantidad) as ganancia_generada
             ')
-            ->join('productos', 'detalle_tickets.producto_id', '=', 'productos.id')
-            ->whereHas('ticket', function($query) use ($rangoFechas) {
-                $query->where('estado', 'entregado')->whereBetween('created_at', $rangoFechas);
+            ->whereHas('ticket', function($query) use ($rangoFechas, $estadosValidos) {
+                $query->whereIn('estado', $estadosValidos)->whereBetween('created_at', $rangoFechas);
             })
             ->groupBy('producto_id')
             ->with('producto.categoria');
@@ -255,8 +255,8 @@ class ReporteController extends Controller
         // CATEGORÍAS (PDF)
         // --------------------------------------------------------------
         $rankingCategorias = $request->input('ranking_categorias', 'ventas');
-        $detallesParaCategorias = DetalleTicket::whereHas('ticket', function($query) use ($rangoFechas) {
-                $query->where('estado', 'entregado')->whereBetween('created_at', $rangoFechas);
+        $detallesParaCategorias = DetalleTicket::whereHas('ticket', function($query) use ($rangoFechas, $estadosValidos) {
+                $query->whereIn('estado', $estadosValidos)->whereBetween('created_at', $rangoFechas);
             })->with('producto.categoria')->get();
 
         $ventasPorCategoria = []; 
@@ -309,10 +309,9 @@ class ReporteController extends Controller
                 if (isset($ventasBarras[$etiqueta])) {
                     $ventasBarras[$etiqueta] += $ticket->total;
                     foreach ($ticket->detalles as $d) {
-                        if ($d->producto) {
-                            $c = $d->producto->precio_compra * $d->cantidad; $v = $d->precio_unitario * $d->cantidad;
-                            $gastosBarras[$etiqueta] += $c; $gananciasBarras[$etiqueta] += ($v - $c);
-                        }
+                        $c = $d->precio_compra * $d->cantidad; 
+                        $v = $d->precio_unitario * $d->cantidad;
+                        $gastosBarras[$etiqueta] += $c; $gananciasBarras[$etiqueta] += ($v - $c);
                     }
                 }
             }
@@ -333,10 +332,9 @@ class ReporteController extends Controller
                 if (isset($ventasBarras[$etiqueta])) {
                     $ventasBarras[$etiqueta] += $ticket->total;
                     foreach ($ticket->detalles as $d) {
-                        if ($d->producto) {
-                            $c = $d->producto->precio_compra * $d->cantidad; $v = $d->precio_unitario * $d->cantidad;
-                            $gastosBarras[$etiqueta] += $c; $gananciasBarras[$etiqueta] += ($v - $c);
-                        }
+                        $c = $d->precio_compra * $d->cantidad; 
+                        $v = $d->precio_unitario * $d->cantidad;
+                        $gastosBarras[$etiqueta] += $c; $gananciasBarras[$etiqueta] += ($v - $c);
                     }
                 }
             }
@@ -353,10 +351,9 @@ class ReporteController extends Controller
                 if (isset($ventasBarras[$etiqueta])) {
                     $ventasBarras[$etiqueta] += $ticket->total;
                     foreach ($ticket->detalles as $d) {
-                        if ($d->producto) {
-                            $c = $d->producto->precio_compra * $d->cantidad; $v = $d->precio_unitario * $d->cantidad;
-                            $gastosBarras[$etiqueta] += $c; $gananciasBarras[$etiqueta] += ($v - $c);
-                        }
+                        $c = $d->precio_compra * $d->cantidad; 
+                        $v = $d->precio_unitario * $d->cantidad;
+                        $gastosBarras[$etiqueta] += $c; $gananciasBarras[$etiqueta] += ($v - $c);
                     }
                 }
             }
@@ -373,10 +370,9 @@ class ReporteController extends Controller
                 if (isset($ventasBarras[$etiqueta])) {
                     $ventasBarras[$etiqueta] += $ticket->total;
                     foreach ($ticket->detalles as $d) {
-                        if ($d->producto) {
-                            $c = $d->producto->precio_compra * $d->cantidad; $v = $d->precio_unitario * $d->cantidad;
-                            $gastosBarras[$etiqueta] += $c; $gananciasBarras[$etiqueta] += ($v - $c);
-                        }
+                        $c = $d->precio_compra * $d->cantidad; 
+                        $v = $d->precio_unitario * $d->cantidad;
+                        $gastosBarras[$etiqueta] += $c; $gananciasBarras[$etiqueta] += ($v - $c);
                     }
                 }
             }
@@ -393,10 +389,9 @@ class ReporteController extends Controller
                 if (isset($ventasBarras[$etiqueta])) {
                     $ventasBarras[$etiqueta] += $ticket->total;
                     foreach ($ticket->detalles as $d) {
-                        if ($d->producto) {
-                            $c = $d->producto->precio_compra * $d->cantidad; $v = $d->precio_unitario * $d->cantidad;
-                            $gastosBarras[$etiqueta] += $c; $gananciasBarras[$etiqueta] += ($v - $c);
-                        }
+                        $c = $d->precio_compra * $d->cantidad; 
+                        $v = $d->precio_unitario * $d->cantidad;
+                        $gastosBarras[$etiqueta] += $c; $gananciasBarras[$etiqueta] += ($v - $c);
                     }
                 }
             }

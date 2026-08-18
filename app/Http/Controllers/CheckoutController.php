@@ -38,25 +38,39 @@ class CheckoutController extends Controller
             'estado' => 'pendiente',
         ]);
 
-        // 4. Guardamos cada producto en la tabla de detalles Y DESCONTAmos STOCK
+        // 4. Guardamos cada producto en la tabla de detalles Y DESCONTAMOS STOCK
         foreach ($carrito as $item) {
-            
-            // Consultamos el producto en la BD para saber su costo de compra actual
             $producto = \App\Models\Producto::find($item['id']);
             
-            // A) Creamos el detalle del ticket
-            DetalleTicket::create([
-                'ticket_id' => $ticket->id,
-                'producto_id' => $item['id'],
-                'cantidad' => $item['cantidad'],
-                'precio_unitario' => $item['precio'],
-                'precio_compra' => $producto ? $producto->precio_compra : 0, // <--- FOTOGRAFÍA DEL COSTO
-            ]);
+            if ($producto) {
+                DetalleTicket::create([
+                    'ticket_id' => $ticket->id,
+                    'producto_id' => $item['id'],
+                    'cantidad' => $item['cantidad'],
+                    'precio_unitario' => $item['precio'],
+                    'precio_compra' => $producto->precio_compra,
+                ]);
 
-            // B) Descontamos el stock inmediatamente
-            DB::table('productos')
-                ->where('id', $item['id'])
-                ->decrement('stock', $item['cantidad']);
+                // Guardamos el stock viejo para la auditoría
+                $stockAnterior = $producto->stock;
+
+                // Apagamos el log automático un segundo para evitar filas duplicadas
+                $producto->disableLogging();
+                $producto->stock = $producto->stock - $item['cantidad'];
+                $producto->save();
+                $producto->enableLogging(); // Lo volvemos a encender
+
+                /// Creamos UN SOLO registro maestro
+                activity('inventario') 
+                    ->causedBy(Auth::user()) 
+                    ->performedOn($producto)
+                    ->event('reserva_online')
+                    ->withProperties([
+                        'old' => ['stock' => $stockAnterior],
+                        'attributes' => ['stock' => $producto->stock]
+                    ])
+                    ->log("{$item['cantidad']} producto(s) reservado(s) por compra online en el Ticket {$ticket->codigo_reserva}");
+            }
         }
 
         // ==========================================

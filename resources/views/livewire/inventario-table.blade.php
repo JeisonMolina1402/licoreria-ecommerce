@@ -74,7 +74,12 @@
                                     🍾
                                 @endif
                             </td>
-                            <td class="fw-bold">{{ $producto->nombre }}</td>
+                            <td class="fw-bold">
+                                {{ $producto->nombre }}
+                                @if ($producto->estado === 'inactivo')
+                                    <span class="badge bg-danger ms-2" style="font-size: 0.7rem;">Inactivo</span>
+                                @endif
+                            </td>
                             <td class="text-muted small">
                                 {{ \Illuminate\Support\Str::limit($producto->descripcion, 30) }}</td>
                             <td class="d-none d-md-table-cell">{{ $producto->categoria->nombre ?? 'Sin Categoría' }}
@@ -99,11 +104,21 @@
                                     data-imagen="{{ $producto->imagen ? asset($producto->imagen) : '' }}"
                                     onclick="prepararModalEditar(this)">✏️ Editar</button>
 
+                                {{-- BOTÓN DINÁMICO DE ACTIVAR / DESACTIVAR --}}
                                 <form action="{{ route('inventario.destroy', $producto->id) }}" method="POST"
-                                    class="d-inline" onsubmit="return confirm('¿Eliminar producto?')">
+                                    class="d-inline">
                                     @csrf
                                     @method('DELETE')
-                                    <button type="submit" class="btn btn-sm btn-outline-danger">🗑️ Eliminar</button>
+                                    @if ($producto->estado === 'activo' || $producto->estado === null)
+                                        <button type="submit" class="btn btn-sm btn-outline-danger shadow-sm fw-bold"
+                                            onclick="return confirm('¿Seguro que deseas ocultar este producto del catálogo?')">
+                                            <i class="fa-solid fa-ban"></i> Desactivar
+                                        </button>
+                                    @else
+                                        <button type="submit" class="btn btn-sm btn-outline-success shadow-sm fw-bold">
+                                            <i class="fa-solid fa-check"></i> Activar
+                                        </button>
+                                    @endif
                                 </form>
                             </td>
                         </tr>

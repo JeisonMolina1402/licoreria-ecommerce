@@ -131,7 +131,7 @@
                                 🎟️ Tickets
                             </a>
                         </li>
-                        @can('ver reportes')
+                        @can('gestionar reportes')
                             <li class="nav-item mb-2">
                                 <a class="nav-link {{ request()->routeIs('reportes.index') ? 'active-menu' : 'text-white' }}"
                                     href="{{ route('reportes.index') }}">
@@ -143,38 +143,44 @@
 
                         {{-- MENÚ AGRUPADO DE CONFIGURACIÓN / SEGURIDAD --}}
                         @can('gestionar usuarios') {{-- o 'gestionar roles y permisos' --}}
-                        <li class="nav-item mb-2">
-                            <a class="nav-link d-flex justify-content-between align-items-center" data-bs-toggle="collapse" href="#collapseSeguridad" role="button" aria-expanded="false" aria-controls="collapseSeguridad">
-                                <span><i class="fa-solid fa-gears me-2"></i> Configuración</span>
-                                <i class="fa-solid fa-chevron-down small"></i>
-                            </a>
-                            <div class="collapse {{ request()->routeIs('usuarios.*') || request()->routeIs('roles.*') || request()->routeIs('permisos.*') ? 'show' : '' }}" id="collapseSeguridad">
-                                <ul class="nav flex-column ms-3 mt-1 pb-1" style="border-left: 2px solid #495057;">
-                                    
-                                    @can('gestionar usuarios')
-                                    <li class="nav-item mb-1">
-                                        <a class="nav-link py-1 {{ request()->routeIs('usuarios.*') ? 'text-white fw-bold' : 'text-muted' }}" href="{{ route('usuarios.index') }}">
-                                            <i class="fa-solid fa-users me-2 small"></i> Usuarios
-                                        </a>
-                                    </li>
-                                    @endcan
+                            <li class="nav-item mb-2">
+                                <a class="nav-link d-flex justify-content-between align-items-center"
+                                    data-bs-toggle="collapse" href="#collapseSeguridad" role="button" aria-expanded="false"
+                                    aria-controls="collapseSeguridad">
+                                    <span><i class="fa-solid fa-gears me-2"></i> Configuración</span>
+                                    <i class="fa-solid fa-chevron-down small"></i>
+                                </a>
+                                <div class="collapse {{ request()->routeIs('usuarios.*') || request()->routeIs('roles.*') || request()->routeIs('permisos.*') ? 'show' : '' }}"
+                                    id="collapseSeguridad">
+                                    <ul class="nav flex-column ms-3 mt-1 pb-1" style="border-left: 2px solid #495057;">
 
-                                    @can('gestionar roles y permisos')
-                                    <li class="nav-item mb-1">
-                                        <a class="nav-link py-1 {{ request()->routeIs('roles.*') ? 'text-white fw-bold' : 'text-muted' }}" href="{{ route('roles.index') }}">
-                                            <i class="fa-solid fa-user-shield me-2 small"></i> Roles
-                                        </a>
-                                    </li>
-                                    <li class="nav-item mb-1">
-                                        <a class="nav-link py-1 {{ request()->routeIs('permisos.*') ? 'text-white fw-bold' : 'text-muted' }}" href="{{ route('permisos.index') }}">
-                                            <i class="fa-solid fa-key me-2 small"></i> Permisos
-                                        </a>
-                                    </li>
-                                    @endcan
+                                        @can('gestionar usuarios')
+                                            <li class="nav-item mb-1">
+                                                <a class="nav-link py-1 {{ request()->routeIs('usuarios.*') ? 'text-white fw-bold' : 'text-muted' }}"
+                                                    href="{{ route('usuarios.index') }}">
+                                                    <i class="fa-solid fa-users me-2 small"></i> Usuarios
+                                                </a>
+                                            </li>
+                                        @endcan
 
-                                </ul>
-                            </div>
-                        </li>
+                                        @can('gestionar roles y permisos')
+                                            <li class="nav-item mb-1">
+                                                <a class="nav-link py-1 {{ request()->routeIs('roles.*') ? 'text-white fw-bold' : 'text-muted' }}"
+                                                    href="{{ route('roles.index') }}">
+                                                    <i class="fa-solid fa-user-shield me-2 small"></i> Roles
+                                                </a>
+                                            </li>
+                                            <li class="nav-item mb-1">
+                                                <a class="nav-link py-1 {{ request()->routeIs('permisos.*') ? 'text-white fw-bold' : 'text-muted' }}"
+                                                    href="{{ route('permisos.index') }}">
+                                                    <i class="fa-solid fa-key me-2 small"></i> Permisos
+                                                </a>
+                                            </li>
+                                        @endcan
+
+                                    </ul>
+                                </div>
+                            </li>
                         @endcan
                     </ul>
                 </div>
@@ -223,38 +229,44 @@
 
                         {{-- MENÚ AGRUPADO DE CONFIGURACIÓN / SEGURIDAD --}}
                         @can('gestionar usuarios') {{-- o 'gestionar roles y permisos' --}}
-                        <li class="nav-item mb-2">
-                            <a class="nav-link d-flex justify-content-between align-items-center" data-bs-toggle="collapse" href="#collapseSeguridad" role="button" aria-expanded="false" aria-controls="collapseSeguridad">
-                                <span><i class="fa-solid fa-gears me-2"></i> Configuración</span>
-                                <i class="fa-solid fa-chevron-down small"></i>
-                            </a>
-                            <div class="collapse {{ request()->routeIs('usuarios.*') || request()->routeIs('roles.*') || request()->routeIs('permisos.*') ? 'show' : '' }}" id="collapseSeguridad">
-                                <ul class="nav flex-column ms-3 mt-1 pb-1" style="border-left: 2px solid #495057;">
-                                    
-                                    @can('gestionar usuarios')
-                                    <li class="nav-item mb-1">
-                                        <a class="nav-link py-1 {{ request()->routeIs('usuarios.*') ? 'text-white fw-bold' : 'text-muted' }}" href="{{ route('usuarios.index') }}">
-                                            <i class="fa-solid fa-users me-2 small"></i> Usuarios
-                                        </a>
-                                    </li>
-                                    @endcan
+                            <li class="nav-item mb-2">
+                                <a class="nav-link d-flex justify-content-between align-items-center"
+                                    data-bs-toggle="collapse" href="#collapseSeguridad" role="button"
+                                    aria-expanded="false" aria-controls="collapseSeguridad">
+                                    <span><i class="fa-solid fa-gears me-2"></i> Configuración</span>
+                                    <i class="fa-solid fa-chevron-down small"></i>
+                                </a>
+                                <div class="collapse {{ request()->routeIs('usuarios.*') || request()->routeIs('roles.*') || request()->routeIs('permisos.*') ? 'show' : '' }}"
+                                    id="collapseSeguridad">
+                                    <ul class="nav flex-column ms-3 mt-1 pb-1" style="border-left: 2px solid #495057;">
 
-                                    @can('gestionar roles y permisos')
-                                    <li class="nav-item mb-1">
-                                        <a class="nav-link py-1 {{ request()->routeIs('roles.*') ? 'text-white fw-bold' : 'text-muted' }}" href="{{ route('roles.index') }}">
-                                            <i class="fa-solid fa-user-shield me-2 small"></i> Roles
-                                        </a>
-                                    </li>
-                                    <li class="nav-item mb-1">
-                                        <a class="nav-link py-1 {{ request()->routeIs('permisos.*') ? 'text-white fw-bold' : 'text-muted' }}" href="{{ route('permisos.index') }}">
-                                            <i class="fa-solid fa-key me-2 small"></i> Permisos
-                                        </a>
-                                    </li>
-                                    @endcan
+                                        @can('gestionar usuarios')
+                                            <li class="nav-item mb-1">
+                                                <a class="nav-link py-1 {{ request()->routeIs('usuarios.*') ? 'text-white fw-bold' : 'text-muted' }}"
+                                                    href="{{ route('usuarios.index') }}">
+                                                    <i class="fa-solid fa-users me-2 small"></i> Usuarios
+                                                </a>
+                                            </li>
+                                        @endcan
 
-                                </ul>
-                            </div>
-                        </li>
+                                        @can('gestionar roles y permisos')
+                                            <li class="nav-item mb-1">
+                                                <a class="nav-link py-1 {{ request()->routeIs('roles.*') ? 'text-white fw-bold' : 'text-muted' }}"
+                                                    href="{{ route('roles.index') }}">
+                                                    <i class="fa-solid fa-user-shield me-2 small"></i> Roles
+                                                </a>
+                                            </li>
+                                            <li class="nav-item mb-1">
+                                                <a class="nav-link py-1 {{ request()->routeIs('permisos.*') ? 'text-white fw-bold' : 'text-muted' }}"
+                                                    href="{{ route('permisos.index') }}">
+                                                    <i class="fa-solid fa-key me-2 small"></i> Permisos
+                                                </a>
+                                            </li>
+                                        @endcan
+
+                                    </ul>
+                                </div>
+                            </li>
                         @endcan
                     </ul>
                 </div>

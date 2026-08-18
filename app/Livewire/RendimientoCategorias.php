@@ -20,8 +20,10 @@ class RendimientoCategorias extends Component
     {
         $rangoFechas = [$this->fechaInicio . ' 00:00:00', $this->fechaFin . ' 23:59:59'];
 
-        $detallesParaCategorias = DetalleTicket::whereHas('ticket', function($query) use ($rangoFechas) {
-            $query->where('estado', 'entregado')->whereBetween('created_at', $rangoFechas);
+        $estadosValidos = ['pagado', 'listo', 'entregado'];
+
+        $detallesParaCategorias = DetalleTicket::whereHas('ticket', function($query) use ($rangoFechas, $estadosValidos) {
+            $query->whereIn('estado', $estadosValidos)->whereBetween('created_at', $rangoFechas);
         })->with('producto.categoria')->get();
 
         $ventasPorCategoria = [];

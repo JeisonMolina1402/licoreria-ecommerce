@@ -27,48 +27,36 @@ class RendimientoProductos extends Component
         $this->resetPage('page_productos');
     }
 
-    public function render()
+   public function render()
     {
         $rangoFechas = [$this->fechaInicio . ' 00:00:00', $this->fechaFin . ' 23:59:59'];
-
-        $queryProductos = Producto::with('categoria')
-            ->select('productos.*') 
-            ->withSum(['detalles as total_vendido' => function($query) use ($rangoFechas) {
-                $query->whereHas('ticket', function($q) use ($rangoFechas) {
-                    $q->where('estado', 'entregado')->whereBetween('created_at', $rangoFechas);
-                });
-            }], 'cantidad')
-            ->addSelect(['ingreso_generado' => DetalleTicket::selectRaw('SUM(detalle_tickets.precio_unitario * detalle_tickets.cantidad)')
-                ->whereColumn('detalle_tickets.producto_id', 'productos.id')
-                ->whereHas('ticket', function($q) use ($rangoFechas) {
-                    $q->where('estado', 'entregado')->whereBetween('created_at', $rangoFechas);
-                })
-            ])
-            ->addSelect(['ganancia_generada' => DetalleTicket::selectRaw('SUM((detalle_tickets.precio_unitario - detalle_tickets.precio_compra) * detalle_tickets.cantidad)')
-                ->whereColumn('detalle_tickets.producto_id', 'productos.id')
-                ->whereHas('ticket', function($q) use ($rangoFechas) {
-                    $q->where('estado', 'entregado')->whereBetween('created_at', $rangoFechas);
-                })
-            ]);
+        $estadosValidos = ['pagado', 'listo', 'entregado'];
 
         if ($this->ranking_productos === 'cero') {
-            $queryProductos->whereDoesntHave('detalles', function($query) use ($rangoFechas) {
-                $query->whereHas('ticket', function($q) use ($rangoFechas) {
-                    $q->where('estado', 'entregado')->whereBetween('created_at', $rangoFechas);
-                });
-            })->orderBy('nombre', 'asc');
-        } elseif ($this->ranking_productos === 'ganancia') {
-            $queryProductos->whereHas('detalles', function($query) use ($rangoFechas) {
-                $query->whereHas('ticket', function($q) use ($rangoFechas) {
-                    $q->where('estado', 'entregado')->whereBetween('created_at', $rangoFechas);
-                });
-            })->orderByRaw('COALESCE(ganancia_generada, 0) DESC');
+            $queryProductos = Producto::with('categoria')
+                ->whereDoesntHave('detalles', function($query) use ($rangoFechas, $estadosValidos) {
+                    $query->whereHas('ticket', function($q) use ($rangoFechas, $estadosValidos) {
+                        $q->whereIn('estado', $estadosValidos)->whereBetween('created_at', $rangoFechas);
+                    });
+                })->orderBy('nombre', 'asc');
         } else {
-            $queryProductos->whereHas('detalles', function($query) use ($rangoFechas) {
-                $query->whereHas('ticket', function($q) use ($rangoFechas) {
-                    $q->where('estado', 'entregado')->whereBetween('created_at', $rangoFechas);
-                });
-            })->orderByRaw('COALESCE(total_vendido, 0) DESC');
+            $queryProductos = DetalleTicket::selectRaw('
+                    producto_id,
+                    SUM(cantidad) as total_vendido,
+                    SUM(precio_unitario * cantidad) as ingreso_generado,
+                    SUM((precio_unitario - precio_compra) * cantidad) as ganancia_generada
+                ')
+                ->whereHas('ticket', function($q) use ($rangoFechas, $estadosValidos) {
+                    $q->whereIn('estado', $estadosValidos)->whereBetween('created_at', $rangoFechas);
+                })
+                ->with('producto.categoria')
+                ->groupBy('producto_id');
+
+            if ($this->ranking_productos === 'ganancia') {
+                $queryProductos->orderByDesc('ganancia_generada');
+            } else {
+                $queryProductos->orderByDesc('total_vendido');
+            }
         }
 
         $productosTop = $queryProductos->paginate(5, ['*'], 'page_productos');

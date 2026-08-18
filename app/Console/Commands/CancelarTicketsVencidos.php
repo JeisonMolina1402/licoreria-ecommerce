@@ -51,8 +51,24 @@ class CancelarTicketsVencidos extends Command
                 // Recorremos los detalles de ese ticket para devolver las botellas
                 foreach ($ticket->detalles as $detalle) {
                     if ($detalle->producto) {
-                        // increment hace lo opuesto a decrement suma la cantidad al stock
-                        $detalle->producto->increment('stock', $detalle->cantidad);
+                        $producto = $detalle->producto;
+                        $stockAnterior = $producto->stock;
+                        
+                        // Apagamos log automático
+                        $producto->disableLogging();
+                        $producto->stock = $producto->stock + $detalle->cantidad;
+                        $producto->save();
+                        $producto->enableLogging();
+
+                        // Creamos UN SOLO registro maestro
+                        activity('inventario') 
+                            ->performedOn($producto)
+                            ->event('devolucion_automatica')
+                            ->withProperties([
+                                'old' => ['stock' => $stockAnterior],
+                                'attributes' => ['stock' => $producto->stock]
+                            ])
+                            ->log("{$detalle->cantidad} producto(s) devuelto(s) al stock automáticamente por vencimiento de tiempo del Ticket {$ticket->codigo_reserva}");
                     }
                 }
             });

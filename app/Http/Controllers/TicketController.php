@@ -62,10 +62,70 @@ class TicketController extends Controller
 
         // Si el ticket NO estaba cancelado antes, y el NUEVO estado que pide el admin ES 'cancelado'...
         if ($estadoAnterior != 'cancelado' && $request->estado == 'cancelado') {
+            
+            // 1. DEVOLUCIÓN DE STOCK AL INVENTARIO
             foreach ($ticket->detalles as $detalle) {
-                DB::table('productos')
-                    ->where('id', $detalle->producto_id)
-                    ->increment('stock', $detalle->cantidad);
+                $producto = Producto::find($detalle->producto_id);
+                if ($producto) {
+                    $stockAnterior = $producto->stock;
+
+                    $producto->disableLogging();
+                    $producto->stock = $producto->stock + $detalle->cantidad;
+                    $producto->save();
+                    $producto->enableLogging();
+
+                    activity('inventario') // <--- Pasamos 'inventario' aquí adentro
+                        ->causedBy(Auth::user())
+                        ->performedOn($producto)
+                        ->event('devolucion_manual')
+                        ->withProperties([
+                            'old' => ['stock' => $stockAnterior],
+                            'attributes' => ['stock' => $producto->stock]
+                        ])
+                        ->log("{$detalle->cantidad} producto(s) devuelto(s) al stock debido a la cancelación manual del Ticket {$ticket->codigo_reserva}");
+                }
+            }
+
+            // 2. NUEVO: DEVOLUCIÓN DE DINERO A LA CAJA
+            // Verificamos si el ticket ya había metido dinero a la caja (estados pagados)
+            if (in_array($estadoAnterior, ['pagado', 'listo', 'entregado'])) {
+                $turnoAbierto = TurnoCaja::where('user_id', Auth::id())
+                                         ->where('estado', 'abierto')
+                                         ->first();
+
+                if ($turnoAbierto) {
+                    $saldoAnteriorEfectivo = $turnoAbierto->total_efectivo;
+                    $saldoAnteriorTransf = $turnoAbierto->total_transferencias;
+
+                    // Apagamos el log automático para no generar un mensaje genérico
+                    $turnoAbierto->disableLogging();
+
+                    // Restamos del método de pago correspondiente
+                    if ($ticket->metodo_pago == 'efectivo') {
+                        $turnoAbierto->total_efectivo -= $ticket->total;
+                    } else {
+                        $turnoAbierto->total_transferencias -= $ticket->total;
+                    }
+                    $turnoAbierto->save();
+                    $turnoAbierto->enableLogging();
+
+                    // FASE 3: Log Manual de Devolución de Dinero
+                    activity('caja')
+                        ->causedBy(Auth::user())
+                        ->performedOn($turnoAbierto)
+                        ->event('devolucion_dinero')
+                        ->withProperties([
+                            'old' => [
+                                'total_efectivo' => $saldoAnteriorEfectivo,
+                                'total_transferencias' => $saldoAnteriorTransf
+                            ],
+                            'attributes' => [
+                                'total_efectivo' => $turnoAbierto->total_efectivo,
+                                'total_transferencias' => $turnoAbierto->total_transferencias
+                            ]
+                        ])
+                        ->log("Egreso de \${$ticket->total} ({$ticket->metodo_pago}) devuelto al cliente por cancelación del Ticket {$ticket->codigo_reserva}");
+                }
             }
         }
 
@@ -177,9 +237,25 @@ class TicketController extends Controller
                         'precio_compra' => $producto->precio_compra, // <--- FOTOGRAFÍA DEL COSTO
                     ]);
 
-                    // 2. DESCONTAMOS EL STOCK DIRECTAMENTE
+                    // 2. DESCONTAMOS EL STOCK CON LOG MANUAL PARA AUDITORÍA
+                    $stockAnterior = $producto->stock;
+
+                    // Apagamos el log automático
+                    $producto->disableLogging();
                     $producto->stock = $producto->stock - $item['cantidad'];
-                    $producto->save(); // save() fuerza la actualización de 'updated_at' y guarda los datos
+                    $producto->save(); 
+                    $producto->enableLogging(); // Lo encendemos de nuevo
+
+                    // 3. Creamos el registro maestro unificado
+                    activity('inventario')
+                        ->causedBy(Auth::user())
+                        ->performedOn($producto)
+                        ->event('venta_pos') // <--- NUEVO EVENTO: Venta en Punto de Venta
+                        ->withProperties([
+                            'old' => ['stock' => $stockAnterior],
+                            'attributes' => ['stock' => $producto->stock]
+                        ])
+                        ->log("{$item['cantidad']} producto(s) vendido(s) en mostrador en el Ticket {$ticket->codigo_reserva}");
                 }
             });
 

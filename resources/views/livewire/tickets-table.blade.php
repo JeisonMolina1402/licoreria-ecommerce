@@ -110,7 +110,7 @@
                                     <!-- ========================================== -->
                                     <!-- MODAL DINÁMICO                             -->
                                     <!-- ========================================== -->
-                                    <div class="modal fade" id="modalDetalle{{ $ticket->id }}" tabindex="-1" aria-hidden="true" style="white-space: normal;">
+                                    <div wire:ignore.self class="modal fade" id="modalDetalle{{ $ticket->id }}" tabindex="-1" aria-hidden="true" style="white-space: normal;">
                                         <div class="modal-dialog modal-dialog-centered">
                                             <div class="modal-content border-0 shadow-lg">
                                                 <div class="modal-header bg-dark text-white">

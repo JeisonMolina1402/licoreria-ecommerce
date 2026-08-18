@@ -29,7 +29,7 @@ class PosTable extends Component
     public function render()
     {
         $categorias = Categoria::orderBy('nombre', 'asc')->get();
-        $query = Producto::where('stock', '>', 0);
+        $query = Producto::where('stock', '>', 0)->where('estado', 'activo');
 
         if (!empty($this->nombre)) {
             $query->where('nombre', 'LIKE', '%' . $this->nombre . '%');

@@ -19,6 +19,7 @@ return new class extends Migration
             $table->decimal('precio',8,2);
             $table->decimal('precio_compra', 8, 2);
             $table->integer('stock');
+            $table->string('estado')->default('activo'); 
             $table->string('imagen')->nullable();
             $table->timestamps();
         });

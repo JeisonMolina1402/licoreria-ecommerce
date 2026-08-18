@@ -32,12 +32,21 @@
                         </tr>
                     </thead>
                     <tbody>
-                        @forelse($productosTop as $index => $producto)
+                        @forelse($productosTop as $index => $item)
                             @php
-                                $unidades = $producto->total_vendido ?? 0;
-                                $totalVenta = $producto->ingreso_generado ?? 0; 
-                                $ganancia = $producto->ganancia_generada ?? 0;  
+                                $esRanking = $ranking_productos !== 'cero';
+
+                                $unidades = $esRanking ? ($item->total_vendido ?? 0) : 0;
+                                $totalVenta = $esRanking ? ($item->ingreso_generado ?? 0) : 0; 
+                                $ganancia = $esRanking ? ($item->ganancia_generada ?? 0) : 0;  
                                 $totalInversion = $totalVenta - $ganancia;      
+
+                                $modeloProducto = $esRanking ? $item->producto : $item;
+                                $nombre = $modeloProducto ? $modeloProducto->nombre : '📦 Producto Eliminado';
+                                $categoria = $modeloProducto && $modeloProducto->categoria ? $modeloProducto->categoria->nombre : 'Sin Categoría';
+                                $precioCompra = $modeloProducto ? $modeloProducto->precio_compra : 0;
+                                $precioVenta = $modeloProducto ? $modeloProducto->precio : 0;
+                                $imagen = $modeloProducto ? $modeloProducto->imagen : null;
                             @endphp
                             <tr>
                                 <td class="px-4 py-3 fw-bold text-muted text-start">
@@ -46,18 +55,18 @@
                                 <td class="py-3 text-start">
                                     <div class="d-flex align-items-center">
                                         <div class="bg-white border rounded p-1 me-3 d-flex justify-content-center align-items-center shadow-sm" style="width: 45px; height: 45px;">
-                                            @if ($producto->imagen)
-                                                <img src="{{ asset($producto->imagen) }}" alt="img" class="rounded" style="max-width: 100%; max-height: 100%; object-fit: cover;">
+                                            @if ($imagen)
+                                                <img src="{{ asset($imagen) }}" alt="img" class="rounded" style="max-width: 100%; max-height: 100%; object-fit: cover;">
                                             @else
                                                 <span class="fs-5">🍷</span>
                                             @endif
                                         </div>
-                                        <strong>{{ $producto->nombre }}</strong>
+                                        <strong class="{{ !$modeloProducto ? 'text-danger' : '' }}">{{ $nombre }}</strong>
                                     </div>
                                 </td>
-                                <td class="py-3">{{ $producto->categoria->nombre ?? 'Sin Categoría' }}</td>
-                                <td class="py-3 text-muted">${{ number_format($producto->precio_compra, 2) }}</td>
-                                <td class="py-3">${{ number_format($producto->precio, 2) }}</td>
+                                <td class="py-3">{{ $categoria }}</td>
+                                <td class="py-3 text-muted">${{ number_format($precioCompra, 2) }}</td>
+                                <td class="py-3">${{ number_format($precioVenta, 2) }}</td>
                                 <td class="py-3 border-start text-danger">${{ number_format($totalInversion, 2) }}</td>
                                 <td class="py-3 text-primary fw-bold">${{ number_format($totalVenta, 2) }}</td>
                                 <td class="py-3 text-success fw-bold">${{ number_format($ganancia, 2) }}</td>

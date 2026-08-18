@@ -8,6 +8,8 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Spatie\Permission\Traits\HasRoles;
+use Spatie\Activitylog\Traits\LogsActivity;
+use Spatie\Activitylog\LogOptions;
 
 class User extends Authenticatable implements MustVerifyEmail
 {
@@ -15,6 +17,8 @@ class User extends Authenticatable implements MustVerifyEmail
     use HasFactory, Notifiable;
 
     use HasRoles;
+
+    use LogsActivity;
 
     /**
      * Los atributos que se pueden asignar de forma masiva (Formularios).
@@ -52,5 +56,16 @@ class User extends Authenticatable implements MustVerifyEmail
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
         ];
+    }
+
+
+    // NUEVO: Reglas de auditoría para usuarios
+    public function getActivitylogOptions(): LogOptions
+    {
+        return LogOptions::defaults()
+            ->logOnly(['name', 'email', 'cedula', 'rol', 'estado']) 
+            ->logOnlyDirty()
+            ->dontSubmitEmptyLogs() 
+            ->useLogName('usuarios'); // Aparecerá bajo el módulo "USUARIOS"
     }
 }

@@ -40,8 +40,8 @@ class CatalogoPublico extends Component
     {
         $categorias = Categoria::all();
 
-        // 1. Base: Solo productos con stock
-        $query = Producto::where('stock', '>', 0);
+        // 1. Base: Solo productos con stock Y ACTIVOS
+       $query = Producto::where('stock', '>', 0)->where('estado', 'activo');
 
         // 2. Filtro de búsqueda por nombre
         if (!empty($this->buscar)) {
