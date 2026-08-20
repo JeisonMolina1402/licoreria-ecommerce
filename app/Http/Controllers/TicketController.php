@@ -11,27 +11,18 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
 use App\Models\TurnoCaja;
 
-// 🔥 IMPORTAMOS LA NOTIFICACIÓN PARA EL CLIENTE
+// IMPORTAMOS LA NOTIFICACIÓN PARA EL CLIENTE
 use App\Notifications\TicketListoClienteNotification;
 
 class TicketController extends Controller
 {
-    /**
-     * CONSTRUCTOR: Seguridad del Controlador.
-     * Protege todas las rutas de este controlador. Solo un usuario autenticado cajero/admin 
-     * puede interactuar con el Punto de Venta o ver el historial de tickets.
-     */
     public function __construct()
     {
         $this->middleware('auth');
     }
 
-    /**
-     * MÉTODO INDEX : Muestra el historial de tickets con Eager Loading.
-     */
     public function index(Request $request)
     {
-        // BUSCAMOS SI EL VENDEDOR TIENE UN TURNO DE CAJA ABIERTO PARA EL WIDGET SUPERIOR
         $turnoAbierto = TurnoCaja::where('user_id', Auth::id())
                                  ->where('estado', 'abierto')
                                  ->first();
@@ -39,18 +30,13 @@ class TicketController extends Controller
         return view('tickets.index', compact('turnoAbierto'));
     }
 
-    // MÉTODO CREATE: Prepara y muestra la pantalla del Punto de Venta mediante livewire
     public function create(Request $request)
     {
         return view('tickets.create');
     }
 
-    /**
-     * MÉTODO CAMBIAR ESTADO: Permite avanzar el flujo del ticket de Pendiente a Pagado
-     */
     public function cambiarEstado(Request $request, $id)
     {
-        // 1. SEGURIDAD: Validamos los estados permitidos
         $request->validate([
             'estado' => 'required|in:pendiente,pagado,listo,entregado,cancelado' 
         ], [
@@ -60,10 +46,8 @@ class TicketController extends Controller
         $ticket = Ticket::with('detalles')->findOrFail($id);
         $estadoAnterior = $ticket->estado;
 
-        // Si el ticket NO estaba cancelado antes, y el NUEVO estado que pide el admin ES 'cancelado'...
         if ($estadoAnterior != 'cancelado' && $request->estado == 'cancelado') {
             
-            // 1. DEVOLUCIÓN DE STOCK AL INVENTARIO
             foreach ($ticket->detalles as $detalle) {
                 $producto = Producto::find($detalle->producto_id);
                 if ($producto) {
@@ -74,7 +58,7 @@ class TicketController extends Controller
                     $producto->save();
                     $producto->enableLogging();
 
-                    activity('inventario') // <--- Pasamos 'inventario' aquí adentro
+                    activity('inventario')
                         ->causedBy(Auth::user())
                         ->performedOn($producto)
                         ->event('devolucion_manual')
@@ -86,8 +70,6 @@ class TicketController extends Controller
                 }
             }
 
-            // 2. NUEVO: DEVOLUCIÓN DE DINERO A LA CAJA
-            // Verificamos si el ticket ya había metido dinero a la caja (estados pagados)
             if (in_array($estadoAnterior, ['pagado', 'listo', 'entregado'])) {
                 $turnoAbierto = TurnoCaja::where('user_id', Auth::id())
                                          ->where('estado', 'abierto')
@@ -97,10 +79,8 @@ class TicketController extends Controller
                     $saldoAnteriorEfectivo = $turnoAbierto->total_efectivo;
                     $saldoAnteriorTransf = $turnoAbierto->total_transferencias;
 
-                    // Apagamos el log automático para no generar un mensaje genérico
                     $turnoAbierto->disableLogging();
 
-                    // Restamos del método de pago correspondiente
                     if ($ticket->metodo_pago == 'efectivo') {
                         $turnoAbierto->total_efectivo -= $ticket->total;
                     } else {
@@ -109,7 +89,6 @@ class TicketController extends Controller
                     $turnoAbierto->save();
                     $turnoAbierto->enableLogging();
 
-                    // FASE 3: Log Manual de Devolución de Dinero
                     activity('caja')
                         ->causedBy(Auth::user())
                         ->performedOn($turnoAbierto)
@@ -129,7 +108,6 @@ class TicketController extends Controller
             }
         }
 
-        // CONTROL DE CAJA: Si el ticket pasa de 'pendiente' a un estado donde ya se recibió el dinero
         if ($estadoAnterior == 'pendiente' && in_array($request->estado, ['pagado', 'listo', 'entregado'])) {
             
             $turnoAbierto = TurnoCaja::where('user_id', Auth::id())
@@ -137,39 +115,33 @@ class TicketController extends Controller
                                      ->first();
             
             if ($turnoAbierto) {
-                // Sumamos a las transferencias del vendedor actual
                 $turnoAbierto->total_transferencias += $ticket->total;
                 $turnoAbierto->save();
 
-                // Aseguramos que quede marcado como transferencia
                 $ticket->metodo_pago = 'transferencia';
             } else {
                 return redirect()->back()->withErrors(['error' => 'Debes abrir un turno de caja antes de aprobar pagos.']);
             }
         }
 
-        // 3. Actualizamos el estado y guardamos
+        // 🔥 NUEVO: ASIGNACIÓN DE VENTA AL CAJERO (LÓGICA DE BONOS)
+        // Si el ticket no tiene vendedor asignado (viene de la web) y lo acaban de marcar como completado...
+        if (is_null($ticket->vendedor_id) && in_array($request->estado, ['pagado', 'listo', 'entregado'])) {
+            $ticket->vendedor_id = Auth::id(); // ¡Punto para el cajero que lo gestionó!
+        }
+
         $ticket->estado = $request->estado;
         $ticket->save();
 
-        // ==========================================
-        // 4. DISPARAR NOTIFICACIÓN AL CLIENTE
-        // ==========================================
-        // Verificamos si el nuevo estado es "listo" para avisarle que venga al local
         if ($request->estado === 'listo' && $ticket->user) {
             $ticket->user->notify(new TicketListoClienteNotification($ticket));
         }
-        // ==========================================
 
         return redirect()->back()->with('success', '¡El estado del ticket ha sido actualizado!');
     }
 
-    /**
-     * MÉTODO STORE (COBRAR):Guardamos la venta, creamos detalles y restamos stock.
-     */
     public function store(Request $request)
     {
-        // 1. VALIDAMOS LOS DATOS QUE VIENEN DE JAVASCRIPT
         $request->validate([
             'productos' => 'required|array',
             'productos.*.id' => 'required|exists:productos,id',
@@ -184,35 +156,30 @@ class TicketController extends Controller
             DB::transaction(function () use ($request) {
                 $totalReal = 0;
 
-                // PASO A: VERIFICACIÓN DE SEGURIDAD para evitar ventas a medias
                 foreach ($request->productos as $item) {
                     $producto = Producto::findOrFail($item['id']);
 
-                    // Si un producto no tiene stock, cancelamos TODO antes de guardar nada
                     if ($producto->stock < $item['cantidad']) {
                         throw new \Exception("Stock insuficiente para: " . $producto->nombre);
                     }
 
-                    // Sumamos al total (calculado de forma segura en el servidor)
                     $totalReal += ($producto->precio * $item['cantidad']);
                 }
 
-                // PASO B: CREACIÓN DEL TICKET
                 $ticket = Ticket::create([
-                    'user_id' => Auth::id(),
+                    'user_id' => Auth::id(), 
+                    'vendedor_id' => Auth::id(), // 🔥 NUEVO: LA VENTA POS PERTENECE AL CAJERO ACTUAL
                     'codigo_reserva' => strtoupper(Str::random(8)),
                     'estado' => 'entregado',
                     'metodo_pago' => $request->metodo_pago,
                     'total' => $totalReal,
                 ]);
 
-                // PASO B.2: SUMAR AL TURNO DE CAJA ACTIVO
                 $turnoAbierto = TurnoCaja::where('user_id', Auth::id())
                                          ->where('estado', 'abierto')
                                          ->first();
 
                 if ($turnoAbierto) {
-                    // Verificamos el método de pago para sumar en el lugar correcto
                     if ($request->metodo_pago == 'efectivo') {
                         $turnoAbierto->total_efectivo += $totalReal;
                     } else {
@@ -223,34 +190,27 @@ class TicketController extends Controller
                     throw new \Exception("Debes abrir un turno de caja antes de realizar cobros.");
                 }
 
-                // PASO C: GUARDAR DETALLES Y DESCONTAR STOCK 
                 foreach ($request->productos as $item) {
-
-                    // Volvemos a llamar al producto fresco de la Base de Datos
                     $producto = Producto::findOrFail($item['id']);
 
-                    // 1. Guardamos en la tabla detalle_tickets
                     $ticket->detalles()->create([
                         'producto_id' => $producto->id,
                         'cantidad' => $item['cantidad'],
                         'precio_unitario' => $producto->precio,
-                        'precio_compra' => $producto->precio_compra, // <--- FOTOGRAFÍA DEL COSTO
+                        'precio_compra' => $producto->precio_compra,
                     ]);
 
-                    // 2. DESCONTAMOS EL STOCK CON LOG MANUAL PARA AUDITORÍA
                     $stockAnterior = $producto->stock;
 
-                    // Apagamos el log automático
                     $producto->disableLogging();
                     $producto->stock = $producto->stock - $item['cantidad'];
                     $producto->save(); 
-                    $producto->enableLogging(); // Lo encendemos de nuevo
+                    $producto->enableLogging(); 
 
-                    // 3. Creamos el registro maestro unificado
                     activity('inventario')
                         ->causedBy(Auth::user())
                         ->performedOn($producto)
-                        ->event('venta_pos') // <--- NUEVO EVENTO: Venta en Punto de Venta
+                        ->event('venta_pos')
                         ->withProperties([
                             'old' => ['stock' => $stockAnterior],
                             'attributes' => ['stock' => $producto->stock]
@@ -263,5 +223,24 @@ class TicketController extends Controller
         } catch (\Exception $e) {
             return redirect()->back()->withErrors(['error' => $e->getMessage()]);
         }
+    }
+
+    public function subirComprobante(Request $request, $id)
+    {
+        $request->validate([
+            'comprobante' => 'required|image|mimes:jpeg,png,jpg,webp|max:2048'
+        ]);
+
+        $ticket = \App\Models\Ticket::findOrFail($id);
+
+        if ($request->hasFile('comprobante')) {
+            $nombreImagen = 'wp_' . $ticket->codigo_reserva . '_' . time() . '.' . $request->comprobante->extension();
+            $request->comprobante->move(public_path('uploads/comprobantes'), $nombreImagen);
+            
+            $ticket->comprobante_whatsapp = 'uploads/comprobantes/' . $nombreImagen;
+            $ticket->save();
+        }
+
+        return redirect()->back()->with('success', '¡Comprobante adjuntado exitosamente al ticket ' . $ticket->codigo_reserva . '!');
     }
 }

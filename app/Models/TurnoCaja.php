@@ -20,7 +20,9 @@ class TurnoCaja extends Model
         'total_transferencias',
         'estado',
         'fecha_apertura',
-        'fecha_cierre'
+        'fecha_cierre',
+        'observaciones_apertura',
+        'comprobante_deposito'
     ];
 
     // Para que Laravel maneje estas fechas como objetos Carbon
@@ -39,19 +41,21 @@ class TurnoCaja extends Model
         return LogOptions::defaults()
             // Le decimos qué columnas queremos vigilar
             ->logOnly([
-                'monto_inicial', 
-                'total_efectivo', 
-                'total_transferencias', 
-                'monto_final', 
-                'transferencias_final', 
-                'estado', 
-                'observaciones'
+                'monto_inicial',
+                'total_efectivo',
+                'total_transferencias',
+                'monto_final',
+                'transferencias_final',
+                'estado',
+                'observaciones',
+                'observaciones_apertura',
+                'comprobante_deposito'
             ])
             // Solo guarda si realmente hubo un cambio
             ->logOnlyDirty()
             // Evita guardar registros vacíos
             ->dontSubmitEmptyLogs()
             // Le damos el nombre del módulo para que aparezca bonito en tu UI
-            ->useLogName('caja'); 
+            ->useLogName('caja');
     }
 }

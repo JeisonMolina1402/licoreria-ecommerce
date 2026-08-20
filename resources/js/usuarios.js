@@ -49,3 +49,32 @@ window.prepararModalEditar = function(btn) {
     document.getElementById('userPassword').required = false;
     document.getElementById('helpPassword').classList.remove('d-none'); // Mostramos el mensaje de ayuda
 };
+
+// Función para el modal de guardar/actualizar permiso
+
+window.confirmarCancelacionUsuario = function () {
+    Swal.fire({
+        title: '¿Cancelar edición?',
+        text: 'Los datos que no hayas guardado se perderán.',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#d33',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: 'Sí, cancelar',
+        cancelButtonText: 'Volver al formulario'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            document.getElementById("btnCerrarModalFantasmaUsuario").click();
+            
+            const form = document.getElementById("formUsuario");
+            form.reset();
+            form.action = window.urlBaseUsuarios; // Ruta de crear
+            
+            // Limpiar errores visuales
+            form.querySelectorAll(".is-invalid").forEach(el => el.classList.remove("is-invalid"));
+            form.querySelectorAll(".texto-error").forEach(el => el.remove());
+            document.getElementById("metodoPutContainer").innerHTML = '';
+            document.getElementById("modalUsuarioTitle").innerHTML = '👤 Nuevo Usuario';
+        }
+    });
+};

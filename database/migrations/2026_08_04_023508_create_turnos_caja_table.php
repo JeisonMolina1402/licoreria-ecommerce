@@ -18,6 +18,9 @@ return new class extends Migration
             $table->decimal('total_transferencias', 8, 2)->default(0); // Las reservas web que aprueba
             
             $table->enum('estado', ['abierto', 'cerrado'])->default('abierto');
+
+            $table->text('observaciones_apertura')->nullable();
+            $table->string('comprobante_deposito')->nullable();
             
             $table->timestamp('fecha_apertura')->useCurrent();
             $table->timestamp('fecha_cierre')->nullable();

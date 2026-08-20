@@ -8,27 +8,27 @@
 
         <div class="d-flex justify-content-between align-items-end mb-3">
             <h5 class="text-dark mb-0 d-none d-md-block">Datos de Rendimiento</h5>
-            <button type="button" class="btn btn-danger btn-sm fw-bold shadow-sm px-3" onclick="exportarConGraficos()">
+            <button type="button" id="btnExportarPdf" class="btn btn-danger btn-sm fw-bold shadow-sm px-3" onclick="exportarConGraficos()">
                 <i class="fa-solid fa-file-pdf me-1"></i> Exportar Reporte
             </button>
         </div>
 
-        <!-- FORMULARIO OCULTO PARA EL PDF  -->
         <form id="formExportarPdf" action="{{ route('reportes.pdf') }}" method="POST" class="d-none">
             @csrf
             <input type="hidden" name="fecha_inicio" value="{{ $fechaInicio }}">
             <input type="hidden" name="fecha_fin" value="{{ $fechaFin }}">
-            <!-- Estos serán rellenados automáticamente por el JS antes de descargar el PDF -->
             <input type="hidden" name="ranking_productos" value="ventas">
             <input type="hidden" name="ranking_categorias" value="ventas">
             <input type="hidden" name="modo_agrupacion" value="{{ $modoAgrupacion }}"> 
             <input type="hidden" name="grafico_barras_base64" id="grafico_barras_base64">
             <input type="hidden" name="grafico_dona_base64" id="grafico_dona_base64">
+            <input type="hidden" name="grafico_vendedores_base64" id="grafico_vendedores_base64">
+            <input type="hidden" name="grafico_usuarios_base64" id="grafico_usuarios_base64">
         </form>
 
         <div class="card shadow-sm border-0 mb-4">
             <div class="card-body p-4">
-                <form action="{{ route('reportes.index') }}" method="GET" id="formFiltroPrincipal">
+                <form action="{{ route('reportes.index') }}" method="GET" id="formFiltroPrincipal" class="form-cargando">
                     <input type="hidden" name="modo_agrupacion" id="input_modo_agrupacion" value="{{ $modoAgrupacion }}">
                     <div class="row align-items-end g-3">
                         <div class="col-md-4">
@@ -46,7 +46,6 @@
                         </div>
                     </div>
 
-                    <!-- BOTONES DE ACCIÓN RÁPIDA -->
                     <div class="mt-3 pt-3 border-top d-flex flex-wrap gap-2 align-items-center">
                         <span class="text-muted small fw-bold me-2"><i class="fa-solid fa-bolt text-warning me-1"></i> Atajos:</span>
                         <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill px-3 fw-bold" onclick="aplicarFiltroRapido('mes')">Mes</button>
@@ -73,8 +72,7 @@
                                 <div class="text-uppercase text-muted small fw-bold mb-1">Ingresos (Ventas)</div>
                                 <div class="h3 mb-0 fw-bold text-dark">${{ number_format($ventasTotales, 2) }}</div>
                             </div>
-                            <div class="bg-primary bg-opacity-10 rounded-circle p-3 d-flex align-items-center justify-content-center"
-                                style="width: 60px; height: 60px;">
+                            <div class="bg-primary bg-opacity-10 rounded-circle p-3 d-flex align-items-center justify-content-center" style="width: 60px; height: 60px;">
                                 <i class="fa-solid fa-cash-register fa-2x text-primary"></i>
                             </div>
                         </div>
@@ -90,8 +88,7 @@
                                 <div class="text-uppercase text-muted small fw-bold mb-1">Costos (Gastos de Inventario)</div>
                                 <div class="h3 mb-0 fw-bold text-dark">${{ number_format($costosTotales, 2) }}</div>
                             </div>
-                            <div class="bg-primary bg-opacity-10 rounded-circle p-3 d-flex align-items-center justify-content-center"
-                                style="width: 60px; height: 60px;">
+                            <div class="bg-primary bg-opacity-10 rounded-circle p-3 d-flex align-items-center justify-content-center" style="width: 60px; height: 60px;">
                                 <i class="fa-solid fa-cash-register fa-2x text-primary"></i>
                             </div>
                         </div>
@@ -107,8 +104,7 @@
                                 <div class="text-uppercase text-muted small fw-bold mb-1">Ganancia Neta</div>
                                 <div class="h3 mb-0 fw-bold text-success">${{ number_format($gananciaNeta, 2) }}</div>
                             </div>
-                            <div class="bg-success bg-opacity-10 rounded-circle p-3 d-flex align-items-center justify-content-center"
-                                style="width: 60px; height: 60px;">
+                            <div class="bg-success bg-opacity-10 rounded-circle p-3 d-flex align-items-center justify-content-center" style="width: 60px; height: 60px;">
                                 <i class="fa-solid fa-sack-dollar fa-2x text-success"></i>
                             </div>
                         </div>
@@ -125,8 +121,7 @@
                                 <div class="h3 mb-0 fw-bold text-dark">{{ $totalTickets }}</div>
                                 <small class="text-success fw-bold">{{ $ticketsEntregados }} Entregados</small>
                             </div>
-                            <div class="bg-warning bg-opacity-10 rounded-circle p-3 d-flex align-items-center justify-content-center"
-                                style="width: 60px; height: 60px;">
+                            <div class="bg-warning bg-opacity-10 rounded-circle p-3 d-flex align-items-center justify-content-center" style="width: 60px; height: 60px;">
                                 <i class="fa-solid fa-receipt fa-2x text-warning"></i>
                             </div>
                         </div>
@@ -142,8 +137,7 @@
                                 <div class="text-uppercase text-muted small fw-bold mb-1">Nuevos Clientes</div>
                                 <div class="h3 mb-0 fw-bold text-dark">{{ $nuevosUsuarios }}</div>
                             </div>
-                            <div class="bg-purple bg-opacity-10 rounded-circle p-3 d-flex align-items-center justify-content-center"
-                                style="width: 60px; height: 60px;">
+                            <div class="bg-purple bg-opacity-10 rounded-circle p-3 d-flex align-items-center justify-content-center" style="width: 60px; height: 60px;">
                                 <i class="fa-solid fa-users fa-2x" style="color: #6f42c1;"></i>
                             </div>
                         </div>
@@ -152,7 +146,6 @@
             </div>
         </div>
 
-        <!-- Gráfico de Barras Dinámico -->
         <div class="row mb-4">
             <div class="col-12">
                 <div class="card shadow-sm border-0 rounded-4">
@@ -171,45 +164,105 @@
             </div>
         </div>
 
-        <!-- Fila 2: TABLA DE RENDIMIENTO (LIVEWIRE) -->
         <div class="row mb-4">
             @livewire('rendimiento-productos', ['fechaInicio' => $fechaInicio, 'fechaFin' => $fechaFin])
         </div>
 
-        <!-- Fila 3: GRÁFICO DE DONA (LIVEWIRE) Y ESTADOS DE RESERVA -->
-        <div class="row g-4">
+        <div class="row g-4 mb-4">
             
             @livewire('rendimiento-categorias', ['fechaInicio' => $fechaInicio, 'fechaFin' => $fechaFin, 'tieneTickets' => $totalTickets > 0])
 
-            <!-- Resumen de Efectividad -->
-            <div class="col-lg-5">
-                <div class="card shadow-sm border-0 rounded-4 h-100">
+            <div class="col-lg-5 d-flex flex-column gap-4">
+
+                <div class="card shadow-sm border-0 rounded-4 flex-grow-1">
+                    <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
+                        <h6 class="m-0 fw-bold text-dark"><i class="fa-solid fa-medal text-warning me-2"></i> Ranking de Vendedores</h6>
+                    </div>
+                    <div class="card-body p-4">
+                        <div class="mb-4" style="position: relative; height: 200px;">
+                            @if(count($rendimientoVendedores) > 0)
+                                <canvas id="graficoVendedores" data-nombres="{{ $nombresVendedores }}" data-ventas="{{ $ventasVendedores }}"></canvas>
+                            @else
+                                <div class="d-flex flex-column justify-content-center align-items-center h-100 text-muted">
+                                    <i class="fa-solid fa-chart-bar fs-1 mb-2"></i>
+                                    <p class="small">No hay ventas registradas.</p>
+                                </div>
+                            @endif
+                        </div>
+                        <div class="table-responsive border rounded-3">
+                            <table class="table table-hover align-middle text-center mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th class="py-2 text-uppercase text-muted small text-start ps-3">#</th>
+                                        <th class="py-2 text-uppercase text-muted small text-start">Vendedor</th>
+                                        <th class="py-2 text-uppercase text-muted small">Tickets</th>
+                                        <th class="py-2 text-uppercase text-muted small text-success fw-bold">Recaudado</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @forelse($rendimientoVendedores as $index => $vendedor)
+                                        <tr>
+                                            <td class="py-2 text-start ps-3 fw-bold">
+                                                @if($index === 0) 🥇 
+                                                @elseif($index === 1) 🥈 
+                                                @elseif($index === 2) 🥉 
+                                                @else {{ $index + 1 }} 
+                                                @endif
+                                            </td>
+                                            <td class="py-2 text-start fw-bold small">{{ $vendedor->vendedor ? $vendedor->vendedor->name : 'Eliminado' }}</td>
+                                            <td class="py-2"><span class="badge bg-secondary rounded-pill">{{ $vendedor->total_tickets }}</span></td>
+                                            <td class="py-2 text-success fw-bold small">${{ number_format($vendedor->total_recaudado, 2) }}</td>
+                                        </tr>
+                                    @empty
+                                        <tr><td colspan="4" class="py-4 text-center text-muted small">Aún no hay datos de comisiones.</td></tr>
+                                    @endforelse
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card shadow-sm border-0 rounded-4">
                     <div class="card-body p-4 d-flex flex-column justify-content-center">
                         <h6 class="fw-bold text-dark mb-4 border-bottom pb-2">Estado de Reservas</h6>
                         <div class="mb-4">
-                            <div class="d-flex justify-content-between mb-1">
-                                <span class="fw-bold text-success">Entregados (Completados)</span>
-                                <span class="fw-bold">{{ $totalTickets > 0 ? round(($ticketsEntregados / $totalTickets) * 100) : 0 }}%</span>
+                            <div class="d-flex justify-content-between align-items-end mb-1">
+                                <div>
+                                    <span class="fw-bold text-success d-block">Entregados (Completados)</span>
+                                    <small class="text-muted"><i class="fa-solid fa-check-circle text-success me-1"></i>{{ $ticketsEntregados }} tickets en total</small>
+                                </div>
+                                <span class="fw-bold fs-5">{{ $totalTickets > 0 ? round(($ticketsEntregados / $totalTickets) * 100) : 0 }}%</span>
                             </div>
                             <div class="progress" style="height: 10px;">
-                                <div class="progress-bar bg-success"
-                                    style="width: {{ $totalTickets > 0 ? ($ticketsEntregados / $totalTickets) * 100 : 0 }}%;">
-                                </div>
+                                <div class="progress-bar bg-success" style="width: {{ $totalTickets > 0 ? ($ticketsEntregados / $totalTickets) * 100 : 0 }}%;"></div>
                             </div>
                         </div>
                         <div>
-                            <div class="d-flex justify-content-between mb-1">
-                                <span class="fw-bold text-danger">Cancelados / Vencidos</span>
-                                <span class="fw-bold">{{ $totalTickets > 0 ? round(($ticketsCancelados / $totalTickets) * 100) : 0 }}%</span>
+                            <div class="d-flex justify-content-between align-items-end mb-1">
+                                <div>
+                                    <span class="fw-bold text-danger d-block">Cancelados / Vencidos</span>
+                                    <small class="text-muted"><i class="fa-solid fa-xmark-circle text-danger me-1"></i>{{ $ticketsCancelados }} tickets en total</small>
+                                </div>
+                                <span class="fw-bold fs-5">{{ $totalTickets > 0 ? round(($ticketsCancelados / $totalTickets) * 100) : 0 }}%</span>
                             </div>
                             <div class="progress" style="height: 10px;">
-                                <div class="progress-bar bg-danger"
-                                    style="width: {{ $totalTickets > 0 ? ($ticketsCancelados / $totalTickets) * 100 : 0 }}%;">
-                                </div>
+                                <div class="progress-bar bg-danger" style="width: {{ $totalTickets > 0 ? ($ticketsCancelados / $totalTickets) * 100 : 0 }}%;"></div>
                             </div>
                         </div>
                     </div>
                 </div>
+
+                <div class="card shadow-sm border-0 rounded-4">
+                    <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
+                        <h6 class="m-0 fw-bold text-dark"><i class="fa-solid fa-user-trend-up" style="color: #6f42c1; margin-right: 0.5rem;"></i> Crecimiento de Clientes</h6>
+                    </div>
+                    <div class="card-body p-4">
+                        <div style="position: relative; height: 180px;">
+                            <canvas id="graficoUsuarios" data-etiquetas="{{ $nombresBarras }}" data-usuarios="{{ $datosUsuariosBarras }}"></canvas>
+                        </div>
+                    </div>
+                </div>
+
             </div>
         </div>
 
@@ -220,4 +273,24 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
     @vite(['resources/js/reportes.js'])
+    
+    <script>
+        function exportarConGraficos() {
+            const btn = document.getElementById('btnExportarPdf');
+            
+            // Mostrar Spinner visual
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span> Generando PDF...';
+            btn.classList.add('disabled');
+            
+            // Llama a la lógica de JS (en reportes.js)
+            if (typeof window.procesarGraficosParaPdf === 'function') {
+                window.procesarGraficosParaPdf();
+            }
+
+            setTimeout(() => {
+                btn.innerHTML = '<i class="fa-solid fa-file-pdf me-1"></i> Exportar Reporte';
+                btn.classList.remove('disabled');
+            }, 3500);
+        }
+    </script>
 @endpush

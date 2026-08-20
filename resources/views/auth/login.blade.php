@@ -2,7 +2,8 @@
     <!-- Session Status -->
     <x-auth-session-status class="mb-4" :status="session('status')" />
 
-    <form method="POST" action="{{ route('login') }}">
+    <!-- AGREGADA CLASE form-cargando -->
+    <form method="POST" action="{{ route('login') }}" class="form-cargando">
         @csrf
 
         <!-- Email Address -->
@@ -43,9 +44,7 @@
                 {{ __('Log in') }}
             </x-primary-button>
         </div>
-        <div class="flex items-center justify-end mt-4">
-            </div>
-
+        
         <div class="mt-6 border-t border-gray-200 pt-5 text-center">
             <p class="text-sm text-gray-600">
                 ¿No tienes una cuenta? 

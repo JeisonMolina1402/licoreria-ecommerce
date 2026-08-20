@@ -142,18 +142,33 @@ document.addEventListener('DOMContentLoaded', () => {
     // 5. Enviar el carrito a Laravel al hacer clic en Procesar Reserva
     const formCheckout = document.getElementById('form-checkout');
     if (formCheckout) {
-        formCheckout.addEventListener('submit', (e) => {
+        formCheckout.addEventListener('submit', function(e) {
             // Verificamos si hay productos por seguridad
             if (carrito.length === 0) {
                 e.preventDefault();
+                // OPCIONAL: Si quieres que el error también sea bonito, descomenta esto y comenta el alert:
+                // if (typeof Swal !== 'undefined') Swal.fire({ icon: 'error', title: 'Tu carrito está vacío', text: 'Agrega productos antes de procesar.' });
                 alert('Tu carrito está vacío');
                 return;
             }
+
             // Convertimos el carrito a texto (JSON) y lo metemos en el input oculto
             document.getElementById('carrito_datos').value = JSON.stringify(carrito);
             
+            // --- INYECCIÓN DEL ESTADO DE CARGA (SPINNER) ---
+            const btnSubmit = this.querySelector('#btn-procesar-pago');
+            if (btnSubmit) {
+                // Deshabilitamos el botón para evitar 2 clics seguidos
+                btnSubmit.disabled = true;
+                btnSubmit.classList.add('disabled');
+                
+                // Cambiamos el texto y ponemos la ruedita de bootstrap
+                btnSubmit.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span> Procesando reserva...';
+            }
+            // ------------------------------------------------
+
             // Nota: Aquí no borramos el localStorage todavía. 
-            // Lo borraremos desde Laravel cuando el ticket se haya guardado con éxito en la base de datos.
+            // Lo borraremos desde la vista Blade (Checkout) cuando el ticket se haya guardado con éxito.
         });
     }
 

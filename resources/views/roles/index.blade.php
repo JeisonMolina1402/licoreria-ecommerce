@@ -6,20 +6,6 @@
 @section('content')
     <div class="container-fluid bg-light p-4" style="min-height: 100vh;">
 
-        <!-- ALERTAS -->
-        @if (session('success'))
-            <div class="alert alert-success alert-dismissible fade show shadow-sm" role="alert">
-                <strong>¡Éxito!</strong> {{ session('success') }}
-                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-            </div>
-        @endif
-        @if ($errors->any())
-            <div class="alert alert-danger alert-dismissible fade show shadow-sm" role="alert">
-                <strong>¡Error!</strong> {{ $errors->first() }}
-                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-            </div>
-        @endif
-
         <div class="d-flex justify-content-between align-items-end mb-3">
             <h5 class="text-dark mb-0 d-none d-md-block">Lista de Roles</h5>
             <button class="btn btn-primary btn-sm fw-bold shadow-sm px-3" data-bs-toggle="modal"
@@ -56,7 +42,7 @@
                                     </td>
                                     <td class="text-end pe-4">
                                         
-                                        {{-- Botón para asignar Permisos (Iremos a esta vista después) --}}
+                                        {{-- Botón para asignar Permisos --}}
                                         @if($role->name !== 'admin')
                                         <a href="{{ route('roles.permisos', $role->id) }}" class="btn btn-sm btn-outline-info me-1" title="Asignar Permisos">
                                             <i class="fa-solid fa-key"></i> Permisos
@@ -72,11 +58,11 @@
                                             <i class="fa-solid fa-pen"></i>
                                         </button>
 
-                                        {{-- Botón Eliminar --}}
+                                        {{-- Botón Eliminar CON CLASE form-eliminar --}}
                                         @if(!in_array($role->name, ['admin', 'cliente']))
-                                            <form action="{{ route('roles.destroy', $role->id) }}" method="POST" class="d-inline"
-                                                onsubmit="return confirm('¿Seguro que deseas eliminar este rol definitivamente?')">
-                                                @csrf @method('DELETE')
+                                            <form action="{{ route('roles.destroy', $role->id) }}" method="POST" class="d-inline form-eliminar">
+                                                @csrf 
+                                                @method('DELETE')
                                                 <button type="submit" class="btn btn-sm btn-outline-danger" title="Eliminar Rol">
                                                     <i class="fa-solid fa-trash"></i>
                                                 </button>
@@ -96,27 +82,30 @@
         </div>
     </div>
 
-    <!-- MODAL POLIMÓRFICO PARA ROLES -->
     <div class="modal fade" id="modalRol" data-bs-backdrop="static" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
-            <form id="formRol" action="{{ route('roles.store') }}" method="POST" class="modal-content border-0 shadow-lg" style="border-radius: 12px;">
+            <form id="formRol" action="{{ route('roles.store') }}" method="POST" class="modal-content border-0 shadow-lg form-cargando" style="border-radius: 12px;">
                 @csrf
                 <div id="metodoRolPutContainer"></div>
 
                 <div class="modal-header bg-light border-bottom-0 pt-4 px-4">
                     <h5 class="modal-title fw-bold" id="modalRolTitle"><i class="fa-solid fa-shield me-2"></i>Nuevo Rol</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    <button type="button" id="btnCerrarModalFantasmaRol" data-bs-dismiss="modal" class="d-none"></button>
+                    <button type="button" class="btn-close" onclick="confirmarCancelacionRol()"></button>
                 </div>
 
                 <div class="modal-body px-4">
                     <div class="mb-3">
                         <label class="form-label fw-bold small text-muted">NOMBRE DEL ROL *</label>
-                        <input type="text" class="form-control" name="name" id="rolName" required placeholder="ej. supervisor">
+                        <input type="text" class="form-control @error('name') is-invalid @enderror" name="name" id="rolName" required  placeholder="ej. supervisor" value="{{ old('name') }}">
+                        @error('name')
+                            <div class="invalid-feedback fw-bold">{{ $message }}</div>
+                        @enderror
                     </div>
                 </div>
 
-                <div class="modal-footer border-top-0 px-4 pb-4">
-                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancelar</button>
+               <div class="modal-footer border-top-0 px-4 pb-4">
+                    <button type="button" class="btn btn-light" onclick="confirmarCancelacionRol()">Cancelar</button>
                     <button type="submit" class="btn btn-primary px-4" id="btnSubmitRol">Guardar Rol</button>
                 </div>
             </form>
@@ -125,10 +114,20 @@
 @endsection
 
 @push('scripts')
-    {{-- Variables de entorno para JS --}}
     <script>
         window.urlBaseRoles = "{{ url('/roles') }}";
     </script>
-    {{-- Archivo JS encapsulado y compilado --}}
     @vite(['resources/js/roles.js'])
+
+    @if ($errors->any())
+        <button type="button" id="btnAutoOpenModalRol" data-bs-toggle="modal" data-bs-target="#modalRol" class="d-none"></button>
+        <script>
+            window.addEventListener('DOMContentLoaded', (event) => {
+                setTimeout(() => {
+                    // Simulamos un clic humano para forzar la apertura del modal
+                    document.getElementById('btnAutoOpenModalRol').click();
+                }, 150);
+            });
+        </script>
+    @endif
 @endpush

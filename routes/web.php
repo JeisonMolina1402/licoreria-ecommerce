@@ -69,9 +69,13 @@ Route::middleware(['auth', 'role:admin|vendedor'])->group(function () {
         Route::post('/tickets/estado/{id}', [TicketController::class, 'cambiarEstado'])->name('tickets.estado');
         Route::post('/tickets', [TicketController::class, 'store'])->name('tickets.store');
 
+
         // Rutas para el Control de Caja
         Route::post('/caja/abrir', [TurnoCajaController::class, 'abrir'])->name('caja.abrir');
         Route::post('/caja/cerrar', [TurnoCajaController::class, 'cerrar'])->name('caja.cerrar');
+
+        // Rutas para el Subir Comprobante
+        Route::post('/tickets/{id}/comprobante', [App\Http\Controllers\TicketController::class, 'subirComprobante'])->name('tickets.comprobante');
     });
 
     // Módulo de Reportes
@@ -84,6 +88,9 @@ Route::middleware(['auth', 'role:admin|vendedor'])->group(function () {
     Route::middleware(['permission:ver auditoria'])->group(function () {
         Route::get('/auditoria', [AuditoriaController::class, 'index'])->name('auditoria.index');
     });
+
+    // Exportar PDF de Auditoria
+    Route::get('/auditoria/pdf', [App\Http\Controllers\AuditoriaController::class, 'exportarPdf'])->name('auditoria.pdf');
 
     // Módulo de Usuarios
     Route::middleware(['permission:gestionar usuarios'])->group(function () {

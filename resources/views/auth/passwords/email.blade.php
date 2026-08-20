@@ -14,7 +14,8 @@
                         </div>
                     @endif
 
-                    <form method="POST" action="{{ route('password.email') }}">
+                    <!-- AGREGADA LA CLASE form-cargando -->
+                    <form method="POST" action="{{ route('password.email') }}" class="form-cargando">
                         @csrf
 
                         <div class="row mb-3">

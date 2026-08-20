@@ -1,18 +1,12 @@
-<!-- wire:poll.15s actualiza la tabla cada 15 segundos automáticamente buscando nuevos tickets -->
 <div wire:poll.10s>
     
-    <!-- ========================================== -->
-    <!-- MOTOR DE BÚSQUEDA Y FILTRADO EN TIEMPO REAL-->
-    <!-- ========================================== -->
     <div class="card shadow-sm border-0 mb-4">
         <div class="card-body">
             <div class="row g-2">
-                <!-- Búsqueda por Código -->
                 <div class="col-md-5">
                     <input type="text" class="form-control" wire:model.live.debounce.300ms="buscar_codigo" placeholder="🔍 Buscar por código de reserva..." autocomplete="off">
                 </div>
 
-                <!-- Filtro por Estado -->
                 <div class="col-md-4">
                     <select class="form-select" wire:model.live="estado">
                         <option value="">Todos los Estados</option>
@@ -24,29 +18,24 @@
                     </select>
                 </div>
 
-                <!-- Botón Limpiar -->
                 <div class="col-md-3">
-                    <button type="button" wire:click="limpiar" class="btn btn-outline-secondary w-100">Limpiar</button>
+                    <button type="button" wire:click="limpiar" class="btn btn-outline-secondary w-100" wire:loading.attr="disabled" wire:target="limpiar">
+                        <span wire:loading.remove wire:target="limpiar">Limpiar</span>
+                        <span wire:loading wire:target="limpiar" class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                    </button>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- ========================================== -->
-    <!-- CABECERA Y BOTÓN NUEVA VENTA               -->
-    <!-- ========================================== -->
     <div class="d-flex justify-content-between align-items-end mb-3">
         <h5 class="text-dark mb-0 d-none d-md-block">Lista de Tickets</h5>
-        <!-- wire:navigate hace que la transición a la vista de caja sea instantánea -->
         <a href="{{ route('tickets.create') }}" class="btn btn-primary btn-sm fw-bold shadow-sm px-3">
             + Nueva Venta (POS)
         </a>
     </div>
 
-    <!-- ========================================== -->
-    <!-- TABLA CENTRAL                              -->
-    <!-- ========================================== -->
-    <div class="bg-white p-3 rounded-3 shadow-sm mb-4">
+    <div class="bg-white p-3 rounded-3 shadow-sm mb-4 transition-all" wire:loading.class="opacity-50" wire:target="buscar_codigo, estado, limpiar">
         <div class="table-responsive">
             <table class="table table-hover align-middle mb-0 text-nowrap">
                 <thead class="table-light">
@@ -56,6 +45,7 @@
                         <th>Usuario</th>
                         <th>Fecha</th>
                         <th class="fw-bold text-success">Total</th>
+                        <th class="text-center">Comprobante</th>
                         <th>Estado</th>
                         <th></th>
                     </tr>
@@ -70,7 +60,18 @@
                                 <td>{{ $ticket->created_at->format('d/m/Y h:i A') }}</td>
                                 <td class="fw-bold text-success">${{ number_format($ticket->total, 2) }}</td>
                                 
-                                <!-- Badges -->
+                                <td class="text-center">
+                                    @if ($ticket->comprobante_whatsapp)
+                                        <button class="btn btn-sm btn-outline-success fw-bold shadow-sm" data-bs-toggle="modal" data-bs-target="#modalVerComprobante{{ $ticket->id }}">
+                                            <i class="fa-brands fa-whatsapp"></i> Ver
+                                        </button>
+                                    @else
+                                        <button class="btn btn-sm btn-light border text-muted fw-bold" data-bs-toggle="modal" data-bs-target="#modalSubirComprobante{{ $ticket->id }}">
+                                            <i class="fas fa-upload"></i> Subir
+                                        </button>
+                                    @endif
+                                </td>
+
                                 <td>
                                     @if ($ticket->estado == 'pendiente')
                                         <span class="badge bg-warning text-dark px-3 py-2 rounded-pill">Pendiente</span>
@@ -85,16 +86,13 @@
                                     @endif
                                 </td>
 
-                                <!-- Acciones -->
                                 <td>
                                     <div class="d-flex align-items-center gap-2">
-                                        <!-- Botón Ver -->
                                         <button class="btn btn-sm btn-outline-dark fw-bold" data-bs-toggle="modal" data-bs-target="#modalDetalle{{ $ticket->id }}">
                                             👁️ Ver
                                         </button>
 
-                                        <!-- Formulario Actualizar Estado -->
-                                        <form action="{{ route('tickets.estado', $ticket->id) }}" method="POST" class="d-flex gap-2 mb-0">
+                                        <form action="{{ route('tickets.estado', $ticket->id) }}" method="POST" class="d-flex gap-2 mb-0 form-cargando">
                                             @csrf
                                             <select name="estado" class="form-select form-select-sm" style="width: 120px;">
                                                 <option value="pendiente" {{ $ticket->estado == 'pendiente' ? 'selected' : '' }}>Pendiente</option>
@@ -107,9 +105,6 @@
                                         </form>
                                     </div>
 
-                                    <!-- ========================================== -->
-                                    <!-- MODAL DINÁMICO                             -->
-                                    <!-- ========================================== -->
                                     <div wire:ignore.self class="modal fade" id="modalDetalle{{ $ticket->id }}" tabindex="-1" aria-hidden="true" style="white-space: normal;">
                                         <div class="modal-dialog modal-dialog-centered">
                                             <div class="modal-content border-0 shadow-lg">
@@ -153,12 +148,58 @@
                                             </div>
                                         </div>
                                     </div>
+
+                                    <div wire:ignore.self class="modal fade" id="modalSubirComprobante{{ $ticket->id }}" tabindex="-1" aria-hidden="true" style="white-space: normal;">
+                                        <div class="modal-dialog modal-dialog-centered">
+                                            <form action="{{ route('tickets.comprobante', $ticket->id) }}" method="POST" enctype="multipart/form-data" class="modal-content border-0 shadow-lg form-cargando">
+                                                @csrf
+                                                <div class="modal-header bg-primary text-white">
+                                                    <h5 class="modal-title fw-bold"><i class="fas fa-upload me-2"></i> Adjuntar Comprobante</h5>
+                                                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                                                </div>
+                                                <div class="modal-body">
+                                                    <div class="mb-3 text-start">
+                                                        <label class="form-label fw-bold">Ticket: {{ $ticket->codigo_reserva }}</label>
+                                                        
+                                                        <input type="file" class="form-control @error('comprobante') is-invalid @enderror" name="comprobante" accept="image/*" required>
+                                                        
+                                                        @error('comprobante')
+                                                            <div class="invalid-feedback fw-bold">{{ $message }}</div>
+                                                        @enderror
+                                                        
+                                                        <small class="text-muted d-block mt-2">Sube la captura de pantalla de la transferencia (WhatsApp, Banco, etc.)</small>
+                                                    </div>
+                                                </div>
+                                                <div class="modal-footer border-top-0">
+                                                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancelar</button>
+                                                    <button type="submit" class="btn btn-primary fw-bold">Guardar Comprobante</button>
+                                                </div>
+                                            </form>
+                                        </div>
+                                    </div>
+
+                                    <div wire:ignore.self class="modal fade" id="modalVerComprobante{{ $ticket->id }}" tabindex="-1" aria-hidden="true" style="white-space: normal;">
+                                        <div class="modal-dialog modal-dialog-centered">
+                                            <div class="modal-content border-0 shadow-lg">
+                                                <div class="modal-header bg-success text-white">
+                                                    <h5 class="modal-title fw-bold"><i class="fa-brands fa-whatsapp me-2"></i> Comprobante: {{ $ticket->codigo_reserva }}</h5>
+                                                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                                                </div>
+                                                <div class="modal-body text-center bg-light">
+                                                    @if($ticket->comprobante_whatsapp)
+                                                        <img src="{{ asset($ticket->comprobante_whatsapp) }}" alt="Comprobante" class="img-fluid rounded shadow-sm border" style="max-height: 60vh; object-fit: contain;">
+                                                    @endif
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
                                 </td>
                             </tr>
                         @endforeach
                     @else
                         <tr>
-                            <td colspan="7" class="text-center py-5 text-muted">
+                            <td colspan="8" class="text-center py-5 text-muted">
                                 <span class="fs-1 d-block mb-2">🧾</span>
                                 Aún no hay tickets ni pedidos registrados.
                             </td>
@@ -169,7 +210,6 @@
         </div>
     </div>
 
-    <!-- Paginación -->
     <div class="mt-4">
         {{ $tickets->links() }}
     </div>

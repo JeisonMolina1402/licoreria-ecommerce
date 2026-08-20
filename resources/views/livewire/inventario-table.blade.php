@@ -34,7 +34,11 @@
                     </select>
                 </div>
                 <div class="col-md-1">
-                    <button type="button" wire:click="limpiar" class="btn btn-outline-secondary w-100">Limpiar</button>
+                    <!-- BOTÓN LIMPIAR CON SPINNER LIVEWIRE -->
+                    <button type="button" wire:click="limpiar" class="btn btn-outline-secondary w-100" wire:loading.attr="disabled" wire:target="limpiar">
+                        <span wire:loading.remove wire:target="limpiar">Limpiar</span>
+                        <span wire:loading wire:target="limpiar" class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                    </button>
                 </div>
             </div>
         </div>
@@ -48,7 +52,8 @@
         </button>
     </div>
 
-    <div class="table-responsive bg-white p-3 rounded-3 shadow-sm mb-4">
+    <!-- TABLA CON EFECTO DE CARGA TRANSLÚCIDO -->
+    <div class="table-responsive bg-white p-3 rounded-3 shadow-sm mb-4 transition-all" wire:loading.class="opacity-50">
         <table class="table table-hover align-middle mb-0">
             <thead class="table-light">
                 <tr>
@@ -104,14 +109,14 @@
                                     data-imagen="{{ $producto->imagen ? asset($producto->imagen) : '' }}"
                                     onclick="prepararModalEditar(this)">✏️ Editar</button>
 
-                                {{-- BOTÓN DINÁMICO DE ACTIVAR / DESACTIVAR --}}
+                                {{-- BOTÓN DINÁMICO DE ACTIVAR / DESACTIVAR (CON ALERTA SWEETALERT) --}}
+                                {{-- Se agregó la clase 'form-eliminar' al form y se quitó el onclick viejo --}}
                                 <form action="{{ route('inventario.destroy', $producto->id) }}" method="POST"
-                                    class="d-inline">
+                                    class="d-inline form-eliminar">
                                     @csrf
                                     @method('DELETE')
                                     @if ($producto->estado === 'activo' || $producto->estado === null)
-                                        <button type="submit" class="btn btn-sm btn-outline-danger shadow-sm fw-bold"
-                                            onclick="return confirm('¿Seguro que deseas ocultar este producto del catálogo?')">
+                                        <button type="submit" class="btn btn-sm btn-outline-danger shadow-sm fw-bold">
                                             <i class="fa-solid fa-ban"></i> Desactivar
                                         </button>
                                     @else

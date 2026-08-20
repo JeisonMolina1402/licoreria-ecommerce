@@ -34,3 +34,30 @@ window.prepararModalRolEditar = function (btn) {
     if(inputName) inputName.value = name;
     if(btnSubmit) btnSubmit.innerText = 'Actualizar Cambios';
 };
+
+// Función para el modal de guardar/actualizar rol
+window.confirmarCancelacionRol = function () {
+    Swal.fire({
+        title: '¿Cancelar edición?',
+        text: 'Los datos que no hayas guardado se perderán.',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#d33',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: 'Sí, cancelar',
+        cancelButtonText: 'Volver al formulario'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            document.getElementById("btnCerrarModalFantasmaRol").click();
+            
+            const form = document.getElementById("formRol");
+            form.reset();
+            form.action = window.urlBaseRoles; 
+            
+            form.querySelectorAll(".is-invalid").forEach(el => el.classList.remove("is-invalid"));
+            form.querySelectorAll(".texto-error").forEach(el => el.remove());
+            document.getElementById("metodoRolPutContainer").innerHTML = '';
+            document.getElementById("modalRolTitle").innerHTML = '<i class="fa-solid fa-shield me-2"></i>Nuevo Rol';
+        }
+    });
+};

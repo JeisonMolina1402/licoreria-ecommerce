@@ -27,34 +27,43 @@ class InventarioController extends Controller
     }
 
     /**
-     * MÉTODO STORE (CREAR / CREATE): Guarda un nuevo producto en la base de datos y sube su imagen.
+     * MÉTODO STORE (CREAR / CREATE): Guarda un nuevo producto.
      */
     public function store(Request $request)
     {
-        // 1. Reemplazamos las comas por puntos en los precios
-        $request->merge([
-            'precio_compra' => str_replace(',', '.', $request->precio_compra),
-            'precio' => str_replace(',', '.', $request->precio),
+       $request->merge([
+            'precio_compra' => str_replace(',', '.', $request->precio_compra ?? ''),
+            'precio' => str_replace(',', '.', $request->precio ?? ''),
         ]);
 
-        // 2. REGLAS DE VALIDACIÓN 
         $request->validate([
             'nombre' => 'required|string|max:255',
             'categoria_id' => 'required',
+            'nueva_categoria' => 'nullable|required_if:categoria_id,nueva|string|max:255', // <-- REGLA NUEVA
             'descripcion' => 'required|string|max:255',
             'precio' => 'required|numeric|min:0',
             'precio_compra' => 'required|numeric|min:0',
             'stock' => 'required|integer|min:0',
-            'imagen' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048', 
+            'imagen' => 'required|image|mimes:jpeg,png,jpg,webp|max:2048', 
+        ], [
+            'nueva_categoria.required_if' => 'Debes escribir el nombre de la nueva categoría.'
         ]);
 
-        // 3. CONTROL DE CATEGORÍAS HUÉRFANAS
-        Categoria::firstOrCreate(
-            ['id' => $request->categoria_id],
-            ['nombre' => 'Categoría General', 'descripcion' => 'Generada automáticamente por el sistema']
-        );
+        // ==========================================
+        // LA MAGIA DE LA NUEVA CATEGORÍA
+        // ==========================================
+        $idCategoriaFinal = $request->categoria_id;
 
-        // 4. GESTIÓN DE LA IMAGEN
+        if ($request->categoria_id === 'nueva') {
+            // Creamos la categoría sobre la marcha
+            $nuevaCat = Categoria::create([
+                'nombre' => ucfirst(strtolower($request->nueva_categoria)),
+                'descripcion' => 'Creada automáticamente desde el inventario.'
+            ]);
+            $idCategoriaFinal = $nuevaCat->id; // Tomamos el ID recién creado
+        }
+        // ==========================================
+
         $rutaImagen = null;
         if ($request->hasFile('imagen')) {
             $nombreImagen = time() . '.' . $request->imagen->extension();
@@ -62,9 +71,8 @@ class InventarioController extends Controller
             $rutaImagen = 'uploads/productos/' . $nombreImagen; 
         }
 
-        // 5. GUARDAMOS EN LA BASE DE DATOS 
         $producto = new Producto();
-        $producto->categoria_id = $request->categoria_id;
+        $producto->categoria_id = $idCategoriaFinal; // <--- USAMOS EL ID FINAL
         $producto->nombre = $request->nombre;
         $producto->descripcion = $request->descripcion;
         $producto->precio_compra = $request->precio_compra ?: 0; 
@@ -81,44 +89,48 @@ class InventarioController extends Controller
      */
     public function update(Request $request, $id)
     {
-        // 1. Buscamos el producto. Si el ID no existe en la BD, lanza un error 404 automático.
         $producto = Producto::findOrFail($id);
 
-        // 2. Misma sanitización de store para los precios
-        $request->merge([
-            'precio_compra' => str_replace(',', '.', $request->precio_compra),
-            'precio' => str_replace(',', '.', $request->precio),
+       $request->merge([
+            'precio_compra' => str_replace(',', '.', $request->precio_compra ?? ''),
+            'precio' => str_replace(',', '.', $request->precio ?? ''),
         ]);
 
-        // 3. Reglas de validación 
-        $reglas = [
+        $request->validate([
             'nombre' => 'required|string|max:255',
             'categoria_id' => 'required',
+            'nueva_categoria' => 'nullable|required_if:categoria_id,nueva|string|max:255', // <-- REGLA NUEVA
             'descripcion' => 'required|string|max:255',
             'precio' => 'required|numeric|min:0',
             'precio_compra' => 'required|numeric|min:0',
             'stock' => 'required|integer|min:0',
             'imagen' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
-        ];
+        ], [
+            'nueva_categoria.required_if' => 'Debes escribir el nombre de la nueva categoría.'
+        ]);
 
-        $mensajes = [ /* ... Mensajes definidos anteriormente ... */ ];
-        $request->validate($reglas, $mensajes);
+        // ==========================================
+        // LA MAGIA DE LA NUEVA CATEGORÍA (También al editar)
+        // ==========================================
+        $idCategoriaFinal = $request->categoria_id;
 
-        // 4. ACTUALIZACIÓN DE IMAGEN
-        // mantenemos la ruta de la imagen que el producto ya tenía.
+        if ($request->categoria_id === 'nueva') {
+            $nuevaCat = Categoria::create([
+                'nombre' => ucfirst(strtolower($request->nueva_categoria)),
+                'descripcion' => 'Creada automáticamente desde el inventario.'
+            ]);
+            $idCategoriaFinal = $nuevaCat->id; 
+        }
+        // ==========================================
+
         $rutaImagen = $producto->imagen;
-        
-        // Si el usuario subió una imagen nueva en el formulario...
         if ($request->hasFile('imagen')) {
             $nombreImagen = time() . '.' . $request->imagen->extension();
             $request->imagen->move(public_path('uploads/productos'), $nombreImagen);
-            $rutaImagen = 'uploads/productos/' . $nombreImagen; // Sobrescribimos la variable con la nueva ruta.
-            
-            // Nota:  añadir código para borrar la imagen vieja del servidor y ahorrar espacio.
+            $rutaImagen = 'uploads/productos/' . $nombreImagen; 
         }
 
-        // 5. Asignación y guardamos.
-        $producto->categoria_id = $request->categoria_id;
+        $producto->categoria_id = $idCategoriaFinal; // <--- USAMOS EL ID FINAL
         $producto->nombre = $request->nombre;
         $producto->descripcion = $request->descripcion;
         $producto->precio_compra = $request->precio_compra ?: 0;
@@ -129,7 +141,6 @@ class InventarioController extends Controller
 
         return redirect()->back()->with('success', '¡Producto actualizado correctamente!');
     }
-
     /**
      * MÉTODO DESTROY (Ahora hace un Borrado Lógico / Desactivación)
      */

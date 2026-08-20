@@ -13,7 +13,7 @@
         .permiso-card:hover {
             transform: translateY(-3px);
             box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.1) !important;
-            border-color: rgba(13, 110, 253, 0.3) !important; /* Borde azul sutil al pasar el mouse */
+            border-color: rgba(13, 110, 253, 0.3) !important;
         }
     </style>
 
@@ -32,7 +32,7 @@
                 <p class="text-muted small mt-1 mb-0">Marca las casillas de las funciones a las que este rol tendrá acceso.</p>
             </div>
             
-            <form action="{{ route('roles.permisos.update', $rol->id) }}" method="POST">
+            <form action="{{ route('roles.permisos.update', $rol->id) }}" method="POST" class="form-cargando">
                 @csrf
                 <div class="card-body p-4 bg-light">
                     
@@ -40,18 +40,15 @@
                         @forelse($permissions as $permiso)
                             <div class="col-md-6 col-lg-4 col-xl-3">
                                 
-                                <!-- TARJETA BLANCA MEJORADA -->
                                 <div class="card bg-white shadow-sm h-100 permiso-card" style="border-radius: 12px; cursor: pointer;"
                                      onclick="document.getElementById('permiso_{{ $permiso->id }}').click();">
                                     
                                     <div class="card-body p-3 d-flex justify-content-between align-items-center">
-                                        <!-- Texto a la izquierda -->
                                         <label class="form-check-label fw-bold text-dark mb-0" for="permiso_{{ $permiso->id }}" 
                                                style="cursor: pointer; user-select: none; line-height: 1.2;">
                                             {{ ucfirst($permiso->name) }}
                                         </label>
                                         
-                                        <!-- Switch a la derecha -->
                                         <div class="form-check form-switch m-0 p-0 ps-2 d-flex align-items-center">
                                             <input class="form-check-input fs-4 m-0 shadow-none float-none" type="checkbox" role="switch" 
                                                 name="permissions[]" 
@@ -62,9 +59,7 @@
                                                 style="cursor: pointer;">
                                         </div>
                                     </div>
-
                                 </div>
-
                             </div>
                         @empty
                             <div class="col-12 text-center text-muted py-5">

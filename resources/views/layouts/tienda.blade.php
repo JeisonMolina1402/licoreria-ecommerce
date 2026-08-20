@@ -148,7 +148,7 @@
                     </div>
 
 
-                    <form action="{{ route('logout') }}" method="POST" class="m-0 p-0">
+                    <form action="{{ route('logout') }}" method="POST" class="m-0 p-0 form-cargando">
                         @csrf
                         <button type="submit" class="nav-icon border-0 bg-transparent text-danger p-0"
                             title="Cerrar Sesión">
@@ -214,16 +214,6 @@
 
     <!-- ... Contenedor Principal ... -->
     <main style="margin-top: 80px; min-height: 80vh;">
-
-        {{-- ALERTA GLOBAL PARA ERRORES DE CHECKOUT O VALIDACIONES --}}
-        @if ($errors->any())
-            <div class="container mt-4">
-                <div class="alert alert-danger alert-dismissible fade show shadow-sm" role="alert">
-                    <strong>¡Atención!</strong> {{ $errors->first() }}
-                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                </div>
-            </div>
-        @endif
 
         @yield('content')
     </main>
@@ -345,13 +335,11 @@
                     <span class="fw-bold fs-4" style="color: var(--color_primario);" id="total-carrito">$0.00</span>
                 </div>
 
-                {{-- FORMULARIO DE CHECKOUT: Envía el estado persistente (LocalStorage) a la base de datos (MySQL) --}}
-                <form action="{{ route('checkout.procesar') }}" method="POST" id="form-checkout">
+                {{-- FORMULARIO DE CHECKOUT --}}
+                <form action="{{ route('checkout.procesar') }}" method="POST" id="form-checkout"
+                    class="form-cargando">
                     @csrf
-
-                    {{-- PUENTE DE DATOS: carrito.js llenará este input escondido (hidden) con un JSON completo del carrito antes de enviarlo por POST --}}
                     <input type="hidden" name="carrito_datos" id="carrito_datos" value="">
-
                     <button type="submit" class="btn btn-black w-100 py-3 rounded-3 disabled" id="btn-procesar-pago"
                         style="font-size: 1rem;">
                         Procesar Reserva

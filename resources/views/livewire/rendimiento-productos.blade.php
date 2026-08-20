@@ -16,7 +16,8 @@
         </div>
 
         <div class="card-body p-0 d-flex flex-column">
-            <div class="table-responsive flex-grow-1">
+            <!-- AGREGADO: transition-all y wire:loading.class="opacity-50" PARA FEEDBACK VISUAL -->
+            <div class="table-responsive flex-grow-1 transition-all" wire:loading.class="opacity-50" wire:target="ranking_productos">
                 <table class="table table-hover align-middle text-center mb-0">
                     <thead class="table-light">
                         <tr>

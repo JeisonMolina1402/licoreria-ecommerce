@@ -12,15 +12,12 @@ class TurnoCajaController extends Controller
     // Procesa la apertura de la caja
     public function abrir(Request $request)
     {
-        // Validamos que el monto inicial sea obligatorio y numérico
         $request->validate([
-            'monto_inicial' => 'required|numeric|min:0'
+            'monto_inicial' => 'required|numeric|min:0',
+            'observaciones_apertura' => 'nullable|string|max:500' // <-- NUEVO
         ]);
 
-        // Verificamos que no tenga ya un turno abierto
-        $turnoExistente = TurnoCaja::where('user_id', Auth::id())
-                                   ->where('estado', 'abierto')
-                                   ->first();
+        $turnoExistente = TurnoCaja::where('user_id', Auth::id())->where('estado', 'abierto')->first();
 
         if ($turnoExistente) {
             return redirect()->back()->withErrors(['error' => 'Ya tienes un turno de caja abierto.']);
@@ -32,62 +29,63 @@ class TurnoCajaController extends Controller
             'total_efectivo' => 0,
             'total_transferencias' => 0,
             'estado' => 'abierto',
+            'observaciones_apertura' => $request->observaciones_apertura, // <-- NUEVO
             'fecha_apertura' => Carbon::now(),
         ]);
 
         return redirect()->route('tickets.index')->with('success', '¡Turno de caja abierto exitosamente!');
     }
 
-    // Procesa el cierre de la caja con arqueo físico
-   // Procesa el cierre de la caja con arqueo físico y digital
+    // Procesa el cierre de la caja con arqueo y comprobante
     public function cerrar(Request $request)
     {
-        $turnoAbierto = TurnoCaja::where('user_id', Auth::id())
-                                 ->where('estado', 'abierto')
-                                 ->first();
+        $turnoAbierto = TurnoCaja::where('user_id', Auth::id())->where('estado', 'abierto')->first();
 
         if (!$turnoAbierto) {
             return redirect()->back()->withErrors(['error' => 'No tienes ningún turno abierto para cerrar.']);
         }
 
-        // 1. LIMPIEZA DE DATOS (Comas por puntos para evitar errores de MySQL)
         $request->merge([
-            'monto_real' => str_replace(',', '.', $request->monto_real),
-            'transferencias_real' => str_replace(',', '.', $request->transferencias_real),
+            'monto_real' => str_replace(',', '.', $request->monto_real ?? ''),
+            'transferencias_real' => str_replace(',', '.', $request->transferencias_real ?? ''),
         ]);
 
-        // 2. REGLAS DE VALIDACIÓN
         $request->validate([
             'monto_real' => 'required|numeric|min:0',
             'transferencias_real' => 'required|numeric|min:0',
-            'observaciones' => 'nullable|string|max:500',
+            'observaciones' => 'required|string|max:500',
+            'comprobante_deposito' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048' // <-- REGLA FOTO
         ]);
 
-        // 3. CÁLCULO DE DIFERENCIAS (ARQUEO TOTAL)
+        // Guardar foto del comprobante si existe
+        $rutaComprobante = null;
+        if ($request->hasFile('comprobante_deposito')) {
+            $nombreImagen = 'deposito_' . time() . '.' . $request->comprobante_deposito->extension();
+            $request->comprobante_deposito->move(public_path('uploads/caja'), $nombreImagen);
+            $rutaComprobante = 'uploads/caja/' . $nombreImagen; 
+        }
+
         $efectivoEsperado = $turnoAbierto->monto_inicial + $turnoAbierto->total_efectivo;
         $transferenciasEsperadas = $turnoAbierto->total_transferencias;
 
         $diferenciaEfectivo = $request->monto_real - $efectivoEsperado;
         $diferenciaTransferencias = $request->transferencias_real - $transferenciasEsperadas;
-        
-        // Sumamos ambas diferencias para saber el balance final del día
         $diferenciaTotal = $diferenciaEfectivo + $diferenciaTransferencias;
 
-        // 4. GUARDAMOS EL CIERRE
         $turnoAbierto->monto_final = $request->monto_real;
         $turnoAbierto->transferencias_final = $request->transferencias_real;
         $turnoAbierto->observaciones = $request->observaciones;
+        if($rutaComprobante) $turnoAbierto->comprobante_deposito = $rutaComprobante; // <-- ASIGNAR FOTO
         $turnoAbierto->estado = 'cerrado';
         $turnoAbierto->fecha_cierre = Carbon::now();
         $turnoAbierto->save();
 
-        // 5. MENSAJE PERSONALIZADO
         if ($diferenciaTotal == 0) {
             $mensaje = 'Turno cerrado correctamente. Cuadre perfecto en efectivo y banco.';
         } elseif ($diferenciaTotal < 0) {
-            $mensaje = 'Turno cerrado. Se registró un FALTANTE total de $' . number_format(abs($diferenciaTotal), 2);
+            $mensaje = 'Turno cerrado. Se registró un FALTANTE de $' . number_format(abs($diferenciaTotal), 2);
         } else {
-            $mensaje = 'Turno cerrado. Se registró un SOBRANTE total de $' . number_format($diferenciaTotal, 2);
+            $mensaje = 'Turno cerrado. Se registró un SOBRANTE de $' . number_format($diferenciaTotal, 2);
         }
 
         return redirect()->route('tickets.index')->with('success', $mensaje);

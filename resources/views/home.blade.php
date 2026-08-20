@@ -41,7 +41,7 @@
             {{-- Fondo de alerta aplicado directamente a la tarjeta para destacar urgencia --}}
             <div class="card shadow-sm border-0 h-100 py-3 bg-danger text-white">
                 <div class="card-body">
-                    <div class="small mb-1">Low Stock</div>
+                    <div class="small mb-1"> Productos Stock Bajo</div>
                     <h3 class="fw-bold mb-0">{{ $lowStock }}</h3>
                 </div>
             </div>
@@ -51,7 +51,7 @@
         <div class="col-md-3">
             <div class="card shadow-sm border-0 h-100 py-3">
                 <div class="card-body">
-                    <div class="text-muted small mb-1">Total Productos</div>
+                    <div class="text-muted small mb-1">Productos en Inventario</div>
                     <h3 class="fw-bold mb-0">{{ $totalProductos }}</h3>
                 </div>
             </div>

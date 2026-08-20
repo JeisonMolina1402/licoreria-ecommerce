@@ -10,7 +10,6 @@
         </div>
 
         <div class="card-body p-4 d-flex flex-column">
-            <!-- PROTEGEMOS EL CANVAS CON WIRE:IGNORE -->
             <div wire:ignore class="d-flex justify-content-center align-items-center mb-4" style="position: relative; min-height: 250px;">
                 @if ($tieneTickets)
                     <canvas id="graficoCategorias" data-nombres="{{ $nombresCategorias }}" data-cantidades="{{ $cantidadesCategorias }}"></canvas>
@@ -22,7 +21,7 @@
                 @endif
             </div>
 
-            <div class="table-responsive border rounded-3 mt-2 flex-grow-1">
+            <div class="table-responsive border rounded-3 mt-2 flex-grow-1 transition-all" wire:loading.class="opacity-50" wire:target="ranking_categorias">
                 <table class="table table-hover align-middle text-center mb-0">
                     <thead class="table-light">
                         <tr>

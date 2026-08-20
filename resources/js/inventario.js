@@ -1,5 +1,3 @@
-// resources/js/inventario.js
-
 // Función para mostrar la vista previa de la imagen al subirla
 window.mostrarVistaPrevia = function (event) {
     const input = event.target;
@@ -12,35 +10,49 @@ window.mostrarVistaPrevia = function (event) {
     if (input.files && input.files[0]) reader.readAsDataURL(input.files[0]);
 };
 
-// Función para confirmar la cancelación y limpiar el modal
+// Función para confirmar la cancelación usando SweetAlert2
 window.confirmarCancelacion = function () {
-    if (
-        confirm(
-            "¿Estás seguro de que deseas cancelar? Los datos no guardados se perderán.",
-        )
-    ) {
-        // 1. CERRAR EL MODAL (Hacemos clic en el botón fantasma)
-        document.getElementById("btnCerrarModalFantasma").click();
+    Swal.fire({
+        title: "¿Cancelar edición?",
+        text: "Los datos que no hayas guardado se perderán.",
+        icon: "warning",
+        showCancelButton: true,
+        confirmButtonColor: "#d33",
+        cancelButtonColor: "#6c757d",
+        confirmButtonText: "Sí, cancelar",
+        cancelButtonText: "Volver al formulario",
+    }).then((result) => {
+        if (result.isConfirmed) {
+            // 1. CERRAR EL MODAL (Hacemos clic en el botón fantasma)
+            document.getElementById("btnCerrarModalFantasma").click();
 
-        // 2. LIMPIAR EL FORMULARIO Y RUTAS
-        const form = document.getElementById("formProducto");
-        form.reset();
-        form.action = "/inventario/guardar";
+            // 2. LIMPIAR EL FORMULARIO Y RUTAS
+            const form = document.getElementById("formProducto");
+            form.reset();
+            form.action = "/inventario/guardar";
 
-        // 3. QUITAR BORDES ROJOS DE ERRORES DE LARAVEL
-        form.querySelectorAll(".is-invalid").forEach((el) =>
-            el.classList.remove("is-invalid"),
-        );
+            // 3. QUITAR BORDES ROJOS DE ERRORES DE LARAVEL
+            form.querySelectorAll(".is-invalid").forEach((el) =>
+                el.classList.remove("is-invalid"),
+            );
 
-        // 4. RESTAURAR EL TÍTULO
-        document.querySelector("#modalAgregarProducto .modal-title").innerHTML =
-            '<h5 class="modal-title fw-bold text-dark">📦 INFORMACIÓN DEL PRODUCTO</h5>';
+            // ELIMINA FÍSICAMENTE LOS TEXTOS DE ERROR DEL HTML
+            form.querySelectorAll(".texto-error").forEach((el) => el.remove());
 
-        // 5. LIMPIAR LA IMAGEN
-        document.getElementById("previewImg").src = "";
-        document.getElementById("previewImg").classList.add("d-none");
-        document.getElementById("uploadPlaceholder").classList.remove("d-none");
-    }
+            // 4. RESTAURAR EL TÍTULO
+            document.querySelector(
+                "#modalAgregarProducto .modal-title",
+            ).innerHTML =
+                '<h5 class="modal-title fw-bold text-dark">📦 INFORMACIÓN DEL PRODUCTO</h5>';
+
+            // 5. LIMPIAR LA IMAGEN
+            document.getElementById("previewImg").src = "";
+            document.getElementById("previewImg").classList.add("d-none");
+            document
+                .getElementById("uploadPlaceholder")
+                .classList.remove("d-none");
+        }
+    });
 };
 
 // Función para llenar el modal con los datos del producto a editar
@@ -93,6 +105,9 @@ window.prepararModalCrear = function () {
     form.querySelectorAll(".is-invalid").forEach((el) =>
         el.classList.remove("is-invalid"),
     );
+
+    // ELIMINA FÍSICAMENTE LOS TEXTOS DE ERROR DEL HTML
+    form.querySelectorAll(".texto-error").forEach((el) => el.remove());
 
     document.querySelector("#modalAgregarProducto .modal-title").innerHTML =
         '<h5 class="modal-title fw-bold text-dark">📦 INFORMACIÓN DEL PRODUCTO</h5>';

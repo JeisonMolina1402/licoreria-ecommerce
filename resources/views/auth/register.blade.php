@@ -1,5 +1,6 @@
 <x-guest-layout>
-    <form method="POST" action="{{ route('register') }}">
+    <!-- AGREGADA CLASE form-cargando -->
+    <form method="POST" action="{{ route('register') }}" class="form-cargando">
         @csrf
 
         <!-- Name -->

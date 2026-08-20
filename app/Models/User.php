@@ -66,6 +66,7 @@ class User extends Authenticatable implements MustVerifyEmail
             ->logOnly(['name', 'email', 'cedula', 'rol', 'estado']) 
             ->logOnlyDirty()
             ->dontSubmitEmptyLogs() 
+            ->setDescriptionForEvent(fn(string $eventName) => "Este usuario ha sido {$eventName}")
             ->useLogName('usuarios'); // Aparecerá bajo el módulo "USUARIOS"
     }
 }

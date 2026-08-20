@@ -16,6 +16,7 @@ class Ticket extends Model
     // Aquí le decimos a Laravel qué columnas SÍ puede llenar automáticamente
     protected $fillable = [
         'user_id', 
+        'vendedor_id',
         'codigo_reserva', 
         'estado', 
         'metodo_pago',
@@ -42,4 +43,10 @@ class Ticket extends Model
     {
         return $this->hasMany(DetalleTicket::class);
     }
+
+    // Relación: Un ticket fue vendido/despachado por un vendedor (usuario)
+public function vendedor()
+{
+    return $this->belongsTo(User::class, 'vendedor_id');
+}
 }

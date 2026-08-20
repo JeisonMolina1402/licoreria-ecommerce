@@ -6,20 +6,6 @@
 @section('content')
     <div class="container-fluid bg-light p-4" style="min-height: 100vh;">
 
-        <!-- ALERTAS -->
-        @if (session('success'))
-            <div class="alert alert-success alert-dismissible fade show shadow-sm" role="alert">
-                <strong>¡Éxito!</strong> {{ session('success') }}
-                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-            </div>
-        @endif
-        @if ($errors->any())
-            <div class="alert alert-danger alert-dismissible fade show shadow-sm" role="alert">
-                <strong>¡Error!</strong> {{ $errors->first() }}
-                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-            </div>
-        @endif
-
         <div class="d-flex justify-content-between align-items-end mb-3">
             <h5 class="text-dark mb-0 d-none d-md-block">Lista de Permisos del Sistema</h5>
             <button class="btn btn-primary btn-sm fw-bold shadow-sm px-3" data-bs-toggle="modal"
@@ -58,10 +44,10 @@
                                             <i class="fa-solid fa-pen"></i>
                                         </button>
 
-                                        {{-- Botón Eliminar --}}
-                                        <form action="{{ route('permisos.destroy', $permiso->id) }}" method="POST" class="d-inline"
-                                            onsubmit="return confirm('ATENCIÓN: Borrar un permiso lo quitará de todos los roles que lo tengan. ¿Continuar?')">
-                                            @csrf @method('DELETE')
+                                        {{-- Botón Eliminar: CON CLASE form-eliminar --}}
+                                        <form action="{{ route('permisos.destroy', $permiso->id) }}" method="POST" class="d-inline form-eliminar">
+                                            @csrf 
+                                            @method('DELETE')
                                             <button type="submit" class="btn btn-sm btn-outline-danger" title="Eliminar Permiso">
                                                 <i class="fa-solid fa-trash"></i>
                                             </button>
@@ -80,16 +66,16 @@
         </div>
     </div>
 
-    <!-- MODAL POLIMÓRFICO PARA PERMISOS -->
     <div class="modal fade" id="modalPermiso" data-bs-backdrop="static" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
-            <form id="formPermiso" action="{{ route('permisos.store') }}" method="POST" class="modal-content border-0 shadow-lg" style="border-radius: 12px;">
+            <form id="formPermiso" action="{{ route('permisos.store') }}" method="POST" class="modal-content border-0 shadow-lg form-cargando" style="border-radius: 12px;">
                 @csrf
                 <div id="metodoPermisoPutContainer"></div>
 
                 <div class="modal-header bg-light border-bottom-0 pt-4 px-4">
                     <h5 class="modal-title fw-bold" id="modalPermisoTitle"><i class="fa-solid fa-key me-2"></i>Nuevo Permiso</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    <button type="button" id="btnCerrarModalFantasmaPermiso" data-bs-dismiss="modal" class="d-none"></button>
+                    <button type="button" class="btn-close" onclick="confirmarCancelacionPermiso()"></button>
                 </div>
 
                 <div class="modal-body px-4">
@@ -98,12 +84,15 @@
                     </div>
                     <div class="mb-3">
                         <label class="form-label fw-bold small text-muted">ACCIÓN PERMITIDA *</label>
-                        <input type="text" class="form-control" name="name" id="permisoName" required placeholder="ej. editar inventario">
+                        <input type="text" class="form-control @error('name') is-invalid @enderror" name="name" id="permisoName" required placeholder="ej. editar inventario" value="{{ old('name') }}">
+                        @error('name')
+                            <div class="invalid-feedback fw-bold">{{ $message }}</div>
+                        @enderror
                     </div>
                 </div>
 
                 <div class="modal-footer border-top-0 px-4 pb-4">
-                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-light" onclick="confirmarCancelacionPermiso()">Cancelar</button>
                     <button type="submit" class="btn btn-primary px-4" id="btnSubmitPermiso">Guardar Permiso</button>
                 </div>
             </form>
@@ -118,4 +107,16 @@
     </script>
     {{-- Archivo JS encapsulado y compilado --}}
     @vite(['resources/js/permisos.js'])
+    
+    @if ($errors->any())
+        <button type="button" id="btnAutoOpenModalPermiso" data-bs-toggle="modal" data-bs-target="#modalPermiso" class="d-none"></button>
+        <script>
+            window.addEventListener('DOMContentLoaded', (event) => {
+                setTimeout(() => {
+                    // Simulamos un clic humano para forzar la apertura del modal
+                    document.getElementById('btnAutoOpenModalPermiso').click();
+                }, 150);
+            });
+        </script>
+    @endif
 @endpush

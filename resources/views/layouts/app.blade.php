@@ -13,7 +13,8 @@
     {{-- Precarga de fuentes para mejorar la velocidad de renderizado en el cliente --}}
     <link rel="dns-prefetch" href="//fonts.bunny.net">
     <link href="https://fonts.bunny.net/css?family=Nunito" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.3.1/css/all.min.css" integrity="sha512-QeR2VH+lsBE5LSAe1Q5EnTBbe7XTBubt8dG93Y7gidSgdMCr8nVqKcfKAMyN96SV8KDbZVTDXChatu5G2KQGzg==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    
 
     {{-- VITE: Motor de construcción. Compila e inyecta el CSS (SASS) y JavaScript de la aplicación --}}
     @vite(['resources/sass/app.scss', 'resources/js/app.js'])
@@ -371,7 +372,8 @@
                                     <hr class="dropdown-divider">
                                 </li>
                                 <li>
-                                    <form action="{{ route('logout') }}" method="POST" class="m-0 p-0">
+                                    <form action="{{ route('logout') }}" method="POST"
+                                        class="m-0 p-0 form-cargando">
                                         @csrf
                                         <button type="submit" class="dropdown-item text-danger fw-bold">🚪 Cerrar
                                             Sesión</button>
@@ -507,6 +509,21 @@
             }
         });
     </script>
+
+
+
+    <!-- ========================================== -->
+    <!-- ALERTAS GLOBALES (SUCCESS, ERROR, VALIDACION) -->
+    <!-- ========================================== -->
+
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <div id="alertas-globales" data-success="{{ session('success') }}" data-error="{{ session('error') }}"
+        data-validacion="{{ $errors->any() ? 'true' : 'false' }}" class="d-none">
+    </div>
+
+    @vite(['resources/js/alertas.js'])
+
 
 </body>
 

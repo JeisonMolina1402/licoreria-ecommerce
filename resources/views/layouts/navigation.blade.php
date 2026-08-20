@@ -51,8 +51,8 @@
                             {{ __('Profile') }}
                         </x-dropdown-link>
 
-                        <!-- LOGOUT / CERRAR SESIÓN -->
-                        <form method="POST" action="{{ route('logout') }}">
+                        <!-- CERRAR SESIÓN ESCRITORIO -->
+                        <form method="POST" action="{{ route('logout') }}" class="form-cargando" >
                             @csrf
 
                             {{-- TRUCO DE JAVASCRIPT: Un enlace <a> normalmente hace un GET. --}}
@@ -103,8 +103,8 @@
                     {{ __('Profile') }}
                 </x-responsive-nav-link>
 
-                <!-- LOGOUT MÓVIL (Misma lógica de POST forzado por JS) -->
-                <form method="POST" action="{{ route('logout') }}">
+                <!-- CERRAR SESIÓN MÓVIL -->
+                <form method="POST" action="{{ route('logout') }}" class="form-cargando">
                     @csrf
                     <x-responsive-nav-link :href="route('logout')"
                             onclick="event.preventDefault();

@@ -3,8 +3,9 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use Spatie\Permission\Models\Role;
+use Illuminate\Support\Facades\Auth;
 use Spatie\Permission\Models\Permission;
+use Spatie\Permission\Models\Role;
 
 class RolPermisoController extends Controller
 {
@@ -37,11 +38,34 @@ class RolPermisoController extends Controller
             return redirect()->route('roles.index')->withErrors('No se pueden modificar los permisos del Administrador.');
         }
 
-        // Si el request no trae la variable 'permissions', significa que desmarcaron todo.
         $permissions = $request->input('permissions', []);
         
-        // syncPermissions es magia de Spatie: quita los viejos y pone los nuevos de golpe
+        // 1. Obtenemos los nombres de los permisos ANTES de los cambios
+        $permisosViejos = $role->permissions->pluck('name')->toArray();
+        
+        // 2. Sincronizamos (Spatie hace el cambio en BD)
         $role->syncPermissions($permissions);
+        
+        // 3. Recargamos la relación para ver los permisos DESPUÉS de los cambios
+        $role->load('permissions');
+        $permisosNuevos = $role->permissions->pluck('name')->toArray();
+
+        // 4. Comparamos para saber exactamente qué se agregó y qué se quitó
+        $agregados = array_diff($permisosNuevos, $permisosViejos);
+        $removidos = array_diff($permisosViejos, $permisosNuevos);
+
+        // 5. Registramos en auditoría SOLO si hubo algún cambio real
+        if (!empty($agregados) || !empty($removidos)) {
+            activity('roles_y_permisos')
+                ->causedBy(\Illuminate\Support\Facades\Auth::user())
+                ->performedOn($role)
+                ->event('permisos_actualizados') // Creamos un evento personalizado
+                ->withProperties([
+                    'agregados' => array_values($agregados),
+                    'removidos' => array_values($removidos)
+                ])
+                ->log('Se modificaron los permisos de acceso de este rol.');
+        }
 
         // Limpiamos la caché de Spatie por seguridad
         app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();

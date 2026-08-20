@@ -1,21 +1,22 @@
-// Declaramos las variables globales para almacenar las instancias de Chart.js
 let chartDonaInstance = null;
 let chartBarrasInstance = null;
+let chartVendedoresInstance = null;
+let chartUsuariosInstance = null; 
 
 document.addEventListener('DOMContentLoaded', function() {
     
-    // 0. Registramos el plugin de etiquetas
     if (typeof ChartDataLabels !== 'undefined') {
         Chart.register(ChartDataLabels);
     }
 
-    // --- 1. GRÁFICO DE DONA ---
+    const paletaColores = ['#0d6efd', '#ffc107', '#20c997', '#dc3545', '#6f42c1', '#fd7e14', '#198754', '#0dcaf0'];
+
+    // --- 1. GRÁFICO DE DONA (Limpio, sin etiquetas internas) ---
     const canvasDona = document.getElementById('graficoCategorias');
     if (canvasDona) {
         const ctxDona = canvasDona.getContext('2d');
         const labels = JSON.parse(canvasDona.dataset.nombres || '[]');
         const data = JSON.parse(canvasDona.dataset.cantidades || '[]');
-        const colores = ['#0d6efd', '#198754', '#ffc107', '#dc3545', '#6f42c1', '#fd7e14', '#20c997', '#0dcaf0'];
 
         chartDonaInstance = new Chart(ctxDona, {
             type: 'doughnut',
@@ -23,7 +24,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 labels: labels,
                 datasets: [{
                     data: data,
-                    backgroundColor: colores,
+                    backgroundColor: paletaColores,
                     borderWidth: 2,
                     hoverOffset: 4
                 }]
@@ -34,32 +35,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 plugins: {
                     legend: {
                         position: 'bottom',
-                        labels: { 
-                            padding: 15, 
-                            font: { family: "'Nunito', sans-serif", size: 12 },
-                            usePointStyle: true 
-                        }
+                        labels: { padding: 15, font: { family: "'Nunito', sans-serif", size: 12 }, usePointStyle: true }
                     },
-                    // ==========================================
-                    // CONFIGURACIÓN DE ETIQUETAS MEJORADA
-                    // ==========================================
-                    datalabels: {
-                        display: false, // 🔴 OCULTAS POR DEFECTO EN LA WEB
-                        color: '#ffffff',
-                        backgroundColor: 'rgba(0, 0, 0, 0.65)', // Fondo limpio y nítido (cero píxeles borrosos)
-                        borderRadius: 4,
-                        padding: 4,
-                        font: {
-                            weight: 'bold',
-                            size: 11
-                        },
-                        textAlign: 'center',
-                        formatter: (value, context) => {
-                            if (value === 0) return null;
-                            const nombreCategoria = context.chart.data.labels[context.dataIndex];
-                            return nombreCategoria + '\n' + value + ' unid.';
-                        }
-                    }
+                    // Apagamos las etiquetas por completo para este gráfico
+                    datalabels: { display: false }
                 },
                 cutout: '65%'
             }
@@ -80,112 +59,156 @@ document.addEventListener('DOMContentLoaded', function() {
             data: {
                 labels: etiquetas,
                 datasets: [
-                    {
-                        label: 'Ingresos (Ventas Brutas)',
-                        data: ventas,
-                        backgroundColor: '#0d6efd',
-                        borderRadius: 4
-                    },
-                    {
-                        label: 'Costos (Gastos de Inventario)',
-                        data: gastos,
-                        backgroundColor: '#dc3545',
-                        borderRadius: 4
-                    },
-                    {
-                        label: 'Ganancia Neta',
-                        data: ganancias,
-                        backgroundColor: '#198754',
-                        borderRadius: 4
-                    }
+                    { label: 'Ingresos (Ventas Brutas)', data: ventas, backgroundColor: '#0d6efd', borderRadius: 4 },
+                    { label: 'Costos (Gastos de Inventario)', data: gastos, backgroundColor: '#dc3545', borderRadius: 4 },
+                    { label: 'Ganancia Neta', data: ganancias, backgroundColor: '#198754', borderRadius: 4 }
                 ]
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                plugins: {
+                    legend: { position: 'top', labels: { font: { family: "'Nunito', sans-serif", size: 13 }, usePointStyle: true } },
+                    tooltip: { callbacks: { label: function(context) { return context.dataset.label + ': $' + parseFloat(context.raw).toFixed(2); } } },
+                    datalabels: { display: false }
+                },
+                scales: {
+                    y: { beginAtZero: true, ticks: { callback: function(value) { return '$' + value; } } }
+                }
+            }
+        });
+    }
+
+    // --- 3. GRÁFICO DE RENDIMIENTO DE VENDEDORES ---
+    const canvasVendedores = document.getElementById('graficoVendedores');
+    if (canvasVendedores) {
+        const ctxVendedores = canvasVendedores.getContext('2d');
+        const labelsVendedores = JSON.parse(canvasVendedores.dataset.nombres || '[]');
+        const dataVendedores = JSON.parse(canvasVendedores.dataset.ventas || '[]');
+
+        chartVendedoresInstance = new Chart(ctxVendedores, {
+            type: 'bar',
+            data: {
+                labels: labelsVendedores,
+                datasets: [{
+                    label: 'Recaudado ($)',
+                    data: dataVendedores,
+                    backgroundColor: paletaColores,
+                    borderRadius: 4
+                }]
+            },
+            options: {
+                indexAxis: 'y', 
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: { callbacks: { label: function(context) { return 'Ventas: $' + parseFloat(context.raw).toFixed(2); } } },
+                    datalabels: {
+                        display: true,
+                        color: '#000',
+                        align: 'end',
+                        anchor: 'end',
+                        font: { weight: 'bold' },
+                        formatter: (value) => '$' + parseFloat(value).toFixed(2)
+                    }
+                },
+                scales: {
+                    x: { beginAtZero: true, grace: '15%' }
+                }
+            }
+        });
+    }
+
+    // --- 4. GRÁFICO DE CRECIMIENTO DE CLIENTES ---
+    const canvasUsuarios = document.getElementById('graficoUsuarios');
+    if (canvasUsuarios) {
+        const ctxUsuarios = canvasUsuarios.getContext('2d');
+        const etiquetasUsuarios = JSON.parse(canvasUsuarios.dataset.etiquetas || '[]');
+        const dataUsuarios = JSON.parse(canvasUsuarios.dataset.usuarios || '[]');
+
+        chartUsuariosInstance = new Chart(ctxUsuarios, {
+            type: 'line',
+            data: {
+                labels: etiquetasUsuarios,
+                datasets: [{
+                    label: 'Nuevos Clientes',
+                    data: dataUsuarios,
+                    borderColor: '#6f42c1',
+                    backgroundColor: 'rgba(111, 66, 193, 0.15)',
+                    borderWidth: 3,
+                    pointBackgroundColor: '#ffffff',
+                    pointBorderColor: '#6f42c1',
+                    pointBorderWidth: 2,
+                    pointRadius: 4,
+                    pointHoverRadius: 6,
+                    fill: true,
+                    tension: 0.4 
+                }]
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
                 plugins: {
-                    legend: {
-                        position: 'top',
-                        labels: { font: { family: "'Nunito', sans-serif", size: 13 }, usePointStyle: true }
-                    },
-                    tooltip: {
-                        callbacks: {
-                            label: function(context) {
-                                return context.dataset.label + ': $' + context.raw.toFixed(2);
-                            }
-                        }
-                    },
-                    datalabels: {
-                        display: false, // Siempre apagadas en las barras ya que se amontonan cuando el rango es por dias
-                    }
+                    legend: { display: false },
+                    datalabels: { display: false }
                 },
                 scales: {
-                    y: { 
-                        beginAtZero: true,
-                        ticks: {
-                            callback: function(value) {
-                                return '$' + value;
-                            }
-                        }
-                    }
+                    y: { beginAtZero: true, ticks: { stepSize: 1 } }
                 }
             }
         });
     }
 });
 
-// ==========================================
-// FUNCIÓN MÁGICA DE EXPORTACIÓN (ACTUALIZADA)
-// ==========================================
-window.exportarConGraficos = function() {
+
+// ===============================================================
+// EXPORTACIÓN A PDF EN ALTA RESOLUCIÓN (HD)
+// ===============================================================
+window.procesarGraficosParaPdf = function() {
     
     const canvasBarras = document.getElementById('graficoBarras');
     const canvasDona = document.getElementById('graficoCategorias'); 
+    const canvasVendedores = document.getElementById('graficoVendedores'); 
+    const canvasUsuarios = document.getElementById('graficoUsuarios'); 
     
     const inputBarras = document.getElementById('grafico_barras_base64');
     const inputDona = document.getElementById('grafico_dona_base64');
+    const inputVendedores = document.getElementById('grafico_vendedores_base64');
+    const inputUsuarios = document.getElementById('grafico_usuarios_base64');
 
-    // 1. Gráfico de Barras a imagen
-    if (canvasBarras) {
-        inputBarras.value = canvasBarras.toDataURL('image/png');
-    } else {
-        inputBarras.value = '';
-    }
+    const params = new URLSearchParams(window.location.search);
+    document.querySelector('input[name="ranking_productos"]').value = params.get('ranking_productos') || 'ventas';
+    document.querySelector('input[name="ranking_categorias"]').value = params.get('ranking_categorias') || 'ventas';
 
-    // 2. Gráfico de Dona a imagen (CON RE-RENDERIZADO INMEDIATO)
-    if (canvasDona && chartDonaInstance) {
+    // Función auxiliar para exportar cualquier gráfico en HD (Anti-pixelado)
+    const exportarEnHD = (chartInstance, canvas) => {
+        if (!chartInstance || !canvas) return '';
+        const originalRatio = chartInstance.options.devicePixelRatio || window.devicePixelRatio;
         
-        // A) Encendemos las etiquetas temporalmente
-        chartDonaInstance.options.plugins.datalabels.display = true;
+        // Subimos la resolución a 2.5x para que sea full HD
+        chartInstance.options.devicePixelRatio = 2.5; 
+        chartInstance.update('none');
         
-        // B) Forzamos un repintado INMEDIATO (sin animaciones) usando 'none'
-        chartDonaInstance.update('none'); 
+        const base64 = canvas.toDataURL('image/png');
         
-        // C) Ahora sí, tomamos la foto perfecta con los datos ya dibujados
-        inputDona.value = canvasDona.toDataURL('image/png');
-        
-        // D) Las apagamos de nuevo para que la web siga limpia
-        chartDonaInstance.options.plugins.datalabels.display = false;
-        
-        // E) Volvemos al estado normal inmediatamente
-        chartDonaInstance.update('none');
+        // Restauramos a la normalidad
+        chartInstance.options.devicePixelRatio = originalRatio; 
+        chartInstance.update('none');
+        return base64;
+    };
 
-    } else {
-        inputDona.value = '';
-    }
+    // Exportar gráficos en Alta Resolución
+    if (chartBarrasInstance) inputBarras.value = exportarEnHD(chartBarrasInstance, canvasBarras); else inputBarras.value = '';
+    if (chartVendedoresInstance) inputVendedores.value = exportarEnHD(chartVendedoresInstance, canvasVendedores); else inputVendedores.value = '';
+    if (chartUsuariosInstance) inputUsuarios.value = exportarEnHD(chartUsuariosInstance, canvasUsuarios); else inputUsuarios.value = '';
+    
+    // Exportar Dona en HD (ahora sin forzar etiquetas)
+    if (chartDonaInstance) inputDona.value = exportarEnHD(chartDonaInstance, canvasDona); else inputDona.value = '';
 
-    // 3. Enviamos el formulario
     const formExportar = document.getElementById('formExportarPdf');
-    if (formExportar) {
-        formExportar.submit();
-    } else {
-        console.error("No se encontró el formulario formExportarPdf");
-    }
+    if (formExportar) formExportar.submit();
 };
 
-// ==========================================
-// FILTROS DE ACCIÓN RÁPIDA AVANZADOS
-// ==========================================
 window.aplicarFiltroRapido = function(tipo) {
     const inputInicio = document.getElementById('input_fecha_inicio').value;
     const hoy = new Date();
@@ -197,7 +220,6 @@ window.aplicarFiltroRapido = function(tipo) {
     }
 
     let inicio, fin;
-
     const formatoFecha = (fecha) => {
         const y = fecha.getFullYear();
         const m = String(fecha.getMonth() + 1).padStart(2, '0');
@@ -206,10 +228,9 @@ window.aplicarFiltroRapido = function(tipo) {
     };
 
     if (tipo === 'limpiar' || tipo === 'mes_actual') {
-        // Volvemos a la fecha por defecto: Mes actual en curso
         inicio = new Date(hoy.getFullYear(), hoy.getMonth(), 1);
         fin = new Date(hoy.getFullYear(), hoy.getMonth() + 1, 0);
-        document.getElementById('input_modo_agrupacion').value = ''; // Borramos el modo de agrupación
+        document.getElementById('input_modo_agrupacion').value = '';
     } 
     else if (tipo === 'mes') {
         inicio = new Date(añoBase, 0, 1);
@@ -232,36 +253,13 @@ window.aplicarFiltroRapido = function(tipo) {
     document.getElementById('formFiltroPrincipal').submit();
 };
 
-// 1. Escuchar a Livewire para animar el Gráfico de Dona sin recargar la pantalla
 document.addEventListener('livewire:init', () => {
     Livewire.on('actualizarGraficoDona', (event) => {
         if (chartDonaInstance) {
-            const data = event[0]; // Extraemos los datos que envió PHP
+            const data = event[0];
             chartDonaInstance.data.labels = data.labels;
             chartDonaInstance.data.datasets[0].data = data.valores;
             chartDonaInstance.update();
         }
     });
 });
-
-// 2. Ajuste en la función exportarConGraficos para enviar la URL actual
-window.exportarConGraficos = function() {
-    const canvasBarras = document.getElementById('graficoBarras');
-    const canvasDona = document.getElementById('graficoCategorias'); 
-    const inputBarras = document.getElementById('grafico_barras_base64');
-    const inputDona = document.getElementById('grafico_dona_base64');
-
-    // Capturamos los filtros de Livewire directamente de la URL
-    const params = new URLSearchParams(window.location.search);
-    document.querySelector('input[name="ranking_productos"]').value = params.get('ranking_productos') || 'ventas';
-    document.querySelector('input[name="ranking_categorias"]').value = params.get('ranking_categorias') || 'ventas';
-
-    // (Aquí va tu código original intacto de canvasBarras y canvasDona.toDataURL...)
-    // ...
-    // ...
-
-    const formExportar = document.getElementById('formExportarPdf');
-    if (formExportar) {
-        formExportar.submit();
-    }
-};

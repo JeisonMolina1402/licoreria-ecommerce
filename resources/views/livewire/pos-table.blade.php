@@ -30,7 +30,11 @@
                         </select>
                     </div>
                     <div class="col-md-3">
-                        <button type="button" wire:click="limpiar" class="btn btn-outline-secondary w-100 fw-bold">Limpiar</button>
+                        <!-- BOTÓN LIMPIAR CON SPINNER LIVEWIRE -->
+                        <button type="button" wire:click="limpiar" class="btn btn-outline-secondary w-100 fw-bold" wire:loading.attr="disabled" wire:target="limpiar">
+                            <span wire:loading.remove wire:target="limpiar">Limpiar</span>
+                            <span wire:loading wire:target="limpiar" class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                        </button>
                     </div>
                 </div>
             </div>
@@ -44,7 +48,8 @@
     <div class="row g-3">
         <!-- PANEL IZQUIERDO: CATÁLOGO (Controlado por Livewire) -->
         <div class="col-lg-8">
-            <div class="row g-3" style="height: 75vh; overflow-y: auto; align-content: flex-start;">
+            <!-- AGREGADO: transition-all y wire:loading.class="opacity-50" PARA FEEDBACK VISUAL -->
+            <div class="row g-3 transition-all" style="height: 75vh; overflow-y: auto; align-content: flex-start;" wire:loading.class="opacity-50">
                 @forelse($productos as $producto)
                     <div class="col-md-4 col-sm-6 item-producto">
                         <div class="card h-100 shadow-sm border-0 btn-agregar-producto" style="cursor: pointer; transition: transform 0.2s;" 
@@ -107,7 +112,9 @@
                             <h4 class="fw-bold mb-0">Total a Pagar:</h4>
                             <h4 class="fw-bold text-success mb-0" id="totalDisplay">$0.00</h4>
                         </div>
-                        <form action="{{ route('tickets.store') }}" method="POST" id="formVenta">
+                        
+                        <!-- AGREGADA CLASE form-cargando PARA EVITAR COBROS DUPLICADOS POR DOBLE CLIC -->
+                        <form action="{{ route('tickets.store') }}" method="POST" id="formVenta" class="form-cargando">
                             @csrf
                             <!-- Selector de Método de Pago -->
                             <div class="mb-3">
