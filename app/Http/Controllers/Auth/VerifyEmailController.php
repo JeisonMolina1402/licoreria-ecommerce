@@ -14,14 +14,20 @@ class VerifyEmailController extends Controller
      */
     public function __invoke(EmailVerificationRequest $request): RedirectResponse
     {
+        // Evaluamos el rol del usuario
+        $urlDestino = $request->user()->hasAnyRole(['admin', 'vendedor']) 
+            ? route('dashboard', absolute: false) 
+            : '/'; // Los clientes van a la raíz de la tienda
+
         if ($request->user()->hasVerifiedEmail()) {
-            return redirect()->intended(route('dashboard', absolute: false).'?verified=1');
+            return redirect()->intended($urlDestino.'?verified=1');
         }
 
         if ($request->user()->markEmailAsVerified()) {
             event(new Verified($request->user()));
         }
 
-        return redirect()->intended(route('dashboard', absolute: false).'?verified=1');
+        // 🔥 Usamos la variable $urlDestino en lugar de forzar 'dashboard'
+        return redirect()->intended($urlDestino.'?verified=1');
     }
 }

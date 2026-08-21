@@ -26,6 +26,12 @@ class ProfileUpdateRequest extends FormRequest
                 'max:255',
                 Rule::unique(User::class)->ignore($this->user()->id),
             ],
+            // 🔥 REGLAS PARA LOS NUEVOS CAMPOS
+            'cedula' => ['nullable', 'string', 'max:15'],
+            'telefono' => ['nullable', 'string', 'max:20'],
+            'direccion' => ['nullable', 'string', 'max:500'],
+            // Validamos que el avatar sea estrictamente una imagen y máximo de 2MB
+            'avatar' => ['nullable', 'image', 'mimes:jpeg,png,jpg,webp', 'max:2048'], 
         ];
     }
 }

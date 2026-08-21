@@ -11,45 +11,47 @@
             @if (!$turnoAbierto)
                 <div class="d-flex justify-content-between align-items-center">
                     <div>
-                        <h5 class="text-dark fw-bold mb-1"><i class="fas fa-cash-register text-primary me-2"></i> Apertura de Caja</h5>
-                        <p class="text-muted small mb-0">No tienes un turno activo. Abre la caja para comenzar a facturar.</p>
+                        <h5 class="text-dark fw-bold mb-1"><i class="fas fa-cash-register text-primary me-2"></i> Apertura de
+                            Caja</h5>
+                        <p class="text-muted small mb-0">No tienes un turno activo. Abre la caja para comenzar a facturar.
+                        </p>
                     </div>
-                    <button type="button" class="btn btn-success fw-bold shadow-sm" data-bs-toggle="modal" data-bs-target="#modalAbrirCaja">
+                    <button type="button" class="btn btn-success fw-bold shadow-sm" data-bs-toggle="modal"
+                        data-bs-target="#modalAbrirCaja">
                         <i class="fas fa-box-open me-1"></i> Iniciar Turno de Caja
                     </button>
                 </div>
 
                 <div class="modal fade" id="modalAbrirCaja" data-bs-backdrop="static" tabindex="-1" aria-hidden="true">
                     <div class="modal-dialog modal-dialog-centered">
-                        <form action="{{ route('caja.abrir') }}" method="POST" class="modal-content border-0 shadow-lg form-cargando" style="border-radius: 16px;">
+                        <form action="{{ route('caja.abrir') }}" method="POST"
+                            class="modal-content border-0 shadow-lg form-cargando" style="border-radius: 16px;">
                             @csrf
                             <div class="modal-header bg-white border-bottom-0 pt-4 pb-2 px-4">
-                                <h5 class="modal-title fw-bold text-dark"><i class="fas fa-cash-register text-success me-2"></i> Apertura de Turno</h5>
+                                <h5 class="modal-title fw-bold text-dark"><i
+                                        class="fas fa-cash-register text-success me-2"></i> Apertura de Turno</h5>
                                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                             </div>
-                            <div class="modal-body px-4">
-                                <div class="mb-3">
-                                    <label class="form-label fw-bold">FONDO INICIAL DE CAJA (Efectivo) *</label>
-                                    <div class="input-group">
-                                        <span class="input-group-text bg-white fw-bold">$</span>
-                                        <input type="number" step="0.01" class="form-control @error('monto_inicial') is-invalid @enderror" name="monto_inicial" value="{{ old('monto_inicial', '20.00') }}" 
-                                            @if(auth()->user()->rol !== 'admin') readonly style="background-color: #e9ecef;" @endif required>
-                                    </div>
-                                    @error('monto_inicial')
-                                        <div class="text-danger fw-bold small mt-1">{{ $message }}</div>
-                                    @enderror
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">FONDO INICIAL DE CAJA (Efectivo) *</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-white fw-bold">$</span>
+                                    <input type="number" step="0.01"
+                                        class="form-control @error('monto_inicial') is-invalid @enderror"
+                                        name="monto_inicial" value="{{ old('monto_inicial', '20.00') }}"
+                                        {{-- 🔥 CAMBIO: Usamos @cannot para bloquear si no tiene el permiso --}}
+                                        @cannot('editar fondo de caja') readonly style="background-color: #e9ecef;" @endcannot
+                                        required>
+                                </div>
+                                @error('monto_inicial')
+                                    <div class="text-danger fw-bold small mt-1">{{ $message }}</div>
+                                @enderror
 
-                                    @if(auth()->user()->rol !== 'admin')
-                                        <small class="text-muted"><i class="fas fa-lock me-1"></i> El monto base es asignado por el Administrador.</small>
-                                    @endif
-                                </div>
-                                <div class="mb-2">
-                                    <label class="form-label fw-bold">OBSERVACIONES *</label>
-                                    <textarea class="form-control @error('observaciones_apertura') is-invalid @enderror" name="observaciones_apertura" rows="2" placeholder="Indica que todo está en orden o si hay alguna novedad..." required>{{ old('observaciones_apertura') }}</textarea>
-                                    @error('observaciones_apertura')
-                                        <div class="text-danger fw-bold small mt-1">{{ $message }}</div>
-                                    @enderror
-                                </div>
+                                {{-- 🔥 CAMBIO: Mensaje adaptado al permiso --}}
+                                @cannot('editar fondo de caja')
+                                    <small class="text-muted"><i class="fas fa-lock me-1"></i> No tienes permiso para editar el
+                                        fondo base.</small>
+                                @endcannot
                             </div>
                             <div class="modal-footer border-top-0 px-4 pb-4">
                                 <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancelar</button>
@@ -58,49 +60,136 @@
                         </form>
                     </div>
                 </div>
-
             @else
                 <div class="d-flex justify-content-between align-items-center mb-3">
                     <div>
-                        <h5 class="text-dark fw-bold mb-0"><i class="fas fa-cash-register text-success me-2"></i> Estado de Caja Actual</h5>
-                        <small class="text-muted">Turno abierto el: {{ $turnoAbierto->fecha_apertura->format('d/m/Y h:i A') }}</small>
+                        <h5 class="text-dark fw-bold mb-0"><i class="fas fa-cash-register text-success me-2"></i> Estado de
+                            Caja Actual</h5>
+                        <small class="text-muted">Turno abierto el:
+                            {{ $turnoAbierto->fecha_apertura->format('d/m/Y h:i A') }}</small>
                     </div>
-                    <button type="button" class="btn btn-outline-danger btn-sm fw-bold px-3" data-bs-toggle="modal" data-bs-target="#modalCerrarCaja">
+                    <button type="button" class="btn btn-outline-danger btn-sm fw-bold px-3" data-bs-toggle="modal"
+                        data-bs-target="#modalCerrarCaja">
                         <i class="fas fa-lock me-1"></i> Cerrar Caja
                     </button>
                 </div>
 
                 <div class="row row-cols-1 row-cols-md-5 g-3 text-start">
-                    <div class="col"><div class="card border-0 shadow-sm rounded-4 h-100" style="border-left: 5px solid #6c757d !important;"><div class="card-body p-3 d-flex justify-content-between align-items-center"><div><span class="text-muted small text-uppercase fw-bold">Fondo Inicial</span><h4 class="text-dark mb-0 mt-1">${{ number_format($turnoAbierto->monto_inicial, 2) }}</h4></div><div class="bg-secondary bg-opacity-10 text-secondary rounded-circle d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;"><i class="fas fa-wallet"></i></div></div></div></div>
-                    <div class="col"><div class="card border-0 shadow-sm rounded-4 h-100" style="border-left: 5px solid #0d6efd !important;"><div class="card-body p-3 d-flex justify-content-between align-items-center"><div><span class="text-muted small text-uppercase fw-bold">POS (Efectivo)</span><h4 class="text-dark mb-0 mt-1">+ ${{ number_format($turnoAbierto->total_efectivo, 2) }}</h4></div><div class="bg-primary bg-opacity-10 text-primary rounded-circle d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;"><i class="fas fa-cash-register"></i></div></div></div></div>
-                    <div class="col"><div class="card border-0 shadow-sm rounded-4 h-100" style="border-left: 5px solid #0dcaf0 !important;"><div class="card-body p-3 d-flex justify-content-between align-items-center"><div><span class="text-muted small text-uppercase fw-bold">Web (Bancos)</span><h4 class="text-dark mb-0 mt-1">+ ${{ number_format($turnoAbierto->total_transferencias, 2) }}</h4></div><div class="bg-info bg-opacity-10 text-info rounded-circle d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;"><i class="fas fa-mobile-alt"></i></div></div></div></div>
-                    <div class="col"><div class="card border-0 shadow-sm rounded-4 h-100 bg-light" style="border-left: 5px solid #ffc107 !important;"><div class="card-body p-3 d-flex justify-content-between align-items-center"><div><span class="text-muted small text-uppercase fw-bold">Ventas Turno</span><h4 class="text-dark mb-0 mt-1 fw-bold">${{ number_format($turnoAbierto->total_efectivo + $turnoAbierto->total_transferencias, 2) }}</h4></div><div class="bg-warning bg-opacity-25 text-warning rounded-circle d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;"><i class="fas fa-chart-line"></i></div></div></div></div>
-                    <div class="col"><div class="card border-0 shadow-sm rounded-4 h-100" style="border-left: 5px solid #198754 !important;"><div class="card-body p-3 d-flex justify-content-between align-items-center"><div><span class="text-success small text-uppercase fw-bold">Físico en Caja</span><h4 class="text-success mb-0 mt-1 fw-bold">${{ number_format($turnoAbierto->monto_inicial + $turnoAbierto->total_efectivo, 2) }}</h4></div><div class="bg-success bg-opacity-10 text-success rounded-circle d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;"><i class="fas fa-money-bill-wave"></i></div></div></div></div>
+                    <div class="col">
+                        <div class="card border-0 shadow-sm rounded-4 h-100"
+                            style="border-left: 5px solid #6c757d !important;">
+                            <div class="card-body p-3 d-flex justify-content-between align-items-center">
+                                <div><span class="text-muted small text-uppercase fw-bold">Fondo Inicial</span>
+                                    <h4 class="text-dark mb-0 mt-1">${{ number_format($turnoAbierto->monto_inicial, 2) }}
+                                    </h4>
+                                </div>
+                                <div class="bg-secondary bg-opacity-10 text-secondary rounded-circle d-flex align-items-center justify-content-center"
+                                    style="width: 40px; height: 40px;"><i class="fas fa-wallet"></i></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col">
+                        <div class="card border-0 shadow-sm rounded-4 h-100"
+                            style="border-left: 5px solid #0d6efd !important;">
+                            <div class="card-body p-3 d-flex justify-content-between align-items-center">
+                                <div><span class="text-muted small text-uppercase fw-bold">POS (Efectivo)</span>
+                                    <h4 class="text-dark mb-0 mt-1">+ ${{ number_format($turnoAbierto->total_efectivo, 2) }}
+                                    </h4>
+                                </div>
+                                <div class="bg-primary bg-opacity-10 text-primary rounded-circle d-flex align-items-center justify-content-center"
+                                    style="width: 40px; height: 40px;"><i class="fas fa-cash-register"></i></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col">
+                        <div class="card border-0 shadow-sm rounded-4 h-100"
+                            style="border-left: 5px solid #0dcaf0 !important;">
+                            <div class="card-body p-3 d-flex justify-content-between align-items-center">
+                                <div><span class="text-muted small text-uppercase fw-bold">Web (Bancos)</span>
+                                    <h4 class="text-dark mb-0 mt-1">+
+                                        ${{ number_format($turnoAbierto->total_transferencias, 2) }}</h4>
+                                </div>
+                                <div class="bg-info bg-opacity-10 text-info rounded-circle d-flex align-items-center justify-content-center"
+                                    style="width: 40px; height: 40px;"><i class="fas fa-mobile-alt"></i></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col">
+                        <div class="card border-0 shadow-sm rounded-4 h-100 bg-light"
+                            style="border-left: 5px solid #ffc107 !important;">
+                            <div class="card-body p-3 d-flex justify-content-between align-items-center">
+                                <div><span class="text-muted small text-uppercase fw-bold">Ventas Turno</span>
+                                    <h4 class="text-dark mb-0 mt-1 fw-bold">
+                                        ${{ number_format($turnoAbierto->total_efectivo + $turnoAbierto->total_transferencias, 2) }}
+                                    </h4>
+                                </div>
+                                <div class="bg-warning bg-opacity-25 text-warning rounded-circle d-flex align-items-center justify-content-center"
+                                    style="width: 40px; height: 40px;"><i class="fas fa-chart-line"></i></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col">
+                        <div class="card border-0 shadow-sm rounded-4 h-100"
+                            style="border-left: 5px solid #198754 !important;">
+                            <div class="card-body p-3 d-flex justify-content-between align-items-center">
+                                <div><span class="text-success small text-uppercase fw-bold">Físico en Caja</span>
+                                    <h4 class="text-success mb-0 mt-1 fw-bold">
+                                        ${{ number_format($turnoAbierto->monto_inicial + $turnoAbierto->total_efectivo, 2) }}
+                                    </h4>
+                                </div>
+                                <div class="bg-success bg-opacity-10 text-success rounded-circle d-flex align-items-center justify-content-center"
+                                    style="width: 40px; height: 40px;"><i class="fas fa-money-bill-wave"></i></div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
-                <div class="modal fade" id="modalCerrarCaja" data-bs-backdrop="static" tabindex="-1" aria-hidden="true">
+                <div class="modal fade" id="modalCerrarCaja" data-bs-backdrop="static" tabindex="-1"
+                    aria-hidden="true">
                     <div class="modal-dialog modal-dialog-centered modal-lg">
-                        <form action="{{ route('caja.cerrar') }}" method="POST" enctype="multipart/form-data" class="modal-content border-0 shadow-lg form-cargando" style="border-radius: 16px;">
+                        <form action="{{ route('caja.cerrar') }}" method="POST" enctype="multipart/form-data"
+                            class="modal-content border-0 shadow-lg form-cargando" style="border-radius: 16px;">
                             @csrf
                             <div class="modal-header bg-white border-bottom-0 pt-4 pb-2 px-4">
-                                <h5 class="modal-title fw-bold text-dark"><i class="fas fa-calculator text-danger me-2"></i> Arqueo y Cierre de Caja</h5>
+                                <h5 class="modal-title fw-bold text-dark"><i
+                                        class="fas fa-calculator text-danger me-2"></i> Arqueo y Cierre de Caja</h5>
                                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                             </div>
-                            
+
                             <div class="modal-body px-4">
                                 <div class="row g-3 mb-4">
-                                    <div class="col-md-6"><div class="alert alert-success d-flex flex-column justify-content-center mb-0 h-100 border-0 shadow-sm py-2"><span class="small text-uppercase fw-bold text-success mb-1"  >Efectivo Esperado</span><h4 class="mb-0 fw-bold text-success">${{ number_format($turnoAbierto->monto_inicial + $turnoAbierto->total_efectivo, 2) }}</h4></div></div>
-                                    <div class="col-md-6"><div class="alert alert-info d-flex flex-column justify-content-center mb-0 h-100 border-0 shadow-sm py-2"><span class="small text-uppercase fw-bold text-info mb-1">Transferencias Esperadas</span><h4 class="mb-0 fw-bold text-info">${{ number_format($turnoAbierto->total_transferencias, 2) }}</h4></div></div>
+                                    <div class="col-md-6">
+                                        <div
+                                            class="alert alert-success d-flex flex-column justify-content-center mb-0 h-100 border-0 shadow-sm py-2">
+                                            <span class="small text-uppercase fw-bold text-success mb-1">Efectivo
+                                                Esperado</span>
+                                            <h4 class="mb-0 fw-bold text-success">
+                                                ${{ number_format($turnoAbierto->monto_inicial + $turnoAbierto->total_efectivo, 2) }}
+                                            </h4>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div
+                                            class="alert alert-info d-flex flex-column justify-content-center mb-0 h-100 border-0 shadow-sm py-2">
+                                            <span class="small text-uppercase fw-bold text-info mb-1">Transferencias
+                                                Esperadas</span>
+                                            <h4 class="mb-0 fw-bold text-info">
+                                                ${{ number_format($turnoAbierto->total_transferencias, 2) }}</h4>
+                                        </div>
+                                    </div>
                                 </div>
 
                                 <h6 class="fw-bold text-dark mb-3 border-bottom pb-2">Declaración del Cajero</h6>
-                                
+
                                 <div class="row g-3 mb-3">
                                     <div class="col-md-6">
                                         <label class="form-label fw-bold">EFECTIVO FÍSICO CONTADO *</label>
                                         <div class="input-group">
                                             <span class="input-group-text bg-white fw-bold">$</span>
-                                            <input type="number" step="0.01" class="form-control input-arqueo @error('monto_real') is-invalid @enderror" name="monto_real" id="montoFisico" value="{{ old('monto_real') }}" required>
+                                            <input type="number" step="0.01"
+                                                class="form-control input-arqueo @error('monto_real') is-invalid @enderror"
+                                                name="monto_real" id="montoFisico" value="{{ old('monto_real') }}"
+                                                required>
                                         </div>
                                         @error('monto_real')
                                             <div class="text-danger fw-bold small mt-1">{{ $message }}</div>
@@ -110,7 +199,10 @@
                                         <label class="form-label fw-bold">MONTO EN CUENTA BANCARIA *</label>
                                         <div class="input-group">
                                             <span class="input-group-text bg-white fw-bold">$</span>
-                                            <input type="number" step="0.01" class="form-control input-arqueo @error('transferencias_real') is-invalid @enderror" name="transferencias_real" id="montoTransferencias" value="{{ old('transferencias_real') }}" required>
+                                            <input type="number" step="0.01"
+                                                class="form-control input-arqueo @error('transferencias_real') is-invalid @enderror"
+                                                name="transferencias_real" id="montoTransferencias"
+                                                value="{{ old('transferencias_real') }}" required>
                                         </div>
                                         @error('transferencias_real')
                                             <div class="text-danger fw-bold small mt-1">{{ $message }}</div>
@@ -125,16 +217,20 @@
 
                                 <div class="mb-3">
                                     <label class="form-label fw-bold">FOTO DEL DEPÓSITO BANCARIO (Opcional)</label>
-                                    <input type="file" class="form-control @error('comprobante_deposito') is-invalid @enderror" name="comprobante_deposito" accept="image/*">
+                                    <input type="file"
+                                        class="form-control @error('comprobante_deposito') is-invalid @enderror"
+                                        name="comprobante_deposito" accept="image/*">
                                     @error('comprobante_deposito')
                                         <div class="text-danger fw-bold small mt-1">{{ $message }}</div>
                                     @enderror
-                                    <small class="text-muted">Si depositaste el efectivo del turno en el banco, sube aquí la foto del comprobante.</small>
+                                    <small class="text-muted">Si depositaste el efectivo del turno en el banco, sube aquí
+                                        la foto del comprobante.</small>
                                 </div>
 
                                 <div class="mb-1">
                                     <label class="form-label fw-bold">OBSERVACIONES / NOVEDADES *</label>
-                                    <textarea class="form-control @error('observaciones') is-invalid @enderror" name="observaciones" rows="2" placeholder="Si hay sobrantes o faltantes, indica la razón aquí..." required>{{ old('observaciones') }}</textarea>
+                                    <textarea class="form-control @error('observaciones') is-invalid @enderror" name="observaciones" rows="2"
+                                        placeholder="Si hay sobrantes o faltantes, indica la razón aquí..." required>{{ old('observaciones') }}</textarea>
                                     @error('observaciones')
                                         <div class="text-danger fw-bold small mt-1">{{ $message }}</div>
                                     @enderror
@@ -143,7 +239,8 @@
 
                             <div class="modal-footer bg-white border-top-0 px-4 pb-4 pt-0">
                                 <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancelar</button>
-                                <button type="submit" class="btn btn-danger fw-bold px-4"><i class="fas fa-lock me-1"></i> Confirmar Cierre</button>
+                                <button type="submit" class="btn btn-danger fw-bold px-4"><i
+                                        class="fas fa-lock me-1"></i> Confirmar Cierre</button>
                             </div>
                         </form>
                     </div>
@@ -158,7 +255,8 @@
 
 @push('scripts')
     @if ($errors->has('monto_inicial') || $errors->has('observaciones_apertura'))
-        <button type="button" id="btnAutoOpenApertura" data-bs-toggle="modal" data-bs-target="#modalAbrirCaja" class="d-none"></button>
+        <button type="button" id="btnAutoOpenApertura" data-bs-toggle="modal" data-bs-target="#modalAbrirCaja"
+            class="d-none"></button>
         <script>
             window.addEventListener('DOMContentLoaded', () => {
                 setTimeout(() => {
@@ -168,8 +266,13 @@
         </script>
     @endif
 
-    @if ($errors->has('monto_real') || $errors->has('transferencias_real') || $errors->has('observaciones') || $errors->has('comprobante_deposito'))
-        <button type="button" id="btnAutoOpenCierre" data-bs-toggle="modal" data-bs-target="#modalCerrarCaja" class="d-none"></button>
+    @if (
+        $errors->has('monto_real') ||
+            $errors->has('transferencias_real') ||
+            $errors->has('observaciones') ||
+            $errors->has('comprobante_deposito'))
+        <button type="button" id="btnAutoOpenCierre" data-bs-toggle="modal" data-bs-target="#modalCerrarCaja"
+            class="d-none"></button>
         <script>
             window.addEventListener('DOMContentLoaded', () => {
                 setTimeout(() => {
@@ -193,7 +296,7 @@
                 totalDeclarado.textContent = '$' + suma.toFixed(2);
             }
 
-            if(inputEfectivo && inputTransferencias) {
+            if (inputEfectivo && inputTransferencias) {
                 inputEfectivo.addEventListener('input', calcularTotal);
                 inputTransferencias.addEventListener('input', calcularTotal);
                 calcularTotal(); // Llamada inicial por si hay un old()

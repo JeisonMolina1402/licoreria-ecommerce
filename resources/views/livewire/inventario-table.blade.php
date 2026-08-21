@@ -1,45 +1,63 @@
 <div>
     <div class="card shadow-sm border-0 mb-4">
         <div class="card-body">
-            <div class="row g-2">
+            <!-- align-items-end para alinear el botón rojo con los inputs -->
+            <div class="row g-2 align-items-end">
+                
+                <!-- Buscador -->
                 <div class="col-md-4">
-                    <input type="text" class="form-control" wire:model.live.debounce.300ms="nombre"
-                        list="sugerenciasProductos" autocomplete="off" placeholder="🔍 Buscar por nombre...">
+                    <label class="form-label text-muted mb-1" style="font-size: 0.75rem; font-weight: 600;">Buscar Producto</label>
+                    <div class="input-group input-group-sm shadow-sm">
+                        <span class="input-group-text bg-white border-end-0"><i class="fa-solid fa-search text-muted"></i></span>
+                        <input type="text" class="form-control border-start-0 ps-0 text-muted" wire:model.live.debounce.300ms="nombre"
+                            list="sugerenciasProductos" autocomplete="off" placeholder="Nombre...">
+                    </div>
                     <datalist id="sugerenciasProductos">
                         @foreach ($nombresProductos as $nombreSugerido)
                             <option value="{{ $nombreSugerido }}">
                         @endforeach
                     </datalist>
                 </div>
+
+                <!-- Categoría -->
                 <div class="col-md-3">
-                    <select class="form-select" wire:model.live="categoria_id">
-                        <option value="">Categoría...</option>
+                    <label class="form-label text-muted mb-1" style="font-size: 0.75rem; font-weight: 600;">Categoría</label>
+                    <select class="form-select form-select-sm text-muted shadow-sm" wire:model.live="categoria_id">
+                        <option value="">Todas las categorías...</option>
                         @foreach ($categorias as $categoria)
                             <option value="{{ $categoria->id }}">{{ $categoria->nombre }}</option>
                         @endforeach
                     </select>
                 </div>
-                <div class="col-md-2">
-                    <select class="form-select" wire:model.live="orden_stock">
-                        <option value="">Stock...</option>
+
+                <!-- Orden Stock -->
+                <div class="col">
+                    <label class="form-label text-muted mb-1" style="font-size: 0.75rem; font-weight: 600;">Stock</label>
+                    <select class="form-select form-select-sm text-muted shadow-sm" wire:model.live="orden_stock">
+                        <option value="">Cualquiera...</option>
                         <option value="desc">Más stock</option>
                         <option value="asc">Menos stock</option>
                     </select>
                 </div>
-                <div class="col-md-2">
-                    <select class="form-select" wire:model.live="orden_precio">
-                        <option value="">Precio...</option>
+
+                <!-- Orden Precio -->
+                <div class="col">
+                    <label class="form-label text-muted mb-1" style="font-size: 0.75rem; font-weight: 600;">Precio</label>
+                    <select class="form-select form-select-sm text-muted shadow-sm" wire:model.live="orden_precio">
+                        <option value="">Cualquiera...</option>
                         <option value="desc">Más caro</option>
                         <option value="asc">Más barato</option>
                     </select>
                 </div>
-                <div class="col-md-1">
-                    <!-- BOTÓN LIMPIAR CON SPINNER LIVEWIRE -->
-                    <button type="button" wire:click="limpiar" class="btn btn-outline-secondary w-100" wire:loading.attr="disabled" wire:target="limpiar">
-                        <span wire:loading.remove wire:target="limpiar">Limpiar</span>
+
+                <!-- Botón Limpiar -->
+                <div class="col-auto">
+                    <button type="button" wire:click="limpiar" class="btn btn-outline-danger btn-sm shadow-sm" title="Limpiar Filtros" wire:loading.attr="disabled" wire:target="limpiar">
+                        <span wire:loading.remove wire:target="limpiar"><i class="fa-solid fa-eraser"></i></span>
                         <span wire:loading wire:target="limpiar" class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
                     </button>
                 </div>
+
             </div>
         </div>
     </div>
@@ -137,15 +155,21 @@
         </table>
     </div>
 
-    <div class="d-flex justify-content-between align-items-center mt-4 mb-4">
-        <div>
-            <a href="{{ route('inventario.pdf', ['nombre' => $nombre, 'categoria_id' => $categoria_id, 'orden_stock' => $orden_stock, 'orden_precio' => $orden_precio]) }}"
-                class="btn btn-danger btn-sm fw-bold shadow-sm px-3 py-2" target="_blank">
-                <i class="fa-solid fa-file-pdf me-1"></i> Descargar PDF
-            </a>
-        </div>
-        <div>
+   <!-- FOOTER: PAGINACIÓN Y BOTÓN PDF -->
+    <div class="row align-items-center mt-4 mb-2 pt-2 border-top">
+        
+        <!-- PAGINACIÓN (Alineada a la izquierda en PC, al centro en Móviles) -->
+        <!-- overflow-auto asegura que si los números son muchos en celular, se puedan deslizar sin romper la pantalla -->
+        <div class="col-12 col-lg-9 d-flex justify-content-center justify-content-lg-start mb-3 mb-lg-0 overflow-auto" style="scrollbar-width: thin;">
             {{ $productos->links() }}
         </div>
+
+        <!-- BOTÓN PDF (Alineado a la derecha en PC, ancho completo en Móviles) -->
+        <div class="col-12 col-lg-3 d-flex justify-content-center justify-content-lg-end">
+            <a href="{{ route('inventario.pdf') }}" class="btn btn-danger fw-bold shadow-sm px-4 py-2 w-100 d-flex justify-content-center align-items-center" style="max-width: 220px;" target="_blank">
+                <i class="fa-solid fa-file-pdf me-2 fs-5"></i> Descargar PDF
+            </a>
+        </div>
+        
     </div>
 </div>

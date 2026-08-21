@@ -14,15 +14,17 @@ class AuditoriaTable extends Component
     protected $paginationTheme = 'bootstrap';
 
     public $modulo = '';
+    public $filtroAccion = ''; 
     public $filtroRol = '';
     public $searchUsuario = '';
     public $fechaInicio;
     public $fechaFin;
 
-    // Se ejecuta una sola vez cuando el componente carga en pantalla
+    // 🔥 1. CREAMOS LA LLAVE MÁGICA
+    public $resetKey = 0; 
+
     public function mount()
     {
-        // Establecemos el día actual por defecto (formato YYYY-MM-DD para el input date)
         $this->fechaInicio = date('Y-m-d');
         $this->fechaFin = date('Y-m-d');
     }
@@ -35,13 +37,8 @@ class AuditoriaTable extends Component
     // Método que llamará nuestro botón "Limpiar"
     public function limpiarFiltros()
     {
-        // Reseteamos los campos de texto y selects
-        $this->reset(['modulo', 'filtroRol', 'searchUsuario']);
-        // Restauramos las fechas al día de hoy
-        $this->fechaInicio = date('Y-m-d');
-        $this->fechaFin = date('Y-m-d');
-        // Volvemos a la página 1
-        $this->resetPage();
+        // Al estilo Inventario: Infalible y directo.
+        return redirect()->route('auditoria.index');
     }
 
     public function render()
@@ -50,6 +47,11 @@ class AuditoriaTable extends Component
 
         if ($this->modulo !== '') {
             $query->where('log_name', $this->modulo);
+        }
+
+        // 🔥 3. NUEVA CONDICIÓN PARA FILTRAR POR LA ACCIÓN EXACTA
+        if ($this->filtroAccion !== '') {
+            $query->where('event', $this->filtroAccion);
         }
 
         if ($this->fechaInicio) {

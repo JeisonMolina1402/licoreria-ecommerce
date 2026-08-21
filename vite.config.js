@@ -6,14 +6,14 @@ export default defineConfig({
         laravel({
             input: [
                 // Estilos (CSS/SASS)
+                'resources/css/app.css', // Breeze
                 'resources/sass/app.scss',
                 'resources/css/tienda.css',
-
-                //Breeze
-                'resources/css/app.css',
                 
-                // Scripts Base
+                // Scripts Base / Globales
                 'resources/js/app.js',
+                'resources/js/alertas.js', 
+                'resources/js/notificaciones.js',
                 
                 // Scripts de la Tienda (Frontend)
                 'resources/js/carrito.js',
@@ -24,8 +24,9 @@ export default defineConfig({
                 'resources/js/pos.js',
                 'resources/js/reportes.js',
                 'resources/js/usuarios.js',
+                'resources/js/permisos.js',
 
-                //Scripts de roles y permisos
+                // Scripts de Roles y Permisos
                 'resources/js/roles.js',
             ],
             refresh: true,

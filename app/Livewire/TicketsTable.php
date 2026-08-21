@@ -19,6 +19,24 @@ class TicketsTable extends Component
     #[Url]
     public $estado = '';
 
+    #[Url]
+    public $fecha_inicio = '';
+
+    #[Url]
+    public $fecha_fin = '';
+
+    // 🔥 NUEVO: Método mount para inicializar todo automáticamente en el día actual
+    public function mount()
+    {
+        // Si no hay fechas en la URL, ponemos las de hoy por defecto
+        if (empty($this->fecha_inicio)) {
+            $this->fecha_inicio = date('Y-m-d');
+        }
+        if (empty($this->fecha_fin)) {
+            $this->fecha_fin = date('Y-m-d');
+        }
+    }
+
     // Resetear paginación al escribir
     public function updating($property)
     {
@@ -45,7 +63,16 @@ class TicketsTable extends Component
             $query->where('estado', $this->estado);
         }
 
-        // 3. Paginación
+        // 3. Filtros de Fechas automáticos
+        if (!empty($this->fecha_inicio)) {
+            $query->whereDate('created_at', '>=', $this->fecha_inicio);
+        }
+
+        if (!empty($this->fecha_fin)) {
+            $query->whereDate('created_at', '<=', $this->fecha_fin);
+        }
+
+        // 4. Paginación
         $tickets = $query->latest()->paginate(5);
 
         return view('livewire.tickets-table', [

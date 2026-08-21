@@ -7,14 +7,14 @@ document.addEventListener('DOMContentLoaded', function () {
         // 2. Extraemos los mensajes
         const mensajeSuccess = alertasGlobales.getAttribute('data-success');
         const mensajeError = alertasGlobales.getAttribute('data-error');
-        const errorValidacion = alertasGlobales.getAttribute('data-validacion') === 'true';
+        const errorValidacion = alertasGlobales.getAttribute('data-validacion') === 'true' || alertasGlobales.getAttribute('data-validacion') === '1';
 
         // 3. Configuramos el diseño del Toast (Notificación)
         const Toast = Swal.mixin({
             toast: true,
             position: 'top-end',
             showConfirmButton: false,
-            timer: 4000, // Desaparece en 4 segundos
+            timer: 4000,
             timerProgressBar: true,
             didOpen: (toast) => {
                 toast.addEventListener('mouseenter', Swal.stopTimer)
@@ -29,14 +29,13 @@ document.addEventListener('DOMContentLoaded', function () {
 
         if (mensajeError) {
             Toast.fire({ icon: 'error', title: mensajeError });
-        }
-
-        if (errorValidacion) {
-            Toast.fire({ icon: 'warning', title: 'Por favor revisa los campos en rojo.' });
+        } 
+        else if (errorValidacion) {
+            // Mensaje genérico para cuando falte llenar un campo obligatorio en cualquier formulario del sistema
+            Toast.fire({ icon: 'warning', title: 'Por favor revisa los campos requeridos.' });
         }
     }
 });
-
 // ==========================================
         // 1. ALERTAS DE CONFIRMACIÓN (ELIMINAR/DESACTIVAR)
         // ==========================================

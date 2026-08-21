@@ -1,47 +1,71 @@
 <div>
-    <!-- CABECERA: FILTROS -->
-    <div class="d-flex flex-column flex-xl-row justify-content-between align-items-center mb-3 gap-3">
-        <div class="card shadow-sm border-0 flex-grow-1 mb-0" style="border-radius: 12px;">
-            <div class="card-body p-2">
-                <div class="row g-2 align-items-center">
-                    <div class="col-md-3">
-                        <input type="text" wire:model.live.debounce.300ms="nombre" class="form-control bg-light" placeholder="🔍 Buscar por nombre..." autocomplete="off">
-                    </div>
-                    <div class="col-md-2">
-                        <select class="form-select bg-light" wire:model.live="categoria_id">
-                            <option value="">Todas las Categorías</option>
-                            @foreach($categorias as $categoria)
-                                <option value="{{ $categoria->id }}">{{ $categoria->nombre }}</option>
-                            @endforeach
-                        </select>
-                    </div>
-                    <div class="col-md-2">
-                        <select class="form-select bg-light" wire:model.live="orden_stock">
-                            <option value="">Stock...</option>
-                            <option value="desc">Más stock</option>
-                            <option value="asc">Menos stock</option>
-                        </select>
-                    </div>
-                    <div class="col-md-2">
-                        <select class="form-select bg-light" wire:model.live="orden_precio">
-                            <option value="">Precio...</option>
-                            <option value="desc">Más caro</option>
-                            <option value="asc">Más barato</option>
-                        </select>
-                    </div>
-                    <div class="col-md-3">
-                        <!-- BOTÓN LIMPIAR CON SPINNER LIVEWIRE -->
-                        <button type="button" wire:click="limpiar" class="btn btn-outline-secondary w-100 fw-bold" wire:loading.attr="disabled" wire:target="limpiar">
-                            <span wire:loading.remove wire:target="limpiar">Limpiar</span>
-                            <span wire:loading wire:target="limpiar" class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
-                        </button>
+    <!-- CABECERA: FILTROS ESTILIZADOS -->
+    <div class="card shadow-sm border-0 mb-4" style="border-radius: 12px;">
+        <div class="card-body p-3">
+            <div class="row g-2 align-items-end">
+                
+                <!-- Buscador -->
+                <div class="col-md-3" style="min-width: 200px;">
+                    <label class="form-label text-muted mb-1" style="font-size: 0.75rem; font-weight: 600;">Buscar Producto</label>
+                    <div class="input-group input-group-sm shadow-sm">
+                        <span class="input-group-text bg-white border-end-0"><i class="fa-solid fa-search text-muted"></i></span>
+                        <input type="text" wire:model.live.debounce.300ms="nombre" class="form-control border-start-0 ps-0 text-muted" placeholder="Nombre..." autocomplete="off">
                     </div>
                 </div>
+
+                <!-- Categoría -->
+                <div class="col-md-2" style="min-width: 150px;">
+                    <label class="form-label text-muted mb-1" style="font-size: 0.75rem; font-weight: 600;">Categoría</label>
+                    <select class="form-select form-select-sm shadow-sm text-muted" wire:model.live="categoria_id">
+                        <option value="">Todas</option>
+                        @foreach($categorias as $categoria)
+                            <option value="{{ $categoria->id }}">{{ $categoria->nombre }}</option>
+                        @endforeach
+                    </select>
+                </div>
+
+                <!-- Stock -->
+                <div class="col-md-2" style="min-width: 130px;">
+                    <label class="form-label text-muted mb-1" style="font-size: 0.75rem; font-weight: 600;">Stock</label>
+                    <select class="form-select form-select-sm shadow-sm text-muted" wire:model.live="orden_stock">
+                        <option value="">Todos</option>
+                        <option value="desc">Más stock</option>
+                        <option value="asc">Menos stock</option>
+                    </select>
+                </div>
+
+                <!-- Precio -->
+                <div class="col-md-2" style="min-width: 130px;">
+                    <label class="form-label text-muted mb-1" style="font-size: 0.75rem; font-weight: 600;">Precio</label>
+                    <select class="form-select form-select-sm shadow-sm text-muted" wire:model.live="orden_precio">
+                        <option value="">Todos</option>
+                        <option value="desc">Más caro</option>
+                        <option value="asc">Más barato</option>
+                    </select>
+                </div>
+
+                <!-- Botón Limpiar Rojo -->
+                <div class="col-auto">
+                    <button type="button" wire:click="limpiar" class="btn btn-outline-danger btn-sm shadow-sm" title="Limpiar Filtros">
+                        <span wire:loading.remove wire:target="limpiar"><i class="fa-solid fa-eraser"></i></span>
+                        <span wire:loading wire:target="limpiar" class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                    </button>
+                </div>
+
+                <!-- Divisor Visual -->
+                <div class="col-auto d-none d-md-block">
+                    <div class="vr h-100 mx-2 text-muted"></div>
+                </div>
+
+                <!-- Botón Volver (Estilizado) -->
+                <div class="col-auto">
+                    <a href="{{ route('tickets.index') }}" class="btn btn-outline-secondary btn-sm shadow-sm fw-bold d-flex align-items-center h-100 px-3">
+                        <i class="fa-solid fa-arrow-left me-2"></i> Volver a Tickets
+                    </a>
+                </div>
+
             </div>
         </div>
-        <a href="{{ route('tickets.index') }}" class="btn btn-outline-secondary shadow-sm px-4 fw-bold text-nowrap py-2" style="border-radius: 12px;">
-            ⬅ Volver a Tickets
-        </a>
     </div>
 
     <!-- CUERPO DEL POS -->

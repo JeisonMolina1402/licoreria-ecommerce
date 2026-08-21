@@ -12,24 +12,34 @@ class TurnoCajaController extends Controller
     // Procesa la apertura de la caja
     public function abrir(Request $request)
     {
+        // 1. Validamos los datos básicos
         $request->validate([
             'monto_inicial' => 'required|numeric|min:0',
-            'observaciones_apertura' => 'nullable|string|max:500' // <-- NUEVO
+            'observaciones_apertura' => 'nullable|string|max:500'
         ]);
 
+        // 🔥 2. DEFENSA: Forzar el monto a 20.00 si el usuario NO tiene permiso, 
+        // sin importar lo que haya enviado en el formulario
+        $montoFinal = $request->monto_inicial;
+        if (!Auth::user()->can('editar fondo de caja')) {
+            $montoFinal = 20.00; // Valor fijo de seguridad
+        }
+
+        // 3. Verificamos que no tenga un turno abierto
         $turnoExistente = TurnoCaja::where('user_id', Auth::id())->where('estado', 'abierto')->first();
 
         if ($turnoExistente) {
             return redirect()->back()->withErrors(['error' => 'Ya tienes un turno de caja abierto.']);
         }
 
+        // 4. Creamos el turno con el monto validado
         TurnoCaja::create([
             'user_id' => Auth::id(),
-            'monto_inicial' => $request->monto_inicial,
+            'monto_inicial' => $montoFinal, // <-- Usamos la variable segura
             'total_efectivo' => 0,
             'total_transferencias' => 0,
             'estado' => 'abierto',
-            'observaciones_apertura' => $request->observaciones_apertura, // <-- NUEVO
+            'observaciones_apertura' => $request->observaciones_apertura,
             'fecha_apertura' => Carbon::now(),
         ]);
 

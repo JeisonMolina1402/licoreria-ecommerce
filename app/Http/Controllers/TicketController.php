@@ -120,7 +120,7 @@ class TicketController extends Controller
 
                 $ticket->metodo_pago = 'transferencia';
             } else {
-                return redirect()->back()->withErrors(['error' => 'Debes abrir un turno de caja antes de aprobar pagos.']);
+                return redirect()->back()->with('error', 'Debes abrir un turno de caja antes de aprobar pagos.');
             }
         }
 
@@ -221,7 +221,7 @@ class TicketController extends Controller
 
             return redirect()->route('tickets.create')->with('success', 'El cobro se ha realizado y el inventario fue actualizado.');
         } catch (\Exception $e) {
-            return redirect()->back()->withErrors(['error' => $e->getMessage()]);
+            return redirect()->back()->with('error', $e->getMessage());
         }
     }
 

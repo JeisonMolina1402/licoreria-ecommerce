@@ -13,15 +13,20 @@
             <x-input-error :messages="$errors->get('email')" class="mt-2" />
         </div>
 
-        <!-- Password -->
+        <!-- Password con Ojito en Negro -->
         <div class="mt-4">
             <x-input-label for="password" :value="__('Password')" />
-
-            <x-text-input id="password" class="block mt-1 w-full"
-                            type="password"
-                            name="password"
-                            required autocomplete="current-password" />
-
+            <div class="relative mt-1">
+                <!-- pr-10 para dar espacio al ícono -->
+                <x-text-input id="password" class="block w-full pr-10"
+                                type="password"
+                                name="password"
+                                required autocomplete="current-password" />
+                
+                <button type="button" class="absolute inset-y-0 right-0 px-3 flex items-center toggle-password text-gray-500 hover:text-gray-700" data-target="password">
+                    <i class="fa-solid fa-eye"></i>
+                </button>
+            </div>
             <x-input-error :messages="$errors->get('password')" class="mt-2" />
         </div>
 
@@ -54,4 +59,42 @@
             </p>
         </div>
     </form>
+
+    <!-- JAVASCRIPT MÁGICO (Versión Tailwind CSS) -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // 1. Lógica para el Ojito de Contraseña
+            const toggleButtons = document.querySelectorAll('.toggle-password');
+            toggleButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    const input = document.getElementById(this.dataset.target);
+                    const icon = this.querySelector('i');
+                    
+                    if (input.type === 'password') {
+                        input.type = 'text';
+                        icon.classList.remove('fa-eye');
+                        icon.classList.add('fa-eye-slash');
+                    } else {
+                        input.type = 'password';
+                        icon.classList.remove('fa-eye-slash');
+                        icon.classList.add('fa-eye');
+                    }
+                });
+            });
+
+            // 2. Lógica para el Spinner con Tailwind (Prevenir múltiples clics)
+            const forms = document.querySelectorAll('.form-cargando');
+            forms.forEach(form => {
+                form.addEventListener('submit', function() {
+                    const btn = this.querySelector('button[type="submit"]');
+                    if (btn) {
+                        btn.disabled = true;
+                        btn.classList.add('opacity-75', 'cursor-not-allowed');
+                        // Spinner animado en línea
+                        btn.innerHTML = `<svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white inline-block" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> INICIANDO...`;
+                    }
+                });
+            });
+        });
+    </script>
 </x-guest-layout>

@@ -2,13 +2,22 @@
     
     <div class="card shadow-sm border-0 mb-4">
         <div class="card-body">
-            <div class="row g-2">
-                <div class="col-md-5">
-                    <input type="text" class="form-control" wire:model.live.debounce.300ms="buscar_codigo" placeholder="🔍 Buscar por código de reserva..." autocomplete="off">
+            <!-- align-items-end es clave aquí para que el botón se alinee abajo con los inputs -->
+            <div class="row g-2 align-items-end">
+                
+                <!-- Buscador -->
+                <div class="col-md-3">
+                    <label class="form-label text-muted mb-1" style="font-size: 0.75rem; font-weight: 600;">Buscar Ticket</label>
+                    <div class="input-group input-group-sm shadow-sm">
+                        <span class="input-group-text bg-white border-end-0"><i class="fa-solid fa-search text-muted"></i></span>
+                        <input type="text" class="form-control border-start-0 ps-0 text-muted" wire:model.live.debounce.300ms="buscar_codigo" placeholder="Código de reserva..." autocomplete="off">
+                    </div>
                 </div>
 
-                <div class="col-md-4">
-                    <select class="form-select" wire:model.live="estado">
+                <!-- Estado -->
+                <div class="col-md-3">
+                    <label class="form-label text-muted mb-1" style="font-size: 0.75rem; font-weight: 600;">Estado</label>
+                    <select class="form-select form-select-sm text-muted shadow-sm" wire:model.live="estado">
                         <option value="">Todos los Estados</option>
                         <option value="pendiente">🟡 Pendientes</option>
                         <option value="pagado">🔵 Pagados</option>
@@ -18,12 +27,26 @@
                     </select>
                 </div>
 
-                <div class="col-md-3">
-                    <button type="button" wire:click="limpiar" class="btn btn-outline-secondary w-100" wire:loading.attr="disabled" wire:target="limpiar">
-                        <span wire:loading.remove wire:target="limpiar">Limpiar</span>
+                <!-- Desde Fecha -->
+                <div class="col">
+                    <label class="form-label text-muted mb-1" style="font-size: 0.75rem; font-weight: 600;">Desde</label>
+                    <input type="date" class="form-control form-control-sm text-muted shadow-sm" wire:model.live="fecha_inicio" title="Desde Fecha">
+                </div>
+
+                <!-- Hasta Fecha -->
+                <div class="col">
+                    <label class="form-label text-muted mb-1" style="font-size: 0.75rem; font-weight: 600;">Hasta</label>
+                    <input type="date" class="form-control form-control-sm text-muted shadow-sm" wire:model.live="fecha_fin" title="Hasta Fecha">
+                </div>
+
+                <!-- Botón Limpiar (Estilo Auditoría) -->
+                <div class="col-auto">
+                    <button type="button" wire:click="limpiar" class="btn btn-outline-danger btn-sm shadow-sm" title="Limpiar Filtros">
+                        <span wire:loading.remove wire:target="limpiar"><i class="fa-solid fa-eraser"></i></span>
                         <span wire:loading wire:target="limpiar" class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
                     </button>
                 </div>
+                
             </div>
         </div>
     </div>

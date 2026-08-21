@@ -36,26 +36,50 @@ h1, h2, h3, h4, h5, h6, .titulo-premium {
    ========================================= */
 .navbar-tienda {
     background-color: rgba(255, 255, 255, 0.95) !important; 
-    /* EFECTO GLASSMORPHISM: Desenfoque de fondo moderno */
     backdrop-filter: blur(10px); 
     -webkit-backdrop-filter: blur(10px);
     border-bottom: 1px solid var(--borde_dorado);
     min-height: 90px;
 }
 
-/* Iconos de la barra de navegación con animación de escala */
+/* 1. EL CONTENEDOR PRINCIPAL (Aquí ocurre la magia de moverse juntos) */
 .nav-icon {
     color: var(--color_secundario);
-    font-size: 1.4rem;
-    transition: all 0.3s ease;
+    transition: all 0.3s ease; /* Transición para todo el bloque */
     text-decoration: none;
     padding: 0;
     background-color: transparent !important; 
     border: none !important; 
+    display: flex;
+    align-items: center;
+    gap: 0.4rem; 
 }
+
+/* Al hacer hover, movemos TODO el botón como una sola pieza */
 .nav-icon:hover {
-    color: var(--color_primario);
-    transform: scale(1.2); /* Efecto zoom al pasar el mouse */
+    transform: scale(1.08) translateY(-2px); /* Escala sutil para que no se deforme el texto */
+}
+
+/* 2. EL ÍCONO (Solo hereda el color) */
+.nav-icon i {
+    font-size: 1.4rem;
+    transition: color 0.3s ease;
+}
+
+/* 3. EL TEXTO (Solo hereda el color) */
+.nav-text {
+    font-size: 0.75rem; 
+    font-family: 'Cinzel', serif; 
+    font-weight: 700;
+    letter-spacing: 1px;
+    margin-top: 3px;
+    transition: color 0.3s ease;
+}
+
+/* Forzar el color dorado premium al hacer hover para ambos elementos */
+.nav-icon:hover i,
+.nav-icon:hover .nav-text {
+    color: var(--color_primario) !important;
 }
 
 .social-icon {

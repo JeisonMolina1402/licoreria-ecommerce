@@ -33,6 +33,8 @@ class User extends Authenticatable implements MustVerifyEmail
         'telefono',
         'rol',
         'estado',
+        'avatar',
+        'direccion',
     ];
 
     /**
@@ -58,15 +60,25 @@ class User extends Authenticatable implements MustVerifyEmail
         ];
     }
 
-
-    // NUEVO: Reglas de auditoría para usuarios
+    //Reglas de auditoría para usuarios (Enfocado en Privacidad)
     public function getActivitylogOptions(): LogOptions
     {
         return LogOptions::defaults()
-            ->logOnly(['name', 'email', 'cedula', 'rol', 'estado']) 
+            // Solo auditamos cambios administrativos críticos.
+            // Ignoramos por completo nombre, email, cedula, telefono, direccion y avatar.
+            ->logOnly(['rol', 'estado'])
             ->logOnlyDirty()
-            ->dontSubmitEmptyLogs() 
-            ->setDescriptionForEvent(fn(string $eventName) => "Este usuario ha sido {$eventName}")
+            ->dontSubmitEmptyLogs()
+            // Traducción dinámica del evento
+            ->setDescriptionForEvent(function(string $eventName) {
+                $acciones = [
+                    'created' => 'creado',
+                    'updated' => 'actualizado',
+                    'deleted' => 'eliminado'
+                ];
+                $accion = $acciones[$eventName] ?? $eventName;
+                return "El usuario ha sido {$accion}";
+            })
             ->useLogName('usuarios'); // Aparecerá bajo el módulo "USUARIOS"
     }
 }

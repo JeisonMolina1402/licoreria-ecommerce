@@ -1,64 +1,98 @@
 <section>
-    <header>
-        <h2 class="text-lg font-medium text-gray-900">
-            {{ __('Profile Information') }}
-        </h2>
-
-        <p class="mt-1 text-sm text-gray-600">
-            {{ __("Update your account's profile information and email address.") }}
-        </p>
+    <header class="mb-4">
+        <h2 class="titulo-premium h4 text-dark mb-1">Información de la Cuenta</h2>
+        <p class="text-muted small">Actualiza tus datos de contacto y foto de perfil para agilizar tus reservas.</p>
     </header>
 
     <form id="send-verification" method="post" action="{{ route('verification.send') }}">
         @csrf
     </form>
 
-    <form method="post" action="{{ route('profile.update') }}" class="mt-6 space-y-6 form-cargando">
+    <!-- 🔥 IMPORTANTE: enctype permite el envío de archivos (fotos) -->
+    <form method="post" action="{{ route('profile.update') }}" enctype="multipart/form-data" class="form-cargando">
         @csrf
         @method('patch')
 
-        <div>
-            <x-input-label for="name" :value="__('Name')" />
-            <x-text-input id="name" name="name" type="text" class="mt-1 block w-full" :value="old('name', $user->name)" required autofocus autocomplete="name" />
-            <x-input-error class="mt-2" :messages="$errors->get('name')" />
+        <!-- ZONA DE FOTO DE PERFIL -->
+        <div class="mb-4 text-center">
+            <div class="position-relative d-inline-block">
+                <!-- Imagen Actual o Placeholder -->
+                @if($user->avatar)
+                    <img id="avatar-preview" src="{{ asset('storage/' . $user->avatar) }}" alt="Avatar" class="rounded-circle object-fit-cover shadow-sm" style="width: 130px; height: 130px; border: 3px solid var(--color_primario);">
+                @else
+                    <div id="avatar-placeholder" class="rounded-circle d-flex align-items-center justify-content-center shadow-sm bg-light text-secondary" style="width: 130px; height: 130px; border: 3px solid var(--color_primario); font-size: 3.5rem;">
+                        <i class="fa-regular fa-user"></i>
+                    </div>
+                    <img id="avatar-preview" src="#" alt="Avatar" class="rounded-circle object-fit-cover shadow-sm d-none" style="width: 130px; height: 130px; border: 3px solid var(--color_primario);">
+                @endif
+                
+                <!-- Botón de Cámara superpuesto -->
+                <label for="avatar" class="position-absolute bottom-0 end-0 bg-dark text-white rounded-circle d-flex align-items-center justify-content-center shadow" style="width: 40px; height: 40px; cursor: pointer; transition: all 0.3s ease;" title="Cambiar foto">
+                    <i class="fa-solid fa-camera"></i>
+                </label>
+                <!-- Input real oculto -->
+                <input type="file" id="avatar" name="avatar" class="d-none" accept="image/png, image/jpeg, image/jpg, image/webp" onchange="previewImage(event)">
+            </div>
+            @error('avatar')
+                <div class="text-danger small mt-2 fw-bold">{{ $message }}</div>
+            @enderror
         </div>
 
-        <div>
-            <x-input-label for="email" :value="__('Email')" />
-            <x-text-input id="email" name="email" type="email" class="mt-1 block w-full" :value="old('email', $user->email)" required autocomplete="username" />
-            <x-input-error class="mt-2" :messages="$errors->get('email')" />
+        <div class="row">
+            <!-- NOMBRE -->
+            <div class="col-md-6 mb-3">
+                <label for="name" class="form-label fw-bold small text-muted text-uppercase">Nombre Completo</label>
+                <input type="text" class="form-control shadow-sm" id="name" name="name" value="{{ old('name', $user->name) }}" required autocomplete="name">
+                @error('name') <div class="text-danger small mt-1">{{ $message }}</div> @enderror
+            </div>
 
-            @if ($user instanceof \Illuminate\Contracts\Auth\MustVerifyEmail && ! $user->hasVerifiedEmail())
-                <div>
-                    <p class="text-sm mt-2 text-gray-800">
-                        {{ __('Your email address is unverified.') }}
+            <!-- CORREO -->
+            <div class="col-md-6 mb-3">
+                <label for="email" class="form-label fw-bold small text-muted text-uppercase">Correo Electrónico</label>
+                <input type="email" class="form-control shadow-sm" id="email" name="email" value="{{ old('email', $user->email) }}" required autocomplete="username">
+                @error('email') <div class="text-danger small mt-1">{{ $message }}</div> @enderror
+            </div>
 
-                        <button form="send-verification" class="underline text-sm text-gray-600 hover:text-gray-900 rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-                            {{ __('Click here to re-send the verification email.') }}
-                        </button>
-                    </p>
+            <!-- CÉDULA -->
+            <div class="col-md-6 mb-3">
+                <label for="cedula" class="form-label fw-bold small text-muted text-uppercase">Cédula</label>
+                <input type="text" class="form-control shadow-sm" id="cedula" name="cedula" value="{{ old('cedula', $user->cedula) }}" placeholder="Ej: 17xxxxxx">
+                @error('cedula') <div class="text-danger small mt-1">{{ $message }}</div> @enderror
+            </div>
 
-                    @if (session('status') === 'verification-link-sent')
-                        <p class="mt-2 font-medium text-sm text-green-600">
-                            {{ __('A new verification link has been sent to your email address.') }}
-                        </p>
-                    @endif
-                </div>
-            @endif
+            <!-- TELÉFONO -->
+            <div class="col-md-6 mb-3">
+                <label for="telefono" class="form-label fw-bold small text-muted text-uppercase">Teléfono / WhatsApp</label>
+                <input type="text" class="form-control shadow-sm" id="telefono" name="telefono" value="{{ old('telefono', $user->telefono) }}" placeholder="Ej: 09xxxxxx">
+                @error('telefono') <div class="text-danger small mt-1">{{ $message }}</div> @enderror
+            </div>
+
+            <!-- DIRECCIÓN -->
+            <div class="col-12 mb-4">
+                <label for="direccion" class="form-label fw-bold small text-muted text-uppercase">Dirección (Opcional)</label>
+                <textarea class="form-control shadow-sm" id="direccion" name="direccion" rows="2" placeholder="Sector, calle principal y número de casa">{{ old('direccion', $user->direccion) }}</textarea>
+                @error('direccion') <div class="text-danger small mt-1">{{ $message }}</div> @enderror
+            </div>
         </div>
 
-        <div class="flex items-center gap-4">
-            <x-primary-button>{{ __('Save') }}</x-primary-button>
-
-            @if (session('status') === 'profile-updated')
-                <p
-                    x-data="{ show: true }"
-                    x-show="show"
-                    x-transition
-                    x-init="setTimeout(() => show = false, 2000)"
-                    class="text-sm text-gray-600"
-                >{{ __('Saved.') }}</p>
-            @endif
+        <div class="d-flex align-items-center gap-3 mt-2">
+            <button type="submit" class="btn btn-black"><i class="fa-regular fa-floppy-disk me-1"></i> Guardar Cambios</button>
         </div>
     </form>
 </section>
+
+<!-- Script para mostrar la foto apenas la seleccionas -->
+<script>
+    function previewImage(event) {
+        const reader = new FileReader();
+        reader.onload = function() {
+            const preview = document.getElementById('avatar-preview');
+            const placeholder = document.getElementById('avatar-placeholder');
+            
+            preview.src = reader.result;
+            preview.classList.remove('d-none');
+            if(placeholder) placeholder.classList.add('d-none');
+        }
+        reader.readAsDataURL(event.target.files[0]);
+    }
+</script>
