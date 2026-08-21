@@ -8,8 +8,8 @@
 
         <div class="d-flex justify-content-between align-items-end mb-3">
             <h5 class="text-dark mb-0 d-none d-md-block">Datos de Rendimiento</h5>
-            <button type="button" id="btnExportarPdf" class="btn btn-danger btn-sm fw-bold shadow-sm px-3" onclick="exportarConGraficos()">
-                <i class="fa-solid fa-file-pdf me-1"></i> Exportar Reporte
+            <button type="button" id="btnExportarPdf" class="btn btn-danger btn-sm fw-bold shadow-sm px-4" onclick="exportarConGraficos()">
+                <i class="fa-solid fa-file-pdf me-1"></i> Descargar PDF
             </button>
         </div>
 

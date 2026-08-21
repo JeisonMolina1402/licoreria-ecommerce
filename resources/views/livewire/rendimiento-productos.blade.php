@@ -1,23 +1,35 @@
 <div class="col-12" id="tabla-ranking">
     <div class="card shadow-sm border-0 h-100 rounded-4">
-        <div class="card-header bg-white py-3 border-bottom d-flex align-items-center justify-content-between">
-            <h6 class="m-0 fw-bold text-primary">
+        <!-- CABECERA: RENDIMIENTO DE PRODUCTOS -->
+        <div
+            class="card-header bg-white py-3 border-bottom d-flex flex-column flex-md-row align-items-center justify-content-between gap-3">
+
+            <!-- Título a la Izquierda (PC) / Centro (Móvil) -->
+            <h6 class="m-0 fw-bold text-primary text-center text-md-start">
                 <i class="fa-solid fa-trophy text-warning me-2"></i> Rendimiento de Productos
             </h6>
 
-            <div class="d-flex align-items-center gap-3">
-                <select wire:model.live="ranking_productos" class="form-select form-select-sm border-primary fw-bold text-primary" style="cursor: pointer;">
+            <!-- Grupo Filtro + Paginación: Apilados en móvil, en fila a la derecha en PC -->
+            <div class="d-flex flex-column flex-sm-row align-items-center gap-2 flex-shrink-0">
+                <select wire:model.live="ranking_productos"
+                    class="form-select form-select-sm border-primary fw-bold text-primary text-center text-sm-start"
+                    style="cursor: pointer; width: auto; min-width: 240px;">
                     <option value="ventas">🥇 Más Vendidos (Unidades)</option>
                     <option value="ganancia">💰 Mayor Ganancia (Dinero)</option>
                     <option value="cero">📉 Sin Movimiento (0 Ventas)</option>
                 </select>
-                <span class="badge bg-light text-dark border">Página {{ $productosTop->currentPage() }} de {{ $productosTop->lastPage() }}</span>
+
+                <!-- Le quitamos el w-100 para que ya no se estire como chicle -->
+                <span class="badge bg-light text-dark border px-3 py-2 text-nowrap" style="font-size: 0.85rem;">
+                    Página {{ $productosTop->currentPage() }} de {{ $productosTop->lastPage() }}
+                </span>
             </div>
         </div>
 
         <div class="card-body p-0 d-flex flex-column">
             <!-- AGREGADO: transition-all y wire:loading.class="opacity-50" PARA FEEDBACK VISUAL -->
-            <div class="table-responsive flex-grow-1 transition-all" wire:loading.class="opacity-50" wire:target="ranking_productos">
+            <div class="table-responsive flex-grow-1 transition-all" wire:loading.class="opacity-50"
+                wire:target="ranking_productos">
                 <table class="table table-hover align-middle text-center mb-0">
                     <thead class="table-light">
                         <tr>
@@ -37,14 +49,17 @@
                             @php
                                 $esRanking = $ranking_productos !== 'cero';
 
-                                $unidades = $esRanking ? ($item->total_vendido ?? 0) : 0;
-                                $totalVenta = $esRanking ? ($item->ingreso_generado ?? 0) : 0; 
-                                $ganancia = $esRanking ? ($item->ganancia_generada ?? 0) : 0;  
-                                $totalInversion = $totalVenta - $ganancia;      
+                                $unidades = $esRanking ? $item->total_vendido ?? 0 : 0;
+                                $totalVenta = $esRanking ? $item->ingreso_generado ?? 0 : 0;
+                                $ganancia = $esRanking ? $item->ganancia_generada ?? 0 : 0;
+                                $totalInversion = $totalVenta - $ganancia;
 
                                 $modeloProducto = $esRanking ? $item->producto : $item;
                                 $nombre = $modeloProducto ? $modeloProducto->nombre : '📦 Producto Eliminado';
-                                $categoria = $modeloProducto && $modeloProducto->categoria ? $modeloProducto->categoria->nombre : 'Sin Categoría';
+                                $categoria =
+                                    $modeloProducto && $modeloProducto->categoria
+                                        ? $modeloProducto->categoria->nombre
+                                        : 'Sin Categoría';
                                 $precioCompra = $modeloProducto ? $modeloProducto->precio_compra : 0;
                                 $precioVenta = $modeloProducto ? $modeloProducto->precio : 0;
                                 $imagen = $modeloProducto ? $modeloProducto->imagen : null;
@@ -55,14 +70,17 @@
                                 </td>
                                 <td class="py-3 text-start">
                                     <div class="d-flex align-items-center">
-                                        <div class="bg-white border rounded p-1 me-3 d-flex justify-content-center align-items-center shadow-sm" style="width: 45px; height: 45px;">
+                                        <div class="bg-white border rounded p-1 me-3 d-flex justify-content-center align-items-center shadow-sm"
+                                            style="width: 45px; height: 45px;">
                                             @if ($imagen)
-                                                <img src="{{ asset($imagen) }}" alt="img" class="rounded" style="max-width: 100%; max-height: 100%; object-fit: cover;">
+                                                <img src="{{ asset($imagen) }}" alt="img" class="rounded"
+                                                    style="max-width: 100%; max-height: 100%; object-fit: cover;">
                                             @else
                                                 <span class="fs-5">🍷</span>
                                             @endif
                                         </div>
-                                        <strong class="{{ !$modeloProducto ? 'text-danger' : '' }}">{{ $nombre }}</strong>
+                                        <strong
+                                            class="{{ !$modeloProducto ? 'text-danger' : '' }}">{{ $nombre }}</strong>
                                     </div>
                                 </td>
                                 <td class="py-3">{{ $categoria }}</td>
@@ -73,16 +91,19 @@
                                 <td class="py-3 text-success fw-bold">${{ number_format($ganancia, 2) }}</td>
                                 <td class="py-3 border-start">
                                     @if ($unidades > 0)
-                                        <span class="badge bg-success rounded-pill px-3 py-2" style="font-size: 0.9rem;">{{ $unidades }} unid.</span>
+                                        <span class="badge bg-success rounded-pill px-3 py-2"
+                                            style="font-size: 0.9rem;">{{ $unidades }} unid.</span>
                                     @else
-                                        <span class="badge bg-danger rounded-pill px-3 py-2" style="font-size: 0.9rem;">0 unid.</span>
+                                        <span class="badge bg-danger rounded-pill px-3 py-2"
+                                            style="font-size: 0.9rem;">0 unid.</span>
                                     @endif
                                 </td>
                             </tr>
                         @empty
                             <tr>
                                 <td colspan="9" class="text-center py-5 text-muted">
-                                    <i class="fa-solid fa-box-open fs-2 mb-2 d-block"></i> No hay productos en este rango.
+                                    <i class="fa-solid fa-box-open fs-2 mb-2 d-block"></i> No hay productos en este
+                                    rango.
                                 </td>
                             </tr>
                         @endforelse
@@ -90,7 +111,8 @@
                 </table>
             </div>
             <div class="border-top p-3 bg-light rounded-bottom-4">
-                {{ $productosTop->links() }}
+                {{-- Le indicamos a Livewire que solo haga scroll hasta el ID de esta tabla --}}
+                {{ $productosTop->links(data: ['scrollTo' => '#tabla-ranking']) }}
             </div>
         </div>
     </div>

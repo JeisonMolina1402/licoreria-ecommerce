@@ -1,15 +1,12 @@
 document.addEventListener('DOMContentLoaded', function () {
     
-    // 1. Buscamos el puente de datos en el HTML
+    // 1. ALERTAS GLOBALES (ÉXITO / ERROR)
     const alertasGlobales = document.getElementById('alertas-globales');
-    
     if (alertasGlobales) {
-        // 2. Extraemos los mensajes
         const mensajeSuccess = alertasGlobales.getAttribute('data-success');
         const mensajeError = alertasGlobales.getAttribute('data-error');
         const errorValidacion = alertasGlobales.getAttribute('data-validacion') === 'true' || alertasGlobales.getAttribute('data-validacion') === '1';
 
-        // 3. Configuramos el diseño del Toast (Notificación)
         const Toast = Swal.mixin({
             toast: true,
             position: 'top-end',
@@ -22,62 +19,81 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         });
 
-        // 4. Disparamos la alerta que corresponda
         if (mensajeSuccess) {
             Toast.fire({ icon: 'success', title: mensajeSuccess });
         }
-
         if (mensajeError) {
             Toast.fire({ icon: 'error', title: mensajeError });
         } 
         else if (errorValidacion) {
-            // Mensaje genérico para cuando falte llenar un campo obligatorio en cualquier formulario del sistema
             Toast.fire({ icon: 'warning', title: 'Por favor revisa los campos requeridos.' });
         }
     }
-});
-// ==========================================
-        // 1. ALERTAS DE CONFIRMACIÓN (ELIMINAR/DESACTIVAR)
-        // ==========================================
-        const formulariosEliminar = document.querySelectorAll('.form-eliminar');
-        
-        formulariosEliminar.forEach(formulario => {
-            formulario.addEventListener('submit', function (e) {
-                e.preventDefault(); // Pausamos el envío del formulario
-                
-                Swal.fire({
-                    title: '¿Estás completamente seguro?',
-                    text: "Esta acción modificará el registro en la base de datos.",
-                    icon: 'warning',
-                    showCancelButton: true,
-                    confirmButtonColor: '#dc3545', // Rojo para el peligro
-                    cancelButtonColor: '#6c757d', // Gris para cancelar
-                    confirmButtonText: '<i class="fas fa-check me-1"></i> Sí, proceder',
-                    cancelButtonText: '<i class="fas fa-times me-1"></i> Cancelar',
-                    reverseButtons: true // Pone el botón de cancelar a la izquierda (Mejor UX)
-                }).then((result) => {
-                    if (result.isConfirmed) {
-                        this.submit(); // Si dice que sí, el formulario continúa su viaje
-                    }
-                });
-            });
-        });
 
-        // ==========================================
-        // 2. ESTADOS DE CARGA (SPINNERS PARA EVITAR DOBLE CLIC)
-        // ==========================================
-        const formulariosCarga = document.querySelectorAll('.form-cargando');
-        
-        formulariosCarga.forEach(formulario => {
-            formulario.addEventListener('submit', function () {
-                // Buscamos el botón de tipo submit dentro de este formulario específico
-                const btnSubmit = this.querySelector('button[type="submit"]');
-                
-                if (btnSubmit) {
-                    // Deshabilitamos el botón para que no pueda dar más clics
-                    btnSubmit.disabled = true;
-                    // Le agregamos la ruedita giratoria de Bootstrap y cambiamos el texto
-                    btnSubmit.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span> Procesando...';
+    // 2. ESTADOS DE CARGA (SPINNERS PARA EVITAR DOBLE CLIC)
+    const formulariosCarga = document.querySelectorAll('.form-cargando');
+    formulariosCarga.forEach(formulario => {
+        formulario.addEventListener('submit', function () {
+            const btnSubmit = this.querySelector('button[type="submit"]');
+            if (btnSubmit) {
+                btnSubmit.disabled = true;
+                btnSubmit.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span> Procesando...';
+            }
+        });
+    });
+
+    // 3. ALERTA AMARILLA: CAMBIAR ESTADO (PRODUCTOS Y USUARIOS)
+    const formulariosEstado = document.querySelectorAll('.form-estado');
+    formulariosEstado.forEach(formulario => {
+        formulario.addEventListener('submit', function (e) {
+            e.preventDefault(); 
+            
+            // Texto dinámico dependiendo si estamos en Usuarios o Inventario
+            const esUsuario = window.location.pathname.includes('usuarios');
+            const textoMensaje = esUsuario 
+                                 ? "El usuario perderá o recuperará su acceso al sistema." 
+                                 : "El producto se ocultará o mostrará en la tienda pública.";
+
+            Swal.fire({
+                title: '¿Estás seguro?',
+                text: textoMensaje,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#ffc107', 
+                cancelButtonColor: '#6c757d', 
+                confirmButtonText: '<i class="fa-solid fa-check me-1"></i> Sí, continuar',
+                cancelButtonText: '<i class="fa-solid fa-times me-1"></i> Cancelar',
+                reverseButtons: true
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    this.submit(); 
                 }
             });
         });
+    });
+
+    // 4. ALERTA ROJA: ELIMINAR DEFINITIVAMENTE (ESTA FALTABA)
+    const formulariosEliminar = document.querySelectorAll('.form-eliminar');
+    formulariosEliminar.forEach(formulario => {
+        formulario.addEventListener('submit', function (e) {
+            e.preventDefault(); 
+            
+            Swal.fire({
+                title: '¿Estás seguro de eliminar?',
+                text: "¡Esta acción no se puede deshacer y los datos se perderán para siempre!",
+                icon: 'error',
+                showCancelButton: true,
+                confirmButtonColor: '#dc3545', // Rojo peligro
+                cancelButtonColor: '#6c757d', // Gris
+                confirmButtonText: '<i class="fa-solid fa-trash-can me-1"></i> Sí, eliminar',
+                cancelButtonText: '<i class="fa-solid fa-times me-1"></i> Cancelar',
+                reverseButtons: true
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    this.submit(); 
+                }
+            });
+        });
+    });
+
+});

@@ -59,7 +59,7 @@ class RendimientoProductos extends Component
             }
         }
 
-        $productosTop = $queryProductos->paginate(5, ['*'], 'page_productos');
+        $productosTop = $queryProductos->paginate(5)->onEachSide(1);
 
         return view('livewire.rendimiento-productos', compact('productosTop'));
     }

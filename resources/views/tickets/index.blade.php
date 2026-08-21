@@ -9,50 +9,51 @@
         <div class="card-body p-4">
 
             @if (!$turnoAbierto)
-                <div class="d-flex justify-content-between align-items-center">
-                    <div>
+                <!-- CABECERA: ABRIR CAJA -->
+                <div class="row align-items-center text-center text-md-start gap-3 gap-md-0">
+                    <div class="col-12 col-md">
                         <h5 class="text-dark fw-bold mb-1"><i class="fas fa-cash-register text-primary me-2"></i> Apertura de
                             Caja</h5>
                         <p class="text-muted small mb-0">No tienes un turno activo. Abre la caja para comenzar a facturar.
                         </p>
                     </div>
-                    <button type="button" class="btn btn-success fw-bold shadow-sm" data-bs-toggle="modal"
-                        data-bs-target="#modalAbrirCaja">
-                        <i class="fas fa-box-open me-1"></i> Iniciar Turno de Caja
-                    </button>
+                    <div class="col-12 col-md-auto">
+                        <button type="button" class="btn btn-success fw-bold shadow-sm w-100 py-2 text-uppercase"
+                            data-bs-toggle="modal" data-bs-target="#modalAbrirCaja">
+                            <i class="fas fa-box-open me-2"></i> Iniciar Turno de Caja
+                        </button>
+                    </div>
                 </div>
 
+                <!-- MODAL ABRIR CAJA -->
                 <div class="modal fade" id="modalAbrirCaja" data-bs-backdrop="static" tabindex="-1" aria-hidden="true">
                     <div class="modal-dialog modal-dialog-centered">
-                        <form action="{{ route('caja.abrir') }}" method="POST"
-                            class="modal-content border-0 shadow-lg form-cargando" style="border-radius: 16px;">
+                        <form action="{{ route('caja.abrir') }}" method="POST" class="modal-content border-0 shadow-lg form-cargando" style="border-radius: 16px;">
                             @csrf
                             <div class="modal-header bg-white border-bottom-0 pt-4 pb-2 px-4">
-                                <h5 class="modal-title fw-bold text-dark"><i
-                                        class="fas fa-cash-register text-success me-2"></i> Apertura de Turno</h5>
+                                <h5 class="modal-title fw-bold text-dark"><i class="fas fa-cash-register text-success me-2"></i> Apertura de Turno</h5>
                                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                             </div>
-                            <div class="mb-3">
-                                <label class="form-label fw-bold">FONDO INICIAL DE CAJA (Efectivo) *</label>
-                                <div class="input-group">
-                                    <span class="input-group-text bg-white fw-bold">$</span>
-                                    <input type="number" step="0.01"
-                                        class="form-control @error('monto_inicial') is-invalid @enderror"
-                                        name="monto_inicial" value="{{ old('monto_inicial', '20.00') }}"
-                                        {{-- 🔥 CAMBIO: Usamos @cannot para bloquear si no tiene el permiso --}}
-                                        @cannot('editar fondo de caja') readonly style="background-color: #e9ecef;" @endcannot
-                                        required>
-                                </div>
-                                @error('monto_inicial')
-                                    <div class="text-danger fw-bold small mt-1">{{ $message }}</div>
-                                @enderror
+                            
+                            <!-- 🔥 AQUÍ ESTABA EL ERROR: Faltaba envolver esto en modal-body -->
+                            <div class="modal-body px-4">
+                                <div class="mb-3">
+                                    <label class="form-label fw-bold">FONDO INICIAL DE CAJA (Efectivo) *</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text bg-white fw-bold">$</span>
+                                        <input type="number" step="0.01" class="form-control @error('monto_inicial') is-invalid @enderror" name="monto_inicial" value="{{ old('monto_inicial', '20.00') }}" @cannot('editar fondo de caja') readonly style="background-color: #e9ecef;" @endcannot required>
+                                    </div>
+                                    @error('monto_inicial')
+                                        <div class="text-danger fw-bold small mt-1">{{ $message }}</div>
+                                    @enderror
 
-                                {{-- 🔥 CAMBIO: Mensaje adaptado al permiso --}}
-                                @cannot('editar fondo de caja')
-                                    <small class="text-muted"><i class="fas fa-lock me-1"></i> No tienes permiso para editar el
-                                        fondo base.</small>
-                                @endcannot
+                                    @cannot('editar fondo de caja')
+                                        <small class="text-muted mt-2 d-block"><i class="fas fa-lock me-1"></i> No tienes permiso para editar el fondo base.</small>
+                                    @endcannot
+                                </div>
                             </div>
+                            <!-- 🔥 FIN DEL MODAL BODY -->
+
                             <div class="modal-footer border-top-0 px-4 pb-4">
                                 <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancelar</button>
                                 <button type="submit" class="btn btn-success fw-bold px-4">Abrir Caja</button>
@@ -61,17 +62,20 @@
                     </div>
                 </div>
             @else
-                <div class="d-flex justify-content-between align-items-center mb-3">
-                    <div>
-                        <h5 class="text-dark fw-bold mb-0"><i class="fas fa-cash-register text-success me-2"></i> Estado de
+                <!-- CABECERA: CERRAR CAJA -->
+                <div class="row align-items-center text-center text-md-start gap-3 gap-md-0 mb-4">
+                    <div class="col-12 col-md">
+                        <h5 class="text-dark fw-bold mb-1"><i class="fas fa-cash-register text-success me-2"></i> Estado de
                             Caja Actual</h5>
                         <small class="text-muted">Turno abierto el:
                             {{ $turnoAbierto->fecha_apertura->format('d/m/Y h:i A') }}</small>
                     </div>
-                    <button type="button" class="btn btn-outline-danger btn-sm fw-bold px-3" data-bs-toggle="modal"
-                        data-bs-target="#modalCerrarCaja">
-                        <i class="fas fa-lock me-1"></i> Cerrar Caja
-                    </button>
+                    <div class="col-12 col-md-auto">
+                        <button type="button" class="btn btn-outline-danger fw-bold shadow-sm w-100 py-2 text-uppercase"
+                            data-bs-toggle="modal" data-bs-target="#modalCerrarCaja">
+                            <i class="fas fa-lock me-2"></i> Cerrar Caja
+                        </button>
+                    </div>
                 </div>
 
                 <div class="row row-cols-1 row-cols-md-5 g-3 text-start">

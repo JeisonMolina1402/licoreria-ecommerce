@@ -73,7 +73,7 @@
 
             </div>
 
-            <div class="table-responsive transition-all" wire:loading.class="opacity-50">
+            <div class="table-responsive transition-all" wire:loading.class="opacity-50" id="tabla-auditoria">
                 <table class="table table-hover table-bordered align-middle text-sm bg-white shadow-sm">
                     <thead class="table-dark">
                         <tr>
@@ -336,23 +336,70 @@
                 </table>
             </div>
 
-           <!-- FOOTER: PAGINACIÓN Y BOTÓN PDF -->
+        <!-- FOOTER: PAGINACIÓN Y BOTÓN PDF -->
     <div class="row align-items-center mt-4 mb-2 pt-2 border-top">
         
-        <!-- PAGINACIÓN (Alineada a la izquierda en PC, al centro en Móviles) -->
-        <!-- overflow-auto asegura que si los números son muchos en celular, se puedan deslizar sin romper la pantalla -->
-        <div class="col-12 col-lg-9 d-flex justify-content-center justify-content-lg-start mb-3 mb-lg-0 overflow-auto" style="scrollbar-width: thin;">
-            {{ $logs->links() }}
+       <!-- ESTILO PARA DOMAR LA PAGINACIÓN DE LARAVEL -->
+        <style>
+            /* 1. Ocultamos y destruimos los botones gigantes de celular para siempre */
+            .paginacion-apilada nav > .d-sm-none {
+                display: none !important;
+            }
+
+            /* 2. Forzamos a que la versión de PC se apile y se centre en celular */
+            .paginacion-apilada nav > .d-none.d-sm-flex {
+                display: flex !important;
+                flex-direction: column !important;
+                align-items: center !important;
+                gap: 10px;
+                width: 100%;
+            }
+
+            /* 3. Centrar el texto en celular */
+            .paginacion-apilada nav p {
+                margin-bottom: 0 !important;
+                text-align: center !important;
+            }
+
+            /* 🔥 4. MODO SÚPER COMPACTO PARA CELULARES 🔥 */
+            @media (max-width: 575px) {
+                /* Oculta todos los números sueltos y puntos suspensivos */
+                .paginacion-apilada .pagination .page-item:not(.active):not(:first-child):not(:last-child) {
+                    display: none !important;
+                }
+                /* Hace que los 3 botones que quedan sean anchos y cómodos para el dedo */
+                .paginacion-apilada .pagination .page-link {
+                    padding: 0.5rem 1.2rem !important;
+                    font-weight: bold;
+                    border-radius: 6px;
+                }
+                .paginacion-apilada .pagination {
+                    gap: 5px;
+                }
+            }
+
+            /* 5. En PC, restauramos la alineación a la izquierda */
+            @media (min-width: 992px) {
+                .paginacion-apilada nav > .d-none.d-sm-flex {
+                    align-items: flex-start !important;
+                }
+                .paginacion-apilada nav p {
+                    text-align: left !important;
+                }
+            }
+        </style>
+
+        <!-- PAGINACIÓN -->
+        <div class="col-12 col-lg-9 mb-4 mb-lg-0 overflow-auto paginacion-apilada" style="scrollbar-width: thin;">
+            {{ $logs->links(data: ['scrollTo' => '#tabla-auditoria']) }}
         </div>
 
-        <!-- BOTÓN PDF (Alineado a la derecha en PC, ancho completo en Móviles) -->
+        <!-- BOTÓN PDF -->
         <div class="col-12 col-lg-3 d-flex justify-content-center justify-content-lg-end">
-            <a href="{{ route('auditoria.pdf') }}" class="btn btn-danger fw-bold shadow-sm px-4 py-2 w-100 d-flex justify-content-center align-items-center" style="max-width: 220px;" target="_blank">
+            <a href="{{ route('inventario.pdf') }}" class="btn btn-danger btn-sm fw-bold shadow-sm px-2 d-flex justify-content-center align-items-center w-100" style="max-width: 220px;" target="_blank">
                 <i class="fa-solid fa-file-pdf me-2 fs-5"></i> Descargar PDF
             </a>
         </div>
         
-    </div>
-        </div>
     </div>
 </div>

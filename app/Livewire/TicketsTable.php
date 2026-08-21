@@ -73,7 +73,7 @@ class TicketsTable extends Component
         }
 
         // 4. Paginación
-        $tickets = $query->latest()->paginate(5);
+        $tickets = $query->latest()->paginate(10)->onEachSide(1);
 
         return view('livewire.tickets-table', [
             'tickets' => $tickets

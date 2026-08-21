@@ -61,7 +61,7 @@ class InventarioTable extends Component
             $query->latest();
         }
 
-        $productos = $query->paginate(5);
+        $productos = $query->paginate(5)->onEachSide(1);;
 
         return view('livewire.inventario-table', [
             'productos' => $productos,

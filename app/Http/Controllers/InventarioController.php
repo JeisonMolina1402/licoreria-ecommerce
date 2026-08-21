@@ -142,13 +142,12 @@ class InventarioController extends Controller
         return redirect()->back()->with('success', '¡Producto actualizado correctamente!');
     }
     /**
-     * MÉTODO DESTROY (Ahora hace un Borrado Lógico / Desactivación)
+     * MÉTODO TOGGLE (BOTÓN NARANJA): Alterna entre Activo e Inactivo.
      */
-    public function destroy($id)
+    public function toggleStatus($id)
     {
         $producto = Producto::findOrFail($id);
         
-        // Alternamos el estado como si fuera un interruptor
         if ($producto->estado === 'activo' || $producto->estado === null) {
             $producto->estado = 'inactivo';
             $accion = 'desactivado (Oculto del catálogo)';
@@ -160,6 +159,30 @@ class InventarioController extends Controller
         $producto->save();
         
         return redirect()->back()->with('success', "¡El producto fue $accion correctamente!");
+    }
+
+    /**
+     * MÉTODO DESTROY (BOTÓN ROJO): Borrado físico y definitivo.
+     */
+    public function destroy($id)
+    {
+        try {
+            $producto = Producto::findOrFail($id);
+            
+            // 1. Borramos la imagen del servidor para no acumular basura
+            if ($producto->imagen && file_exists(public_path($producto->imagen))) {
+                unlink(public_path($producto->imagen));
+            }
+
+            // 2. Eliminamos de la base de datos
+            $producto->delete();
+            
+            return redirect()->back()->with('success', "¡El producto fue eliminado definitivamente de la base de datos!");
+            
+        } catch (\Illuminate\Database\QueryException $e) {
+            // ESCUDO ANTI-ERRORES: Si el producto ya tiene ventas, SQL bloqueará el borrado.
+            return redirect()->back()->with('error', "No puedes eliminar este producto porque ya tiene tickets de venta asociados. Te recomendamos usar el botón 'Desactivar'.");
+        }
     }
 
     public function exportarPdf(Request $request)

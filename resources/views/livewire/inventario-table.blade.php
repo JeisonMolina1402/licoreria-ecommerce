@@ -64,14 +64,18 @@
 
     <div class="d-flex justify-content-between align-items-end mb-3">
         <h5 class="text-dark mb-0 d-none d-md-block">Lista de Productos</h5>
-        <button type="button" class="btn btn-primary fw-bold px-4" data-bs-toggle="modal"
-            data-bs-target="#modalAgregarProducto" onclick="prepararModalCrear()">
-            + Agregar Producto
-        </button>
+        
+        @can('crear producto')
+            <button type="button" class="btn btn-primary fw-bold px-4" data-bs-toggle="modal"
+                data-bs-target="#modalAgregarProducto" onclick="prepararModalCrear()">
+                + Agregar Producto
+            </button>
+        @endcan
+        
     </div>
 
     <!-- TABLA CON EFECTO DE CARGA TRANSLÚCIDO -->
-    <div class="table-responsive bg-white p-3 rounded-3 shadow-sm mb-4 transition-all" wire:loading.class="opacity-50">
+    <div class="table-responsive bg-white p-3 rounded-3 shadow-sm mb-4 transition-all" wire:loading.class="opacity-50" id="tabla-inventario">
         <table class="table table-hover align-middle mb-0">
             <thead class="table-light">
                 <tr>
@@ -117,32 +121,54 @@
                                 @endif
                             </td>
                             <td>
-                                <button class="btn btn-sm btn-outline-primary mb-1 mb-md-0" data-bs-toggle="modal"
-                                    data-bs-target="#modalAgregarProducto" data-id="{{ $producto->id }}"
-                                    data-nombre="{{ $producto->nombre }}"
-                                    data-categoria="{{ $producto->categoria_id }}"
-                                    data-descripcion="{{ $producto->descripcion }}"
-                                    data-precio_compra="{{ $producto->precio_compra }}"
-                                    data-precio="{{ $producto->precio }}" data-stock="{{ $producto->stock }}"
-                                    data-imagen="{{ $producto->imagen ? asset($producto->imagen) : '' }}"
-                                    onclick="prepararModalEditar(this)">✏️ Editar</button>
+                                <!-- flex-nowrap fuerza a que se queden en 1 sola línea horizontal en el celular -->
+                                <div class="d-flex flex-row flex-nowrap gap-2 justify-content-start align-items-center">
+                                    
+                                    <!-- 1. BOTÓN EDITAR (AZUL) -->
+                                    @can('editar producto')
+                                        <button class="btn btn-sm btn-outline-primary shadow-sm fw-bold px-2 px-md-3" data-bs-toggle="modal"
+                                            data-bs-target="#modalAgregarProducto" data-id="{{ $producto->id }}"
+                                            data-nombre="{{ $producto->nombre }}"
+                                            data-categoria="{{ $producto->categoria_id }}"
+                                            data-descripcion="{{ $producto->descripcion }}"
+                                            data-precio_compra="{{ $producto->precio_compra }}"
+                                            data-precio="{{ $producto->precio }}" data-stock="{{ $producto->stock }}"
+                                            data-imagen="{{ $producto->imagen ? asset($producto->imagen) : '' }}"
+                                            onclick="prepararModalEditar(this)" title="Editar Producto">
+                                            <i class="fa-solid fa-pen"></i> <span class="d-none d-md-inline ms-1">Editar</span>
+                                        </button>
+                                    @endcan
 
-                                {{-- BOTÓN DINÁMICO DE ACTIVAR / DESACTIVAR (CON ALERTA SWEETALERT) --}}
-                                {{-- Se agregó la clase 'form-eliminar' al form y se quitó el onclick viejo --}}
-                                <form action="{{ route('inventario.destroy', $producto->id) }}" method="POST"
-                                    class="d-inline form-eliminar">
-                                    @csrf
-                                    @method('DELETE')
-                                    @if ($producto->estado === 'activo' || $producto->estado === null)
-                                        <button type="submit" class="btn btn-sm btn-outline-danger shadow-sm fw-bold">
-                                            <i class="fa-solid fa-ban"></i> Desactivar
-                                        </button>
-                                    @else
-                                        <button type="submit" class="btn btn-sm btn-outline-success shadow-sm fw-bold">
-                                            <i class="fa-solid fa-check"></i> Activar
-                                        </button>
-                                    @endif
-                                </form>
+                                    <!-- 2. BOTÓN ACTIVAR/DESACTIVAR (VERDE O NARANJA) -->
+                                    @can('suspender producto')
+                                        <form action="{{ route('inventario.toggle', $producto->id) }}" method="POST"
+                                            class="m-0 p-0 form-estado">
+                                            @csrf
+                                            @if ($producto->estado === 'activo' || $producto->estado === null)
+                                                <button type="submit" class="btn btn-sm btn-outline-warning shadow-sm fw-bold text-dark px-2 px-md-3" title="Ocultar de la tienda">
+                                                    <i class="fa-solid fa-ban"></i> <span class="d-none d-md-inline ms-1">Desactivar</span>
+                                                </button>
+                                            @else
+                                                <button type="submit" class="btn btn-sm btn-outline-success shadow-sm fw-bold px-2 px-md-3" title="Mostrar en la tienda">
+                                                    <i class="fa-solid fa-check"></i> <span class="d-none d-md-inline ms-1">Activar</span>
+                                                </button>
+                                            @endif
+                                        </form>
+                                    @endcan
+
+                                    <!-- 3. BOTÓN ELIMINAR DEFINITIVO (ROJO) -->
+                                    @can('eliminar producto')
+                                        <form action="{{ route('inventario.destroy', $producto->id) }}" method="POST"
+                                            class="m-0 p-0 form-eliminar">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button type="submit" class="btn btn-sm btn-outline-danger shadow-sm fw-bold px-2 px-md-3" title="Eliminar definitivamente">
+                                                <i class="fa-solid fa-trash-can"></i> <span class="d-none d-md-inline ms-1">Eliminar</span>
+                                            </button>
+                                        </form>
+                                    @endcan
+
+                                </div>
                             </td>
                         </tr>
                     @endforeach
@@ -155,20 +181,71 @@
         </table>
     </div>
 
-   <!-- FOOTER: PAGINACIÓN Y BOTÓN PDF -->
+  <!-- FOOTER: PAGINACIÓN Y BOTÓN PDF -->
     <div class="row align-items-center mt-4 mb-2 pt-2 border-top">
         
-        <!-- PAGINACIÓN (Alineada a la izquierda en PC, al centro en Móviles) -->
-        <!-- overflow-auto asegura que si los números son muchos en celular, se puedan deslizar sin romper la pantalla -->
-        <div class="col-12 col-lg-9 d-flex justify-content-center justify-content-lg-start mb-3 mb-lg-0 overflow-auto" style="scrollbar-width: thin;">
-            {{ $productos->links() }}
+        <!-- ESTILO PARA DOMAR LA PAGINACIÓN DE LARAVEL -->
+        <style>
+            /* 1. Ocultamos y destruimos los botones gigantes de celular para siempre */
+            .paginacion-apilada nav > .d-sm-none {
+                display: none !important;
+            }
+
+            /* 2. Forzamos a que la versión de PC se apile y se centre en celular */
+            .paginacion-apilada nav > .d-none.d-sm-flex {
+                display: flex !important;
+                flex-direction: column !important;
+                align-items: center !important;
+                gap: 10px;
+                width: 100%;
+            }
+
+            /* 3. Centrar el texto en celular */
+            .paginacion-apilada nav p {
+                margin-bottom: 0 !important;
+                text-align: center !important;
+            }
+
+            /* 🔥 4. MODO SÚPER COMPACTO PARA CELULARES 🔥 */
+            @media (max-width: 575px) {
+                /* Oculta todos los números sueltos y puntos suspensivos */
+                .paginacion-apilada .pagination .page-item:not(.active):not(:first-child):not(:last-child) {
+                    display: none !important;
+                }
+                /* Hace que los 3 botones que quedan sean anchos y cómodos para el dedo */
+                .paginacion-apilada .pagination .page-link {
+                    padding: 0.5rem 1.2rem !important;
+                    font-weight: bold;
+                    border-radius: 6px;
+                }
+                .paginacion-apilada .pagination {
+                    gap: 5px;
+                }
+            }
+
+            /* 5. En PC, restauramos la alineación a la izquierda */
+            @media (min-width: 992px) {
+                .paginacion-apilada nav > .d-none.d-sm-flex {
+                    align-items: flex-start !important;
+                }
+                .paginacion-apilada nav p {
+                    text-align: left !important;
+                }
+            }
+        </style>
+
+        <!-- PAGINACIÓN -->
+        <div class="col-12 col-lg-9 mb-4 mb-lg-0 overflow-auto paginacion-apilada" style="scrollbar-width: thin;">
+            {{ $productos->links(data: ['scrollTo' => '#tabla-inventario']) }}
         </div>
 
-        <!-- BOTÓN PDF (Alineado a la derecha en PC, ancho completo en Móviles) -->
+        <!-- BOTÓN PDF -->
         <div class="col-12 col-lg-3 d-flex justify-content-center justify-content-lg-end">
-            <a href="{{ route('inventario.pdf') }}" class="btn btn-danger fw-bold shadow-sm px-4 py-2 w-100 d-flex justify-content-center align-items-center" style="max-width: 220px;" target="_blank">
-                <i class="fa-solid fa-file-pdf me-2 fs-5"></i> Descargar PDF
-            </a>
+            @can('exportar inventario')
+                <a href="{{ route('inventario.pdf') }}" class="btn btn-danger btn-sm fw-bold shadow-sm px-2 d-flex justify-content-center align-items-center w-100" style="max-width: 220px;" target="_blank">
+                    <i class="fa-solid fa-file-pdf me-2 fs-5"></i> Descargar PDF
+                </a>
+            @endcan
         </div>
         
     </div>

@@ -1,8 +1,9 @@
 <div class="col-lg-7" id="tabla-categorias">
     <div class="card shadow-sm border-0 rounded-4 h-100">
-        <div class="card-header bg-white py-3 border-bottom d-flex align-items-center justify-content-between">
+        <!-- CABECERA: RENDIMIENTO POR CATEGORÍA -->
+        <div class="card-header bg-white py-3 border-bottom d-flex flex-column flex-md-row align-items-center justify-content-md-between gap-3 gap-md-0 text-center text-md-start">
             <h6 class="m-0 fw-bold text-dark"><i class="fa-solid fa-chart-pie text-success me-2"></i> Rendimiento por Categoría</h6>
-            <select wire:model.live="ranking_categorias" class="form-select form-select-sm border-success fw-bold text-success" style="cursor: pointer; width: auto;">
+            <select wire:model.live="ranking_categorias" class="form-select form-select-sm border-success fw-bold text-success w-100 w-md-auto" style="cursor: pointer; max-width: 250px;">
                 <option value="ventas">🥇 Más Vendidos (Unidades)</option>
                 <option value="ganancia">💰 Mayor Ganancia (Dinero)</option>
                 <option value="cero">📉 Sin Movimiento (0 Ventas)</option>

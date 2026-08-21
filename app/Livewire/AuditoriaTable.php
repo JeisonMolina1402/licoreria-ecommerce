@@ -75,7 +75,7 @@ class AuditoriaTable extends Component
             });
         }
 
-        $logs = $query->paginate(10);
+        $logs = $query->paginate(10)->onEachSide(1);
         $modulos = Activity::select('log_name')->distinct()->pluck('log_name');
 
         return view('livewire.auditoria-table', compact('logs', 'modulos'));

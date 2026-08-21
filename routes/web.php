@@ -73,7 +73,7 @@ Route::get('/notificaciones/check', function () {
 // 3. ZONA ADMINISTRATIVA (PANEL DE CONTROL)
 // Requiere login Y rol estricto de 'admin' o 'vendedor'
 // ==========================================
-Route::middleware(['auth', 'role:admin|vendedor'])->group(function () {
+Route::middleware(['auth', 'permission:ver dashboard'])->group(function () {
 
     // Dashboard Base
     Route::middleware(['permission:ver dashboard'])->group(function () {
@@ -88,6 +88,7 @@ Route::middleware(['auth', 'role:admin|vendedor'])->group(function () {
         Route::post('/inventario/guardar', [InventarioController::class, 'store'])->name('inventario.store');
         Route::post('/inventario/actualizar/{id}', [InventarioController::class, 'update'])->name('inventario.update');
         Route::delete('/inventario/eliminar/{id}', [InventarioController::class, 'destroy'])->name('inventario.destroy');
+        Route::post('/inventario/{id}/toggle', [App\Http\Controllers\InventarioController::class, 'toggleStatus'])->name('inventario.toggle');
     });
 
     // Módulo de Tickets (Ventas, Pedidos y Caja)
@@ -112,7 +113,7 @@ Route::middleware(['auth', 'role:admin|vendedor'])->group(function () {
     // Módulo de Auditoria
     Route::middleware(['permission:ver auditoria'])->group(function () {
         Route::get('/auditoria', [AuditoriaController::class, 'index'])->name('auditoria.index');
-        Route::get('/auditoria/pdf', [App\Http\Controllers\AuditoriaController::class, 'exportarPdf'])->name('auditoria.pdf');
+        Route::get('/auditoria/pdf', [AuditoriaController::class, 'exportarPdf'])->name('auditoria.pdf');
     });
 
     // Módulo de Usuarios
@@ -121,6 +122,7 @@ Route::middleware(['auth', 'role:admin|vendedor'])->group(function () {
         Route::post('/usuarios', [UserController::class, 'store'])->name('usuarios.store');
         Route::put('/usuarios/{usuario}', [UserController::class, 'update'])->name('usuarios.update');
         Route::patch('/usuarios/{usuario}/estado', [UserController::class, 'toggleEstado'])->name('usuarios.toggle');
+        Route::delete('/usuarios/{usuario}', [UserController::class, 'destroy'])->name('usuarios.destroy');
     });
 
     // ==========================================

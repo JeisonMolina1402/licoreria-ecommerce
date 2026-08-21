@@ -10,18 +10,13 @@ use Spatie\Permission\Models\Role; // <-- 1. IMPORTAMOS EL MODELO DE ROLES DE SP
 
 class UserController extends Controller
 {
-    public function index()
+   public function index()
     {
-        $personal = User::whereIn('rol', ['admin', 'vendedor'])->orderBy('id', 'desc')->get();
-        $clientes = User::where('rol', 'cliente')->orderBy('id', 'desc')->get();
-
-        // 2. Traemos TODOS los roles dinámicos de la base de datos
-        $roles = Role::all();
-
-        // 3. Enviamos los roles a la vista
-        return view('usuarios.index', compact('personal', 'clientes', 'roles'));
+        // Solo enviamos los roles para que el Modal de Crear/Editar los tenga disponibles
+        $roles = \Spatie\Permission\Models\Role::all();
+        
+        return view('usuarios.index', compact('roles'));
     }
-
     public function store(Request $request)
     {
         $request->validate([
@@ -97,5 +92,23 @@ class UserController extends Controller
 
         $mensaje = $usuario->estado === 'activo' ? 'Usuario activado exitosamente.' : 'Usuario bloqueado e inactivo.';
         return redirect()->route('usuarios.index')->with('success', $mensaje);
+    }
+
+    /**
+     * MÉTODO DESTROY (BOTÓN ROJO): Eliminar usuario definitivamente
+     */
+    public function destroy(User $usuario)
+    {
+        if ($usuario->id === auth()->id()) {
+            return back()->withErrors('Acción bloqueada: No puedes eliminar tu propia cuenta.');
+        }
+
+        try {
+            $usuario->delete();
+            return redirect()->route('usuarios.index')->with('success', 'Usuario eliminado definitivamente de la base de datos.');
+        } catch (\Illuminate\Database\QueryException $e) {
+            // Escudo de seguridad por si el usuario ya tiene tickets o registros en caja
+            return redirect()->route('usuarios.index')->with('error', 'No puedes eliminar a este usuario porque ya tiene movimientos registrados en el sistema (Tickets, Caja, etc). Te recomendamos usar el botón "Suspender".');
+        }
     }
 }
